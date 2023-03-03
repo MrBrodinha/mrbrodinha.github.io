@@ -18,8 +18,8 @@ let dvd = {
     dvd.img.src = 'EasterEgg/annoying-dog-png.png';
 
     //Draw the "tv screen"
-    canvas.width  = window.innerWidth - 17;
-    canvas.height = window.innerHeight - 19;
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     update();
 })();
