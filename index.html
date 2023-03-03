@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt">
+    <body>
+        <head>
+            <meta charset="utf-8">
+            <title>MrBrodinha</title>
+            <link rel="stylesheet">
+        </head>
+
+     <style>
+        body {
+        background-image: url('background/background.jpg');
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: center center;
+        }
+    </style> 
+
+    <audio autoplay="true" id="myAudio">
+        <source src="pagina_inicial/portal.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio autoplay="true" id="trollagain">
+        <source src="EasterEgg/troll.mp3" type="audio/mpeg">
+    </audio>
+
+    <button id="play" onclick="playAudio()" type="button" title="certified banger">Play Audio</button>
+    <button id="trolar" onclick="pauseAudio()" type="button" title="oh ma god" style="display:none;">Pause Audio</button>
+
+    <a href="http://ricadinho.eu"><IMG id="marte" STYLE="position:absolute; TOP:560px; LEFT:850px; WIDTH:100px; HEIGHT:100px" SRC="extras/White_Dwarf.png"></a>
+    <a href="https://martetm.eu/"><IMG id="boas" STYLE="position:absolute; TOP:525px; RIGHT:725px; WIDTH:75px; HEIGHT:75px; opacity:0.75" SRC="extras/Marte.png" opacity=0.1></a>
+
+    <script>
+        var x = document.getElementById("myAudio");
+        var y = document.getElementById("trollagain");
+        const perdeste = ["L","L", "trolado", "get good", "lol", "noob", "no bitches", "#lmao", "cope", "ratio", "stay mad", "Hahaha", "blocked", "dont care", "picrew avatar", "log out", "do a barrel roll"];
+        var check = false;
+        var spam = 0;
+        var check_spam = false;
+
+        function playAudio() {
+            x.volume = 0.1 
+            x.play();
+            check = true;
+            document.getElementById('play').style.display = 'none';
+            document.getElementById('trolar').style.display = 'inline-block';
+        } 
+
+        function pauseAudio() {
+            if(check == true){
+                spam++;
+
+                var r = Math.random() * (perdeste.length);
+                var ri = parseInt(r);
+
+                var ee = Math.random() * 10;
+                var eei = parseInt(ee);
+                console.log(eei);
+
+                if(x.volume < 0.95){
+                    x.volume = x.volume + 0.05;
+                }
+
+                document.getElementById('trolar').textContent = perdeste[ri];
+
+                if(spam > 10){
+                    perdeste[0] = "Stop Spamming >:("
+                }
+
+                if(eei == 1 && spam > 10 && check_spam == true){
+                    document.getElementById('trolar').style.display = 'none';
+                    document.getElementById('marte').style.display = 'none';
+                    document.getElementById('boas').style.display = 'none';
+
+                    x.pause();
+                    y.play();
+
+                    var canvas = document.createElement("canvas");
+                    canvas.id = "tv-screen";
+                    document.body.appendChild(canvas);
+
+                    var script = document.createElement("script");
+                    script.src = "js/app.js";
+                    document.body.appendChild(script);
+                }
+
+                if(spam > 15 && ri == 0){
+                    check_spam = true;
+                }
+            }
+        }
+    </script>
+    
+    </body>
+</html>

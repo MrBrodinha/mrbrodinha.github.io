@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt">
+    <body>
+        <head>
+            <meta charset="utf-8">
+            <title>MrBrodinha</title>
+            <link rel="stylesheet" href="style.css">
+        </head>
+
+    <audio autoplay="true" id="myAudio">
+        <source src="pagina_inicial/portal.mp3" type="audio/mpeg">
+    </audio>
+
+    <button id="play" onclick="playAudio()" type="button" title="certified banger">Play Audio</button>
+    <button id="trolar" onclick="pauseAudio()" type="button" title="oh ma god" style="display:none;">Pause Audio</button>
+
+    <marquee behavior="alternate" scrollamount="30">
+        <marquee behavior="alternate" scrollamount="30" direction="down">
+            <img src="EasterEgg/undertale-annoying.gif">
+        </marquee>
+    </marquee>
+
+    <script>
+        var x = document.getElementById("myAudio"); 
+        const perdeste = ["L", "trolado", "get good", "lol", "noob", "no bitches", "#lmao", "cope", "ratio", "stay mad", "Hahaha", "blocked", "dont care", "picrew avatar", "log out", "do a barrel roll"];
+        var check = false;
+
+        function playAudio() {
+            x.volume = 0.1 
+            x.play();
+            check = true;
+            document.getElementById('play').style.display = 'none';
+            document.getElementById('trolar').style.display = 'inline-block';
+        } 
+
+        function pauseAudio() {
+            if(check == true){
+                var r = Math.random() * (perdeste.length);
+                var ri = parseInt(r);
+                
+                if(x.volume < 0.95){
+                    x.volume = x.volume + 0.05;
+                }
+
+                document.getElementById('trolar').textContent = perdeste[ri];
+            }
+        }
+    </script>
+    
+    <a href="http://ricadinho.eu"><IMG STYLE="position:absolute; TOP:560px; LEFT:850px; WIDTH:100px; HEIGHT:100px" SRC="extras/White_Dwarf.png"></a>
+    <a href="https://martetm.eu/"><IMG STYLE="position:absolute; TOP:525px; RIGHT:725px; WIDTH:75px; HEIGHT:75px; opacity:0.75" SRC="extras/Marte.png" opacity=0.1></a>
+    
+    </body>
+</html>
