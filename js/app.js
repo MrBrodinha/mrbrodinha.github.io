@@ -7,8 +7,8 @@ let logoColor;
 let dvd = {
     x: 0,
     y: 0,
-    xspeed: 100,
-    yspeed: 80,
+    xspeed: 200,
+    yspeed: 150,
     img: new Image()
 };
 
