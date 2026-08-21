@@ -1,17 +1,248 @@
 .principal {
-    background-color: rgb(63, 63, 63);
-    color: pink;
+    min-height: 100vh;
+}
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    width: 100vw;
-    font-size: 2rem;
-    font-weight: bold;
-    font-family: 'Courier New', Courier, monospace;
-    text-align: center;
+.redbull-page {
+    --ink: #1e241d;
+    min-height: 100vh;
+    padding: 56px clamp(20px, 6vw, 96px) 40px;
+    color: var(--ink);
+    background: linear-gradient(165deg, #f7f3eb 0%, #ece5d8 100%);
+    font-family: Georgia, 'Times New Roman', serif;
+}
+
+.json-header,
+.drinks-grid {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.json-header {
+    border-bottom: 1px solid #b8b4ab;
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+}
+
+.eyebrow {
+    font-family: Arial, sans-serif;
+    letter-spacing: .08em;
     text-transform: uppercase;
-    letter-spacing: 0.5rem;
-    text-shadow: 0 0 0.5rem black;
+}
+
+.eyebrow { color: #d22c28; font-size: 11px; font-weight: 700; }
+.json-header h1 { margin: 10px 0 8px; font-size: clamp(38px, 6vw, 72px); line-height: .95; font-weight: 400; }
+
+.json-meta {
+    margin: 8px 0 0;
+    color: #73736d;
+    font: 13px Arial, sans-serif;
+}
+
+.participant-panel {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    max-width: 320px;
+}
+
+.participant-panel label,
+.participant-panel small {
+    font-family: Arial, sans-serif;
+    letter-spacing: .04em;
+}
+
+.participant-panel label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #4e5b47;
+    font-weight: 700;
+}
+
+.participant-panel input {
+    border: 1px solid #b8b4ab;
+    background: #fffdf8;
+    color: #1e241d;
+    padding: 8px 10px;
+    font: 14px Arial, sans-serif;
+}
+
+.participant-panel small {
+    color: #73736d;
+    font-size: 11px;
+}
+
+.save-panel {
+    margin-top: 14px;
+}
+
+.save-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.save-button {
+    border: 1px solid #1e241d;
+    background: #1e241d;
+    color: #fff;
+    padding: 10px 14px;
+    cursor: pointer;
+    font: 700 11px Arial, sans-serif;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.save-button.secondary {
+    background: transparent;
+    color: #1e241d;
+}
+
+.save-button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.save-status {
+    width: 100%;
+    margin: 2px 0 0;
+    color: #4e5b47;
+    font: 12px Arial, sans-serif;
+}
+
+.drinks-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: 1fr;
+}
+
+.drinks-grid {
+    max-width: 760px;
+}
+
+.drink-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #d6d2c9;
+    background: #fffdf8;
+    box-shadow: 0 4px 0 rgba(23, 33, 29, .08);
+    overflow: hidden;
+}
+
+.drink-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: #ece7de;
+}
+
+.drink-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+}
+
+.drink-content h2 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.15;
+    font-weight: 400;
+}
+
+.drink-flavor {
+    margin: 0;
+    color: #4e5b47;
+    font: 700 11px Arial, sans-serif;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+.existing-results-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid #e0dbd1;
+    border-bottom: 1px solid #e0dbd1;
+}
+
+.existing-results-list li {
+    display: grid;
+    grid-template-columns: minmax(90px, 130px) minmax(90px, 120px) 1fr;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e6e0d6;
+    font: 12px/1.4 Arial, sans-serif;
+    color: #3c4637;
+}
+
+.existing-results-list li:last-child {
+    border-bottom: 0;
+}
+
+.existing-results-list strong {
+    text-transform: lowercase;
+}
+
+.rating-row {
+    display: flex;
+    gap: 6px;
+}
+
+.rating-button {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #b8b4ab;
+    background: #f6f2e9;
+    color: #1e241d;
+    cursor: pointer;
+    font: 700 12px Arial, sans-serif;
+}
+
+.rating-button.active,
+.rating-button:hover {
+    border-color: #b62325;
+    background: #b62325;
+    color: #fff;
+}
+
+.rating-button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.opinion-input {
+    width: 100%;
+    border: 1px solid #d6d2c9;
+    background: #fdfbf5;
+    color: #1e241d;
+    padding: 10px;
+    resize: vertical;
+    font: 13px/1.4 Arial, sans-serif;
+}
+
+.opinion-input:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.drink-link {
+    width: fit-content;
+    color: #b62325;
+    font: 700 12px Arial, sans-serif;
+    text-decoration: none;
+}
+
+.drink-link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 760px) {
+    .redbull-page { padding-top: 32px; }
+    .drink-image { height: 170px; }
+    .existing-results-list li {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
 }

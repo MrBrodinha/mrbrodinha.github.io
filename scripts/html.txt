@@ -1,0 +1,2903 @@
+<body class="drawer drawer--left">
+<div id="wrapper">
+
+<div id="pc">
+<header id="logo" role="banner"><a href="https://www.energydrinkmania.net/en/"><img src="https://www.energydrinkmania.net/img/logo_en.png" alt="ENERGY DRINK MANIA" width="519" height="100" style="user-select: none;"></a>
+<div id="logo_lang"><div id="pc">
+<a href="https://www.energydrinkmania.net/red_bull/"><img src="https://www.energydrinkmania.net/img/lang_jp_pc.png" alt="Red Bull" width="60" height="40" style="user-select: none;"></a>
+<a href="https://www.energydrinkmania.net/en/red_bull/"><img src="https://www.energydrinkmania.net/img/lang_en_pc.png" alt="Red Bull" width="60" height="40" style="user-select: none;"></a>
+</div></div>
+</header>
+</div>
+
+<div id="sp">
+<div id="header_mobile_menu">
+<ul>
+<a id="simple-menu" href="#sidr"><li class="icon-menu"><span class="icon-menu-text"><br>Reviews</span></li></a>
+<li class="icon-menu-logo"><a href="https://www.energydrinkmania.net/en/"><img src="https://www.energydrinkmania.net/img/logo_en_mobile.svg" style="user-select: none;"></a></li>
+<li class="icon-menu-lang">
+<div class="icon-menu-jp"><a href="https://www.energydrinkmania.net/red_bull/"><span class="icon-menu-text"><img src="https://www.energydrinkmania.net/img/lang_jp_sp.png" alt="Red Bull" width="22" height="14" style="user-select: none;"></span></a></div>
+<div class="icon-menu-en"><a href="https://www.energydrinkmania.net/en/red_bull/"><span class="icon-menu-text"><img src="https://www.energydrinkmania.net/img/lang_en_sp.png" alt="Red Bull" width="22" height="14" style="user-select: none;"></span></a></div>
+</li>
+</ul>
+</div>
+</div>
+
+
+<nav id="global_menu"><ul>
+<li><a href="https://www.energydrinkmania.net/en/">Home</a></li>
+<li><a href="https://www.energydrinkmania.net/en/energydrink_caffeine.html">The Strongest &amp; Most Caffeinated Energy Drinks</a></li>
+<li><a href="https://www.energydrinkmania.net/en/news/">Latest News</a></li>
+<li><a href="https://www.energydrinkmania.net/en/carb_ranking.html">Unhealthiest Energy Drinks in the World</a></li>
+</ul></nav>
+
+<main id="main" role="main">
+<article>
+<div id="sp">
+<div id="sp_counter">
+<div id="counter1"><div class="top_count_number">1657</div><div class="top_count_title">Reviews</div><div class="top_count_des">Over 20 Years of Experience !</div></div>
+<div id="counter2"><div class="top_count_number">529</div><div class="top_count_title">Comments</div><div class="top_count_des">Your comments are welcome</div></div>
+<div id="counter3"><div class="top_count_number">7000</div><div class="top_count_title">Collections</div><div class="top_count_des">from around the world I've visited</div></div>
+</div>
+</div>
+
+
+<h1><span itemprop="itemreviewed">Red Bull (All 97 Flavors) Reviewes</span></h1>
+
+<nav><ul id="pan" itemscope="" itemtype="http://schema.org/BreadcrumbList">
+<li class="pan_li1" itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem">
+<a href="https://www.energydrinkmania.net/en/" itemprop="item"><span itemprop="name">Home</span></a><meta itemprop="position" content="1"></li>
+<li class="pan_li2" itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem">
+<a href="https://www.energydrinkmania.net/en/red_bull/" itemprop="item">
+<span itemprop="name">Red Bull</span></a><meta itemprop="position" content="2"></li>
+</ul></nav>
+<div id="date">Last Updated August 15, 2026</div>
+
+
+
+
+<section>
+<h2>Complete Review of All (97 Flavors) Red Bull Flavors</h2>
+<p><img src="https://www.energydrinkmania.net/red_bull/001.jpg" alt="Red Bull Energy Drink" style="user-select: none;">Red Bull did not have as many flavor variations as Monster or Rockstar, but since 2013, the Edition series has expanded globally with new flavors released every year. From the classic color editions to seasonal edition flavors released every year, some of these editions have become regular offerings in various countries, making the flavor range more diverse each year.</p>
+<p>Additionally, there are limited-time versions, country-exclusive, and collaboration products in different countries, making for many varieties when explored deeply. Energy drink enthusiasts have reviewed Red Bulls from all around the world!</p>
+
+
+<h3>Red Bull Original</h3>
+<p>The world's best-selling energy drink, Red Bull. No matter which country you visit, the design remains the same. The simple combination of blue and silver draws you in more the more you look at it. At any event you attend, all equipment and small items are unified under the brand design, and it's amazing to see Red Bull kingdoms appearing in every country and region.</p>
+<section class="flex_box">
+<p><a href="redbull.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull</a></p>
+<p><a href="redbull_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull (Japan)</a></p>
+<p><a href="redbull_sugarfree.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_sugarfree_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Sugar Free</a></p>
+<p><a href="redbull_sugarfree_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_sugarfree_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Sugar Free (Japan)</a></p>
+<p><a href="redbull_total_zero.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_total_zero_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull TOTAL ZERO</a></p>
+<p><a href="redbull_cola.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_cola_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull COLA</a></p>
+</section>
+
+
+
+<h3>Seasonal Editions</h3>
+<p>The seasonal limited editions started with the "Summer Edition" released in the United States in 2014. Many of these editions became regular color editions from the following year onward, which is a characteristic feature.</p>
+<section class="flex_box">
+<p><a href="redbull_summer_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2014</a></p>
+<p><a href="redbull_summer_edition_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Summer Edition (Japan)</a></p>
+<p><a href="redbull_spring_edition_sakura.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_spring_edition_sakura_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Spring Edition</a></p>
+<p><a href="redbull_orange_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_orange_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull ORANGE EDITION (2015 U.S. Summer Substitute)</a></p>
+<p><a href="redbull_summer_edition_kiwi_twist.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_kiwi_twist_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2016 KIWI TWIST</a></p>
+<p><a href="redbull_winter_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2016 Zwetschke-Zimtnelke</a></p>
+<p><a href="redbull_winter_edition_2017_plum_twist.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2017_plum_twist_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2017 Plum Twist</a></p>
+<p><a href="redbull_summer_edition_grapefruit_twist.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_grapefruit_twist_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2017 GRAPEFRUIT TWIST</a></p>
+<p><a href="redbull_summer_edition_2018_coconut_berry.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2018_coconut_berry_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2018 Coconut Berry</a></p>
+
+<p><a href="redbull_winter_edition_2018_rumtopf.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2018_rumtopf_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2018 Rumtopf</a></p>
+<p><a href="redbull_winter_edition_2019_holiday_spice.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2019_holiday_spice_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2019 Holiday Spice</a></p>
+<p><a href="redbull_summer_edition_2019_beach_breeze.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2019_beach_breeze_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2019 Summer Breeze</a></p>
+<p><a href="redbull_winter_edition_2019_gletschereis.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2019_gletschereis_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2019 Gletschereis</a></p>
+<p><a href="redbull_summer_edition_2020_watermelon.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2020_watermelon_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2020 Watermelon</a></p>
+<p><a href="redbull_summer_edition_2020_sunny_beam.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2020_sunny_beam_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2020 Sunny Beam</a></p>
+<p><a href="redbull_summer_edition_2021_dragon_fruit.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2021_dragon_fruit_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2021 Dragon Fruit</a></p>
+<p><a href="redbull_summer_edition_2021_cactus_fruit.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2021_cactus_fruit_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2021 Cactus Fruit</a></p>
+
+<p><a href="redbull_summer_edition_2022_strawberry_apricot.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2022_strawberry_apricot_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2022 Strawberry Apricot</a></p>
+<p><a href="redbull_winter_edition_2022_fig_apple.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2022_fig_apple_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2022 Fig Apple</a></p>
+<p><a href="redbull_summer_edition_2023_junberry.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2023_junberry_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2023 Juneberry</a></p>
+<p><a href="redbull_summer_edition_2023_mango_pineapple.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2023_mango_pineapple_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2023 Mango Pineapple</a></p>
+<p><a href="redbull_winter_edition_2023_pear_cinnamon.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2023_pear_cinnamon_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2023 Pear Cinnamon</a></p>
+<p><a href="redbull_winter_edition_2023_muscat.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2023_muscat_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2023 Muscat</a></p>
+<p><a href="redbull_spring_edition_tropical_pinkgrapefruit.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_spring_edition_tropical_pinkgrapefruit_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SPRING EDITION 2024 Tropical Pink Grapefruit</a></p>
+<p><a href="redbull_summer_edition_2024_curuba_elderflower.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2024_curuba_elderflower_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2024 Curuba Elderflower</a></p>
+<p><a href="redbull_summer_edition_2024_blueberry.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2024_blueberry_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2024 Blueberry</a></p>
+<p><a href="redbull_summer_edition_2024_lime.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2024_lime_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2024 Lime</a></p>
+<p><a href="redbull_winter_edition_2024_iced_vanilla_berry.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2024_iced_vanilla_berry_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2024 Iced Vanilla Berry</a></p>
+<p><a href="redbull_winter_edition_2024_citrus_orange.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2024_citrus_orange_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2024 Citrus Orange</a></p>
+<p><a href="redbull_spring_edition_2025_grapefruit_blossom.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_spring_edition_2025_grapefruit_blossom_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SPRING EDITION 2025 Grapefruit &amp; Blossom</a></p>
+<p><a href="redbull_spring_edition_2025_strawberry_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_spring_edition_2025_strawberry_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Spring Edition 2025 Strawberry (Japan)</a></p>
+<p><a href="redbull_summer_edition_2025_white_peach_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2025_white_peach_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2025 White Peach</a></p>
+<p><a href="redbull_summer_edition_2025_white_peach.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_summer_edition_2025_white_peach_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUMMER EDITION 2025 White Peach (Japan Original)</a></p>
+<p><a href="redbull_winter_edition_2025_apple_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_winter_edition_2025_apple_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull WINTER EDITION 2025 APPLE (Japan)</a></p>
+</section>
+
+
+
+
+<h3>Color Editions</h3>
+<p>The first edition series, released in the United States, included the Red Edition, Blue Edition, and Silver Edition, all launched simultaneously. Later, not only color editions but also flavor-based editions were introduced.</p>
+<section class="flex_box">
+<p><a href="redbull_red_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_red_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Red Edition</a></p>
+<p><a href="redbull_blue_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_blue_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Blue Edition</a></p>
+<p><a href="redbull_blue_edition_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_blue_edition_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Blue Edition (Japan)</a></p>
+<p><a href="redbull_blue_edition_budou_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_blue_edition_budou_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Blue Edition Grape Flavor</a></p>
+<p><a href="redbull_silver_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_silver_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Silver Edition</a></p>
+<p><a href="redbull_silver_edition_austria.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_silver_edition_austria_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Silver Edition Austria Early Batch</a></p>
+<p><a href="redbull_lime_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_lime_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Lime Edition</a></p>
+
+<p><a href="redbull_green_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_green_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Green Edition</a></p>
+<p><a href="redbull_white_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_white_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull White Edition</a></p>
+<p><a href="redbull_yellow_edition_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_yellow_edition_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Yellow Edition (Japan)</a></p>
+<p><a href="redbull_tropical_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_tropical_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Tropical Edition</a></p>
+<p><a href="redbull_white_edition_fresh_breeze.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_white_edition_fresh_breeze_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull White Edition Fresh Breeze</a></p>
+<p><a href="redbull_purple_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_purple_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Purple Edition</a></p>
+<p><a href="redbull_purple_edition_mystic_magic.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_purple_edition_mystic_magic_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Purple Edition (Japan)</a></p>
+<p><a href="redbull_acai_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_acai_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Acai Edition</a></p>
+<p><a href="redbull_peach_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_peach_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Peach Edition</a></p>
+<p><a href="redbull_red_edition_watermelon.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_red_edition_watermelon_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Red Edition Watermelon</a></p>
+<p><a href="redbull_green_edition_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_green_edition_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Green Edition Refreshing Splash (Japan)</a></p>
+<p><a href="redbull_red_edition_wild_passion.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_red_edition_wild_passion_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Red Edition Wild Passion</a></p>
+<p><a href="redbull_orange_edition_sunrise_spark.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_orange_edition_sunrise_spark_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Orange Edition Sunrise Spark</a></p>
+<p><a href="redbull_ruby_edition_vivid_flash.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_ruby_edition_vivid_flash_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Ruby Edition Vivid Flash</a></p>
+<p><a href="redbull_ruby_edition_pomegranate.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_ruby_edition_pomegranate_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Ruby Edition Pomegranate</a></p>
+<p><a href="redbull_green_edition_dragon_fruit.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_green_edition_dragon_fruit_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Green Edition Dragon Fruit</a></p>
+<p><a href="redbull_blue_edition_ocean_blast.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_blue_edition_ocean_blast_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Blue Edition Ocean Blast</a></p>
+<p><a href="redbull_rededition_groovy_fizz.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_rededition_groovy_fizz_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Red Edition Groovy Fizz</a></p>
+<p><a href="redbull_sea_blue_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_sea_blue_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Sea Blue Edition</a></p>
+<p><a href="redbull_pink_edition_wild_berry.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_pink_edition_wild_berry_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull PINK EDITION Wild Berry</a></p>
+<p><a href="redbull_green_edition_curuba_elderflower.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_green_edition_curuba_elderflower_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Green Edition Curuba Elderflower</a></p>
+<p><a href="redbull_lime_green_edition_curuba-holunderblute.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_lime_green_edition_curuba-holunderblute_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull LIME GREEN EDITION Curuba-Holunderblute</a></p>
+
+<p><a href="redbull_green_edition_muscat_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_green_edition_muscat_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull GREEN EDITION Muscat Japan</a></p>
+<p><a href="redbull_cherry_edition_sakuranbo_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_cherry_edition_sakuranbo_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Cherry Edition Sakuranbo Cherry Japan</a></p>
+<p><a href="redbull_sudachi_edition_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_sudachi_edition_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull SUDACHI EDITION (Japan)</a></p>
+</section>
+
+
+
+
+
+<h3>Edition Sugar-Free</h3>
+<p>The Sugar-Free series offers zero sugar options. After the launch of Total Zero in the United States, the Sugar-Free editions were introduced. In the UK, zero sugar versions of the editions started to be released, and by 2024, sugar-free editions expanded in both Europe and the United States. It is easy to assume that the reason for the rapid increase in sugar-free products in the U.S. since 2020 is because most energy drinks in the U.S. became sugar-free.</p>
+<section class="flex_box">
+<p><a href="redbull_total_zero_cherry_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_total_zero_cherry_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Total Zero Cherry Edition</a></p>
+<p><a href="redbull_purple_edition_sugarfree.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_purple_edition_sugarfree_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Purple Edition Sugar-Free</a></p>
+<p><a href="redbull_lime_edition_sugarfree.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_lime_edition_sugarfree_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Lime Edition Sugar-Free</a></p>
+<p><a href="redbull_tropical_edition_sugarfree.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_tropical_edition_sugarfree_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Tropical Edition Sugar-Free</a></p>
+<p><a href="redbull_coconut_edition_sugarfree.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_coconut_edition_sugarfree_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Coconut Edition Sugar-Free</a></p>
+<p><a href="redbull_pear_edition_sugarfree.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_pear_edition_sugarfree_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Pear Edition Sugar-Free</a></p>
+<p><a href="redbull_red_edition_sugarfree_watermelon.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_red_edition_sugarfree_watermelon_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Red Edition Watermelon Sugar-Free</a></p>
+<p><a href="redbull_amber_edition_sugarfree_strawberry_apricot.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_amber_edition_sugarfree_strawberry_apricot_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Amber Edition Sugar-Free Strawberry Apricot</a></p>
+<p><a href="red_bull_winter_edition_sugarfree_2024_iced_vanilla_berry.html"><img src="https://www.energydrinkmania.net/red_bull/red_bull_winter_edition_sugarfree_2024_iced_vanilla_berry_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Winter Edition Sugar-Free 2024 Iced Vanilla Berry</a></p>
+</section>
+
+
+<h3>Limited Edition</h3>
+<p>A limited edition series produced in limited quantities. The flavors are distinctive, with some later becoming permanent products, while others are completely discontinued.</p>
+<section class="flex_box">
+<p><a href="redbull_edicion_limon.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_edicion_limon_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Edición Limón</a></p>
+</section>
+
+
+
+<h3>Red Bull Organics</h3>
+<p>The Red Bull Organics series, certified organic. Instead of being an energy drink, it is an organic carbonated beverage. Four flavors were released in Austria in 2017, and later, it was launched worldwide, meeting each country's organic product standards. In Japan, three flavors have been released.</p>
+<section class="flex_box">
+<p><a href="redbull_organics_simplycola_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_organics_simplycola_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Simply Cola</a></p>
+<p><a href="redbull_organics_bitterlemon_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_organics_bitterlemon_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Bitter Lemon</a></p>
+<p><a href="redbull_organics_gingerale_japan.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_organics_gingerale_japan_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Ginger Ale</a></p>
+<p><a href="redbull_organics_tonic_water.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_organics_tonic_water_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Tonic Water</a></p>
+<p><a href="red_bull_organics_simply_cola.html"><img src="https://www.energydrinkmania.net/red_bull/red_bull_organics_simply_cola_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Simply Cola</a></p>
+<p><a href="redbull_organics_easy_lemon.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_organics_easy_lemon_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Easy Lemon</a></p>
+<p><a href="redbull_organics_black_orange.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_organics_black_orange_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Black Orange</a></p>
+<p><a href="redbull_organics_viva_mate.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_organics_viva_mate_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Viva Mate</a></p>
+<p><a href="redbull_organics_ginger_ale.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_organics_ginger_ale_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull Organics Ginger Ale</a></p>
+<p><a href="red_bull_organics_fizzy_peach.html"><img src="https://www.energydrinkmania.net/red_bull/red_bull_organics_fizzy_peach_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull ORGANICS fizzy PEACH</a></p>
+</section>
+
+
+
+
+
+<h3>Limited Edition and Non-Sale Red Bull</h3>
+<p>Red Bull with high rarity, including limited edition and non-sale versions. Unlike regular Red Bull, these feature limited edition flavors.</p>
+<section class="flex_box">
+<p><a href="redbull_f1_edition.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_f1_edition_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull F1 Edition</a></p>
+<p><a href="bull.html"><img src="https://www.energydrinkmania.net/red_bull/bull_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Bull</a></p>
+</section>
+
+
+
+
+<h2>Red Bull Asia</h2>
+<p>The Red Bull series originating from Thailand, sold in the Asia region. This section gathers various Red Bulls available in different countries.</p>
+<section class="flex_box">
+<p><a href="redbull_plus_singapore.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_plus_singapore_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull PLUS SINGAPORE</a></p>
+<p><a href="redbull_plus_malaysia.html"><img src="https://www.energydrinkmania.net/red_bull/redbull_plus_malaysia_thumbnail.jpg" width="300" height="200" border="0" style="user-select: none;">Red Bull PLUS Malaysia</a></p>
+</section>
+
+
+https://www.energydrinkmania.net/red_bull/
+
+<p align="center"><a href="https://www.energydrinkmania.net/en/news/redbull.html"><img src="https://www.energydrinkmania.net/img/news_banner_redbull.gif" border="0" alt="Red Bull Latest News" style="user-select: none;"></a></p>
+
+
+
+
+
+<article id="contents">
+
+
+
+<div class="share-buttons">
+<button class="share-button twitter" onclick="shareToX()"><i class="fab fa-twitter"></i></button>
+<button class="share-button facebook" onclick="shareToFacebook()"><i class="fab fa-facebook-f"></i></button>
+<button class="share-button reddit" onclick="shareToReddit()"><i class="fab fa-reddit-alien"></i></button>
+<button class="share-button hatena" onclick="shareToHatena()"><span class="hatena-icon">B!</span></button>
+<button class="share-button pinterest" onclick="shareToPinterest()"><i class="fab fa-pinterest"></i></button>
+<button class="share-button copy" onclick="copyURL()"><i class="fas fa-link"></i></button>
+</div>
+
+<script async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8258633614357452" crossorigin="anonymous"></script>
+<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-8258633614357452" data-ad-slot="9524428137" data-ad-format="auto" data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+</article>
+
+<aside id="sub_navi">
+<h4>ads</h4>
+<div id="pc">
+<script type="text/javascript">rakuten_design="text";rakuten_affiliateId="013bb130.4a9f2eff.0c59ead7.37fdbacd";rakuten_items="ctsmatch";rakuten_genreId="0";rakuten_size="200x200";rakuten_target="_blank";rakuten_theme="gray";rakuten_border="off";rakuten_auto_mode="off";rakuten_genre_title="off";rakuten_recommend="on";rakuten_ts="1540964360745";rakuten_bgColor="f7f7f7";rakuten_txtColor="0066cc";rakuten_captionColor="000000";rakuten_moverColor="C00000";</script><script type="text/javascript" src="https://xml.affiliate.rakuten.co.jp/widget/js/rakuten_widget.js"></script>
+</div>
+<div id="sp">
+<script type="text/javascript">rakuten_design="text";rakuten_affiliateId="013bb130.4a9f2eff.0c59ead7.37fdbacd";rakuten_items="ctsmatch";rakuten_genreId="0";rakuten_size="336x280";rakuten_target="_blank";rakuten_theme="gray";rakuten_border="off";rakuten_auto_mode="on";rakuten_genre_title="off";rakuten_recommend="on";rakuten_ts="1586562577312";rakuten_bgColor="f7f7f7";rakuten_txtColor="0066cc";rakuten_captionColor="000000";rakuten_moverColor="C00000";</script><script type="text/javascript" src="https://xml.affiliate.rakuten.co.jp/widget/js/rakuten_widget.js"></script>
+</div>
+</aside>
+</section></article>
+</main>
+
+<div id="sidr" style="transition: left 0.2s;" class="sidr left">
+<div id="local_menu">
+  <div id="count">
+    <h3>Energy Drink Reviews</h3>
+    <p class="count_number">1657 Flavors</p>
+    <p class="border_dashed text14">
+      <img src="https://www.energydrinkmania.net/img/profile.svg" align="left" width="74" height="74" style="user-select: none;">Since 2001, Energy Drink Maniac has been drinking energy drinks and providing the most detailed reviews of global energy drinks based on firsthand research.
+    </p>
+    <p class="text14">
+      <img src="https://www.energydrinkmania.net/img/icon_paper.gif" align="left" style="user-select: none;">1657 flavors reviewed.<br>
+      <img src="https://www.energydrinkmania.net/img/icon_speechbubble.gif" align="left" style="user-select: none;">User reviews: 529 comments.<br>
+      <img src="https://www.energydrinkmania.net/img/icon_crown.gif" align="left" style="user-select: none;">The collection includes approximately 8,000 types of energy drinks from different countries, sizes, and designs.</p>
+  </div>
+  
+  
+  
+  
+    <nav>
+      <h4>Top 3 Global Energy Drinks</h4>
+      
+      <div id="local_menu_banner_king">
+        <a href="https://www.energydrinkmania.net/en/red_bull/">
+          <img src="https://www.energydrinkmania.net/img/banner_red_bull.jpg" alt="Red Bull" width="300" height="80" style="user-select: none;">
+          <span class="banner_title_king">Red Bull</span>
+          <span class="banner_count_king">97 types</span>
+        </a>
+      </div>
+
+      <div id="local_menu_banner_king">
+        <a href="https://www.energydrinkmania.net/en/monster_energy/">
+          <img src="https://www.energydrinkmania.net/img/banner_monster_energy.jpg" alt="Monster Energy" width="300" height="80" style="user-select: none;">
+          <span class="banner_title_king">Monster Energy</span>
+          <span class="banner_count_king">167 types</span>
+        </a>
+      </div>
+
+      <div id="local_menu_banner_king">
+        <a href="https://www.energydrinkmania.net/en/rockstar/">
+          <img src="https://www.energydrinkmania.net/img/banner_rockstar.jpg" alt="Rockstar" width="300" height="80" style="user-select: none;">
+          <span class="banner_title_king">Rockstar</span>
+          <span class="banner_count_king">172 types</span>
+        </a>
+      </div>
+
+
+<h4>Global Energy Drinks</h4>
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/28black/">
+    <img src="https://www.energydrinkmania.net/img/banner_28black.jpg" alt="28black" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">28 BLACK</span>
+    <span class="banner_count">18</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/3d_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_3d_energy_drink.jpg" alt="3D ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">3D ENERGY DRINK</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/5-hour_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_5-hour_energy.jpg" alt="5-hour ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">5-hour ENERGY</span>
+    <span class="banner_count">1</span></a>
+    </div>
+
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/action_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_action_energy.jpg" alt="ACTION ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">ACTION ENERGY</span>
+    <span class="banner_count">7</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/adrenaline_rush/">
+    <img src="https://www.energydrinkmania.net/img/banner_adrenaline_rush.jpg" alt="Adrenaline RUSH" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Adrenaline RUSH</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/alani_nu/">
+    <img src="https://www.energydrinkmania.net/img/banner_alani_nu.jpg" alt="Alani Nu" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Alani Nu</span>
+    <span class="banner_count">11</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/amp/">
+    <img src="https://www.energydrinkmania.net/img/banner_amp.jpg" alt="AMP" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">AMP</span>
+    <span class="banner_count">19</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/arizona/">
+    <img src="https://www.energydrinkmania.net/img/banner_arizona.jpg" alt="AriZona ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">AriZona ENERGY</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/bang/">
+    <img src="https://www.energydrinkmania.net/img/banner_bang.jpg" alt="bang" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Bang</span>
+    <span class="banner_count">39</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/battery/">
+    <img src="https://www.energydrinkmania.net/img/banner_battery.jpg" alt="BATTERY ENERGY DRINKク" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BATTERY ENERGY</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/beaver_buzz_energy/" width="300" height="60">
+    <img src="https://www.energydrinkmania.net/img/banner_beaver_buzz_energy.jpg" alt="BEAVER BUZZ ENERGY" style="user-select: none;">
+    <span class="banner_title">BEAVER BUZZ</span>
+    <span class="banner_count">5</span></a>
+    </div>
+    
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/big_shock/">
+    <img src="https://www.energydrinkmania.net/img/banner_big_shock.jpg" alt="BIG SHOCK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BIG SHOCK</span>
+    <span class="banner_count">34</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/black_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_black_energy.jpg" alt="BLACK ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BLACK ENERGY</span>
+    <span class="banner_count">7</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/bucked_up_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_bucked_up_energy.jpg" alt="burn" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BUCKED UP ENERGY</span>
+    <span class="banner_count">13</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/bullit_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_bullit_energy_drink.jpg" alt="BULLIT ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BULLIT</span>
+    <span class="banner_count">7</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/burn/">
+    <img src="https://www.energydrinkmania.net/img/banner_burn.jpg" alt="burn" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">burn</span>
+    <span class="banner_count">22</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/bomba/">
+    <img src="https://www.energydrinkmania.net/img/banner_bomba.jpg" alt="bomba" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BOMBA!</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/boost_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_boost_energy.jpg" alt="BOOST ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BOOST ENERGY</span>
+    <span class="banner_count">6</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/booster/">
+    <img src="https://www.energydrinkmania.net/img/banner_booster.jpg" alt="BOOSTER ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BOOSTER</span>
+    <span class="banner_count">13</span></a>
+    </div>
+    
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/boston_america/">
+    <img src="https://www.energydrinkmania.net/img/banner_boston_america.jpg" alt="BOSTON AMERICA" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BOSTON AMERICA</span>
+    <span class="banner_count">15</span></a>
+    </div>
+    
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/bsc_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_bsc_energy.jpg" alt="BSC ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BSC ENERGY</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/c4_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_c4_energy.jpg" alt="C4 ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">C4 ENERGY</span>
+    <span class="banner_count">29</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/cannabis_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_cannabis_energy_drink.jpg" alt="CANNABIS ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">CANNABIS ENERGY</span>
+    <span class="banner_count">6</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/carabao_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_carabao_energy_drink.jpg" alt="Carabao ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Carabao</span>
+    <span class="banner_count">1</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/celsius/">
+    <img src="https://www.energydrinkmania.net/img/banner_celsius.jpg" alt="CELSIUS ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">CELSIUS ENERGY</span>
+    <span class="banner_count">29</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/clever_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_clever_energy_drink.jpg" alt="clever" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">clever ENERGY</span>
+    <span class="banner_count">7</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/coca_cola/">
+    <img src="https://www.energydrinkmania.net/img/banner_coca_cola.jpg" alt="Coca Cola ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Coca Cola ENERGY</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/cult_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_cult_energy.jpg" alt="CULT ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">CULT ENERGY</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/drive_m7/">
+    <img src="https://www.energydrinkmania.net/img/banner_drive_m7.jpg" alt="DRIVE M7" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">DRIVE M7</span>
+    <span class="banner_count">2</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/drive_me/">
+    <img src="https://www.energydrinkmania.net/img/banner_drive_me.jpg" alt="DRIVE ME" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">DRIVE ME</span>
+    <span class="banner_count">2</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/dzik_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_dzik_energy.jpg" alt="DZIK ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">DZIK ENERGY</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/effect_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_effect_energy.jpg" alt="effect energy drink" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">effect</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/emerge_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_emerge_energy_drink.jpg" alt="Emerge ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">EMERGE</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/flying_power/">
+    <img src="https://www.energydrinkmania.net/img/banner_flying_power.jpg" alt="FLYING POWER" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">FLYING POWER</span>
+    <span class="banner_count">14</span></a>
+    </div>
+
+ 
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/full_throttle/">
+    <img src="https://www.energydrinkmania.net/img/banner_full_throttle.jpg" alt="Full Throttle" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Full Throttle</span>
+    <span class="banner_count">6</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/gas_monkey_energy_drink">
+    <img src="https://www.energydrinkmania.net/img/banner_gas_monkey_energy_drink.jpg" alt="Gas Monkey ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Gas Monkey</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/g_fuel_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_g_fuel_energy_drink.jpg" alt="G FUEL ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">G FUEL ENERGY</span>
+    <span class="banner_count">20</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/ghost_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_ghost_energy.jpg" alt="GHOST ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">GHOST ENERGY</span>
+    <span class="banner_count">24</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/gorilla_mind/">
+    <img src="https://www.energydrinkmania.net/img/banner_gorilla_mind.jpg" alt="GORILLA MIND" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">GORILLA MIND</span>
+    <span class="banner_count">6</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/hansens_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_hansens_energy.jpg" alt="Hansen’s energy" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Hansen’s energy</span>
+    <span class="banner_count">1</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/hi_ball_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_hi_ball_energy.jpg" alt="hi ball ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">hi ball ENERGY</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/hell/">
+    <img src="https://www.energydrinkmania.net/img/banner_hell.jpg" alt="HELL ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">HELL ENERGY</span>
+    <span class="banner_count">38</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/hot6/">
+    <img src="https://www.energydrinkmania.net/img/banner_hot6.jpg" alt="HOT6" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">HOT6</span>
+    <span class="banner_count">6</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/jaguar_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_jaguar_energy_drink.jpg" alt="Jaguar ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Jaguar</span>
+    <span class="banner_count">1</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/joker_mad_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_joker_mad_energy.jpg" alt="JOKER MAD ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">JOKER MAD ENERGY</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/kamikaze_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_kamikaze_energy.jpg" alt="KAMIKAZE ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">KAMIKAZE ENERGY</span>
+    <span class="banner_count">9</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/kickstart/">
+    <img src="https://www.energydrinkmania.net/img/banner_kickstart.jpg" alt="KICKSTART" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">KICKSTART</span>
+    <span class="banner_count">12</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/kong_strong/">
+    <img src="https://www.energydrinkmania.net/img/banner_kong_strong.jpg" alt="KONG STRONG" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">KONG STRONG</span>
+    <span class="banner_count">15</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/kratingdaeng/">
+    <img src="https://www.energydrinkmania.net/img/banner_kratingdaeng.jpg" alt="KRATINGDAENG Red Bull" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">KRATINGDAENG</span>
+    <span class="banner_count">2</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/kronik/">
+    <img src="https://www.energydrinkmania.net/img/banner_kronik.jpg" alt="Kronik" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Kronik</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/lost/">
+    <img src="https://www.energydrinkmania.net/img/banner_lost.jpg" alt="lost" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">lost</span>
+    <span class="banner_count">2</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/lucozade/">
+    <img src="https://www.energydrinkmania.net/img/banner_lucozade.jpg" alt="Lucozade" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Lucozade</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/mad_croc/">
+    <img src="https://www.energydrinkmania.net/img/banner_mad_croc.jpg" alt="MAD CROC" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">MAD CROC</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/missile_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_missile_energy_drink.jpg" alt="MISSILE ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">MISSILE ENERGY</span>
+    <span class="banner_count">1</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/mixxed_up_freeway_up/">
+    <img src="https://www.energydrinkmania.net/img/banner_mixxed_up_freeway_up.jpg" alt="mixxed up / freeway up" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">mixxed up</span>
+    <span class="banner_count">13</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/mother_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_mother_energy_drink.jpg" alt="Mother ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Mother</span>
+    <span class="banner_count">16</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/mtn_dew_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_mtn_dew_energy.jpg" alt="MTN DEW ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">MTN DEW ENERGY</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/musashi_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_musashi_energy.jpg" alt="MUSASHI ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">MUSASHI ENERGY</span>
+    <span class="banner_count">6</span></a>
+    </div>
+    
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/nos/">
+    <img src="https://www.energydrinkmania.net/img/banner_nos.jpg" alt="NOS ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">NOS</span>
+    <span class="banner_count">17</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/ok/">
+    <img src="https://www.energydrinkmania.net/img/banner_ok.jpg" alt="OK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">ok.-</span>
+    <span class="banner_count">16</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/outlaw_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_outlaw_energy.jpg" alt="OUTLAW ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">OUTLAW ENERGY</span>
+    <span class="banner_count">1</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/playboy/">
+    <img src="https://www.energydrinkmania.net/img/banner_playboy.jpg" alt="PLAYBOY ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">PLAYBOY</span>
+    <span class="banner_count">4</span></a>
+    </div>
+  
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/power_point_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_power_point_energy.jpg" alt="Power Point" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Power Point</span>
+    <span class="banner_count">5</span></a>
+    </div>
+  
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/prime_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_prime_energy_drink.jpg" alt="PRIME ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">PRIME ENERGY</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/redcon1_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_redcon1_energy.jpg" alt="REDCON1 ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">REDCON1 ENERGY</span>
+    <span class="banner_count">7</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/reign/">
+    <img src="https://www.energydrinkmania.net/img/banner_reign.jpg" alt="reign" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">REIGN</span>
+    <span class="banner_count">24</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/relentless_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_relentless_energy_drink.jpg" alt="rip it" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Relentless</span>
+    <span class="banner_count">11</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/rip_it/">
+    <img src="https://www.energydrinkmania.net/img/banner_rip_it.jpg" alt="rip it" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">rip it</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/rhinos/">
+    <img src="https://www.energydrinkmania.net/img/banner_rhinos.jpg" alt="rhinos" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">rhino's</span>
+    <span class="banner_count">7</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/ryse_fuel/">
+    <img src="https://www.energydrinkmania.net/img/banner_ryse_fuel.jpg" alt="RYSE FUEL" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">RYSE FUEL</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/s_budget/">
+    <img src="https://www.energydrinkmania.net/img/banner_s_budget.jpg" alt="S BUDGET ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">S BUDGET</span>
+    <span class="banner_count">14</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/semtex/">
+    <img src="https://www.energydrinkmania.net/img/banner_semtex.jpg" alt="SEMTEX" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">SEMTEX</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/shark/">
+    <img src="https://www.energydrinkmania.net/img/banner_shark.jpg" alt="SHARK ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">SHARK</span>
+    <span class="banner_count">2</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/smag_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_smag_energy.jpg" alt="SMAG! ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">SMAG! ENERGY</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/sova_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_sova_energy_drink.jpg" alt="S.O.V.A. ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">S.O.V.A.</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/spider_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_spider_energy_drink.jpg" alt="SPIDER ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">SPIDER ENERGY</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/spike_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_spike_energy.jpg" alt="SPIKE ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">SPIKE ENERGY</span>
+    <span class="banner_count">1</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/starbucks/">
+    <img src="https://www.energydrinkmania.net/img/banner_starbucks.jpg" alt="STARBUCKS" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">STARBUCKS</span>
+    <span class="banner_count">9</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/sting/">
+    <img src="https://www.energydrinkmania.net/img/banner_sting.jpg" alt="sting ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">STING</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/take_off/">
+    <img src="https://www.energydrinkmania.net/img/banner_take_off.jpg" alt="TAKE OFF" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">TAKE OFF</span>
+    <span class="banner_count">6</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/tiger_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_tiger_energy_drink.jpg" alt="TIGER ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">TIGER</span>
+    <span class="banner_count">55</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/v_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_v_energy.jpg" alt="V ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">V ENERGY</span>
+    <span class="banner_count">29</span></a>
+    </div>
+   
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/venom_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_venom_energy.jpg" alt="VENOM" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">VENOM</span>
+    <span class="banner_count">15</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/volt_energy_aje/">
+    <img src="https://www.energydrinkmania.net/img/banner_volt_energy_aje.jpg" alt="VOLT ENERGY DRINK(AJE)" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">VOLT ENERGY(AJE)</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/warrior_sparkling_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_warrior_sparkling_energy_drink.jpg" alt="WARRIOR SPARKLING ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">WARRIOR (ASIA)</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/watt/">
+    <img src="https://www.energydrinkmania.net/img/banner_watt.jpg" alt="WATT" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">WATT</span>
+    <span class="banner_count">13</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/wired_energy_drink/">
+    <img src="https://www.energydrinkmania.net/img/banner_wired_energy_drink.jpg" alt="WIRED ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">WIRED ENERGY</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/xl_energy/">
+    <img src="https://www.energydrinkmania.net/img/banner_xl_energy.jpg" alt="XL ENERGY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">XL ENERGY</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/x_ray/">
+    <img src="https://www.energydrinkmania.net/img/banner_x_ray.jpg" alt="X RAY" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">X RAY</span>
+    <span class="banner_count">5</span></a>
+    </div>
+    
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/xyience/">
+    <img src="https://www.energydrinkmania.net/img/banner_xyience.jpg" alt="XYIENCE Xenergy" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">XYIENCE Xenergy</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+
+
+<h4>Single-Serving Energy Drink Brands by Country</h4>
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc/">
+    <img src="https://www.energydrinkmania.net/img/flag_japan.png" width="50" height="37" style="user-select: none;"><br>Japan
+    (82)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_usa/">
+    <img src="https://www.energydrinkmania.net/img/flag_usa.png" width="50" height="37" style="user-select: none;"><br>USA
+    (22)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_netherlands/">
+    <img src="https://www.energydrinkmania.net/img/flag_netherlands.png" width="50" height="37" style="user-select: none;"><br>Netherlands
+    (3)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_austria/">
+    <img src="https://www.energydrinkmania.net/img/flag_austria.png" width="50" height="37" style="user-select: none;"><br>Austria
+    (1)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_korea/">
+    <img src="https://www.energydrinkmania.net/img/flag_korea.png" width="50" height="37" style="user-select: none;"><br>South Korea
+    (10)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_cambodia/">
+    <img src="https://www.energydrinkmania.net/img/flag_cambodia.png" width="50" height="37" style="user-select: none;"><br>Cambodia
+    (1)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_czech/">
+    <img src="https://www.energydrinkmania.net/img/flag_czech.png" width="50" height="37" style="user-select: none;"><br>Czech Republic
+    (3)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_denmark/">
+    <img src="https://www.energydrinkmania.net/img/flag_denmark.png" width="50" height="37" style="user-select: none;"><br>Denmark
+    (1)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_germany/">
+    <img src="https://www.energydrinkmania.net/img/flag_germany.png" width="50" height="37" style="user-select: none;"><br>Germany
+    (10)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_new_zealand/">
+    <img src="https://www.energydrinkmania.net/img/flag_new_zealand.png" width="50" height="37" style="user-select: none;"><br>New Zealand
+    
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_philippines/">
+    <img src="https://www.energydrinkmania.net/img/flag_philippines.png" width="50" height="37" style="user-select: none;"><br>Philippines
+    (1)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_france/">
+    <img src="https://www.energydrinkmania.net/img/flag_france.png" width="50" height="37" style="user-select: none;"><br>France
+    (2)
+  </a>
+</p>
+
+<p class="banner_flag">
+  <a href="https://www.energydrinkmania.net/en/etc_malaysia/">
+    <img src="https://www.energydrinkmania.net/img/flag_malaysia.png" width="50" height="37" style="user-select: none;"><br>Malaysia
+    (1)
+  </a>
+</p>
+
+
+    <h4>国内エナジードリンク</h4>
+
+ 
+
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/awarise/">
+    <img src="https://www.energydrinkmania.net/img/banner_awarise.jpg" alt="Awarise" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Awarise</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/asap_club/">
+    <img src="https://www.energydrinkmania.net/img/banner_asap_club.jpg" alt="ASAP CLUB" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">ASAP CLUB</span>
+    <span class="banner_count">4</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/aeon/">
+    <img src="https://www.energydrinkmania.net/img/banner_aeon.jpg" alt="Aeon energy hunter" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">ENERGY HUNTER</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/gabunomi/">
+    <img src="https://www.energydrinkmania.net/img/banner_gabunomi.jpg" alt="Gabunomi ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Gabunomi</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/kiiva/">
+    <img src="https://www.energydrinkmania.net/img/banner_kiiva.jpg" alt="Kiiva ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">kiiva</span>
+    <span class="banner_count">16</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/surf/">
+    <img src="https://www.energydrinkmania.net/img/banner_surf.jpg" alt="Surf ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Surf</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/cheerio/">
+    <img src="https://www.energydrinkmania.net/img/banner_cheerio.jpg" alt="Cheerio ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Cheerio</span>
+    <span class="banner_count">9</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/nissin/">
+    <img src="https://www.energydrinkmania.net/img/banner_nissin.jpg" alt="Nissin ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Nissin</span>
+    <span class="banner_count">2</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/bark/">
+    <img src="https://www.energydrinkmania.net/img/banner_bark.jpg" alt="BARK(belq)" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BARK(Belq)</span>
+    <span class="banner_count">7</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/blackout/">
+    <img src="https://www.energydrinkmania.net/img/banner_blackout.jpg" alt="blackout" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">BLACKOUT</span>
+    <span class="banner_count">10</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/matsukiyo/">
+    <img src="https://www.energydrinkmania.net/img/banner_matsukiyo.jpg" alt="Matsukiyo" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Matsukiyo</span>
+    <span class="banner_count">11</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/seiyu/">
+    <img src="https://www.energydrinkmania.net/img/banner_seiyu.jpg" alt="SEIYU" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">SEIYU</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/miracle_energy_v/">
+    <img src="https://www.energydrinkmania.net/img/banner_miracle_energy_v.jpg" alt="Miracle ENERGY V" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Miracle ENERGY V</span>
+    <span class="banner_count">5</span></a>
+    </div>
+
+
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/raizin/">
+    <img src="https://www.energydrinkmania.net/img/banner_raizin.jpg" alt="raizinエナジードリンク" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">RAIZIN</span>
+    <span class="banner_count">12</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/realgold/">
+    <img src="https://www.energydrinkmania.net/img/banner_realgold.jpg" alt="リアルゴールド" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">REAL GOLD</span>
+    <span class="banner_count">8</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/regain/">
+    <img src="https://www.energydrinkmania.net/img/banner_regain.jpg" alt="Regain ENERGY DRINK" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Regain</span>
+    <span class="banner_count">3</span></a>
+    </div>
+
+    <div id="local_menu_banner"><a href="https://www.energydrinkmania.net/en/zone/">
+    <img src="https://www.energydrinkmania.net/img/banner_zone.jpg" alt="ZONeエナジードリンク" width="300" height="60" style="user-select: none;">
+    <span class="banner_title">Zone</span>
+    <span class="banner_count">61</span></a>
+    </div>
+
+
+
+
+<p><a href="https://www.energydrinkmania.net/en/collabo_energydrink/"> <img src="https://www.energydrinkmania.net/img/banner_collabo_energydrink.jpg" alt="コラボ系エナジードリンク" width="300" height="60" style="user-select: none;"> </a></p>
+<p><a href="https://www.energydrinkmania.net/en/baseball/" class="button">プロ野球エナジードリンク</a></p>
+<p><a href="https://www.energydrinkmania.net/en/football/" class="button">フットボールチーム</a></p>
+<p><a href="https://www.energydrinkmania.net/en/likea/" class="button">その他エナジー系飲料一覧</a> </p>
+</nav>
+</div>
+</div>
+<div class="wall hide" id="wall"></div>
+<script>
+  $(document).ready(function() {
+   $('#simple-menu').sidr({
+     name: 'sidr',
+     side: 'left',
+   onOpen: function(){$('#wall').removeClass('hide');},
+   onCloseEnd: function(){ $('#wall').addClass('hide');}
+   });
+   $('#wall').click(function() {
+     $.sidr('close', 'sidr');
+   });
+  });
+</script>
+</div>
+
+<footer id="footer" role="contentinfo"><p>
+<a href="https://www.energydrinkmania.net/en/profile/">About us</a>｜
+<a href="https://www.energydrinkmania.net/en/profile/media.html">Media Coverage</a>｜
+<a href="https://www.energydrinkmania.net/en/link/">Links</a>｜
+<a href="https://www.energydrinkmania.net/en/contact/">Contact Us</a>
+</p>
+<p>Copyright(C) 2013.06 - 2025 <a href="https://www.energydrinkmania.net/en/">Energy Drink Mania</a> All Rights Reserved.</p></footer>
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    // -----------------------------------------------------
+    // 1. ページ全体 (CollectionPage) の定義
+    // -----------------------------------------------------
+    {
+      "@type": "CollectionPage",
+      "@id": "https://www.energydrinkmania.net/en/red_bull/", 
+      "name": "
+
+Red Bull (All 97 Flavors) Reviewes
+",
+      "description": "
+Red Bull (All 97 Flavors) Reviewes
+",
+      "url": "https://www.energydrinkmania.net/en/red_bull/",
+      "mainEntity": {
+        "@id": "https://www.energydrinkmania.net/en/red_bull/?itemlist"
+      },
+      // 
+      "author": {
+        "@type": "Person",
+        "@id": "https://www.energydrinkmania.net/en/profile/"
+      }
+    },
+
+    // -----------------------------------------------------
+    // 2. リストされている製品 (ItemList) の定義
+    // -----------------------------------------------------
+    {
+      "@type": "ItemList",
+      "@id": "https://www.energydrinkmania.net/en/red_bull/?itemlist", 
+      "itemListElement": [
+         
+        {
+          "@type": "ListItem",
+          "position": "1",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_sudachi_edition_japan.html", 
+            "name": "Red Bull SUDACHI EDITION (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_sudachi_edition_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "2",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_cherry_edition_sakuranbo_japan.html", 
+            "name": "Red Bull Cherry Edition Sakuranbo Cherry Japan",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_cherry_edition_sakuranbo_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "3",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2025_apple_japan.html", 
+            "name": "Red Bull WINTER EDITION 2025 APPLE (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2025_apple_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "4",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_pink_edition_wild_berry.html", 
+            "name": "Red Bull PINK EDITION Wild Berry",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_pink_edition_wild_berry.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "5",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition_muscat_japan.html", 
+            "name": "Red Bull GREEN EDITION Muscat Japan",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition_muscat_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "6",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_spring_edition_2025_grapefruit_blossom.html", 
+            "name": "Red Bull SPRING EDITION 2025 Grapefruit & Blossom",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_spring_edition_2025_grapefruit_blossom.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "7",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_lime_green_edition_curuba-holunderblute.html", 
+            "name": "Red Bull LIME GREEN EDITION Curuba-Holunderblute",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_lime_green_edition_curuba-holunderblute.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "8",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2025_white_peach_japan.html", 
+            "name": "Red Bull SUMMER EDITION 2025 White Peach (Japan Original)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2025_white_peach_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "9",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2025_white_peach.html", 
+            "name": "Red Bull SUMMER EDITION 2025 White Peach",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2025_white_peach.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "10",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_spring_edition_2025_strawberry_japan.html", 
+            "name": "Red Bull Spring Edition 2025 Strawberry (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_spring_edition_2025_strawberry_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "11",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_plus_malaysia.html", 
+            "name": "Red Bull PLUS Malaysia",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_plus_malaysia.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "12",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_plus_singapore.html", 
+            "name": "Red Bull PLUS SINGAPORE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_plus_singapore.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "13",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/red_bull_winter_edition_sugarfree_2024_iced_vanilla_berry.html", 
+            "name": "Red Bull WINTER EDITION SUGARFREE 2024 Iced Vanilla Berry",
+            "url": "https://www.energydrinkmania.net/en/red_bull/red_bull_winter_edition_sugarfree_2024_iced_vanilla_berry.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "14",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2024_iced_vanilla_berry.html", 
+            "name": "Red Bull WINTER EDITION 2024 Iced Vanilla Berry",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2024_iced_vanilla_berry.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "15",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2024_blueberry.html", 
+            "name": "Red Bull SUMMER EDITION 2024 Blueberry",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2024_blueberry.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "16",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_amber_edition_sugarfree_strawberry_apricot.html", 
+            "name": "Red Bull AMBER EDITION SUGARFREE Strawberry Apricot",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_amber_edition_sugarfree_strawberry_apricot.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "17",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_red_edition_sugarfree_watermelon.html", 
+            "name": "Red Bull RED EDITION Watermelon SUGARFREE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_red_edition_sugarfree_watermelon.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "18",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition_curuba_elderflower.html", 
+            "name": "RED BULL GREEN EDITION Curuba Elderflower",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition_curuba_elderflower.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "19",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2024_citrus_orange.html", 
+            "name": "Red Bull WINTER EDITION 2024 CITRUS ORANGE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2024_citrus_orange.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "20",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/red_bull_organics_fizzy_peach.html", 
+            "name": "Red Bull ORGANICS fizzy PEACH",
+            "url": "https://www.energydrinkmania.net/en/red_bull/red_bull_organics_fizzy_peach.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "21",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_ginger_ale.html", 
+            "name": "Red Bull ORGANICS GINGER ALE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_ginger_ale.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "22",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2024_lime.html", 
+            "name": "Red Bull SUMMER EDITION 2024 Lime JAPAN",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2024_lime.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "23",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2024_curuba_elderflower.html", 
+            "name": "Red Bull SUMMER EDITION 2024 Curuba Elderflower",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2024_curuba_elderflower.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "24",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_spring_edition_tropical_pinkgrapefruit.html", 
+            "name": "Red Bull SPRING EDITION 2024 Tropical pink grapefruit Japan",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_spring_edition_tropical_pinkgrapefruit.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "25",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_sea_blue_edition.html", 
+            "name": "Red Bull SEA BLUE EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_sea_blue_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "26",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_viva_mate.html", 
+            "name": "Red Bull ORGANICS VIVA MATE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_viva_mate.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "27",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_black_orange.html", 
+            "name": "Red Bull ORGANICS BLACK ORANGE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_black_orange.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "28",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_easy_lemon.html", 
+            "name": "Red Bull ORGANICS EASY LEMON",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_easy_lemon.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "29",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/red_bull_organics_simply_cola.html", 
+            "name": "Red Bull ORGANICS simply COLA",
+            "url": "https://www.energydrinkmania.net/en/red_bull/red_bull_organics_simply_cola.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "30",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2023_pear_cinnamon.html", 
+            "name": "Red Bull WINTER EDITION 2023 Pear Cinnamon",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2023_pear_cinnamon.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "31",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2023_junberry.html", 
+            "name": "Red Bull SUMMER EDITION 2023 Juneberry",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2023_junberry.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "32",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2023_muscat.html", 
+            "name": "Red Bull Winter Edition 2023 Muscat (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2023_muscat.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "33",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2023_mango_pineapple.html", 
+            "name": "Red Bull Summer Edition 2023 Mango Pineapple (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2023_mango_pineapple.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "34",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2022_fig_apple.html", 
+            "name": "Red Bull WINTER EDITION 2022 Fig Apple",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2022_fig_apple.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "35",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition_dragon_fruit.html", 
+            "name": "Red Bull GREEN EDITION Dragon Fruit(Cactus Fruit)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition_dragon_fruit.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "36",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_ruby_edition_pomegranate.html", 
+            "name": "Red Bull RUBY EDITION Pomegranate",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_ruby_edition_pomegranate.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "37",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_rededition_groovy_fizz.html", 
+            "name": "Red Bull Red Edition Groovy Fizz (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_rededition_groovy_fizz.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "38",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2022_strawberry_apricot.html", 
+            "name": "Red Bull SUMMER EDITION 2022 Strawberry Apricot",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2022_strawberry_apricot.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "39",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_blue_edition_ocean_blast.html", 
+            "name": "Red Bull Blue Edition Ocean Blast",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_blue_edition_ocean_blast.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "40",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_ruby_edition_vivid_flash.html", 
+            "name": "Red Bull Ruby Edition Vivid Flash",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_ruby_edition_vivid_flash.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "41",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2019_gletschereis.html", 
+            "name": "Red Bull WINTER EDITION 2019 Gletschereis",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2019_gletschereis.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "42",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_orange_edition_sunrise_spark.html", 
+            "name": "Red Bull Orange Edition Sunrise Spark",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_orange_edition_sunrise_spark.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "43",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_tropical_edition_sugarfree.html", 
+            "name": "Red Bull TROPICAL EDITION SUGARFREE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_tropical_edition_sugarfree.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "44",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_tropical_edition.html", 
+            "name": "Red Bull TROPICAL EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_tropical_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "45",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2021_cactus_fruit.html", 
+            "name": "Red Bull SUMMER EDITION 2021 Cactus Fruit",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2021_cactus_fruit.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "46",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2021_dragon_fruit.html", 
+            "name": "Red Bull SUMMER EDITION 2021 Dragon Fruit",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2021_dragon_fruit.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "47",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_tonic_water.html", 
+            "name": "Red Bull ORGANICS TONIC WATER",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_tonic_water.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "48",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_red_edition_wild_passion.html", 
+            "name": "Red Bull Red Edition Wild Passion",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_red_edition_wild_passion.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "49",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_purple_edition_mystic_magic.html", 
+            "name": "Red Bull Purple Edition (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_purple_edition_mystic_magic.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "50",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_yellow_edition_japan.html", 
+            "name": "Red Bull Yellow Edition (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_yellow_edition_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "51",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition_japan.html", 
+            "name": "Red Bull Green Edition (Limited Edition in Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "52",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_red_italian_edition.html", 
+            "name": "Red Bull RED ITALIAN EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_red_italian_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "53",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_red_edition_watermelon.html", 
+            "name": "Red Bull RED EDITION Watermelon",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_red_edition_watermelon.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "54",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_silver_edition_austria.html", 
+            "name": "RED BULL SILVER EDITION Initial Batch from Austria",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_silver_edition_austria.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "55",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_lime_edition_sugarfree.html", 
+            "name": "RED BULL LIME EDITION SUGARFREE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_lime_edition_sugarfree.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "56",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_purple_edition_sugarfree.html", 
+            "name": "Red Bull PURPLE EDITION SUGARFREE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_purple_edition_sugarfree.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "57",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2020_sunny_beam.html", 
+            "name": "Red Bull Summer Edition 2020 Sunny Beam",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2020_sunny_beam.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "58",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_pear_edition_sugarfree.html", 
+            "name": "Red Bull PEAR EDITION SUGARFREE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_pear_edition_sugarfree.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "59",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_peach_edition.html", 
+            "name": "Red Bull PEACH EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_peach_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "60",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2020_watermelon.html", 
+            "name": "Red Bull SUMMER EDITION 2020 Watermelon",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2020_watermelon.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "61",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2018_rumtopf.html", 
+            "name": "Red Bull WINTER EDITION 2018 Rumtopf",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2018_rumtopf.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "62",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_white_edition_fresh_breeze.html", 
+            "name": "Red Bull White Edition Fresh Breeze (Limited Edition in Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_white_edition_fresh_breeze.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "63",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2019_holiday_spice.html", 
+            "name": "Red Bull WINTER EDITION 2019 Holiday Spice",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2019_holiday_spice.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "64",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_purple_edition.html", 
+            "name": "Red Bull PURPLE EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_purple_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "65",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_white_edition.html", 
+            "name": "Red Bull WHITE EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_white_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "66",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2017_plum_twist.html", 
+            "name": "Red Bull WINTER EDITION 2017 Plum Twist",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition_2017_plum_twist.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "67",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_coconut_edition_sugarfree.html", 
+            "name": "Red Bull COCONUT EDITION SUGARFREE",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_coconut_edition_sugarfree.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "68",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_acai_edition.html", 
+            "name": "Red Bull ACAI EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_acai_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "69",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2019_beach_breeze.html", 
+            "name": "Red Bull SUMMER EDITION 2019 Beach Breeze",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2019_beach_breeze.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "70",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2018_coconut_berry.html", 
+            "name": "Red Bull SUMMER EDITION 2018 Coconut Berry",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_2018_coconut_berry.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "71",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_gingerale_japan.html", 
+            "name": "Red Bull Organics Ginger Ale",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_gingerale_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "72",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_bitterlemon_japan.html", 
+            "name": "Red Bull Organics Bitter Lemon",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_bitterlemon_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "73",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_simplycola_japan.html", 
+            "name": "Red Bull Organics Simply Cola",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_organics_simplycola_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "74",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_lime_edition.html", 
+            "name": "Red Bull LIME EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_lime_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "75",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_edicion_limon.html", 
+            "name": "Red Bull EDIĆION LIMÓN",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_edicion_limon.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "76",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_grapefruit_twist.html", 
+            "name": "RED BULL SUMMER EDITION 2017 Grapefruit Twist",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_grapefruit_twist.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "77",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition.html", 
+            "name": "RED BULL GREEN EDITION Kiwi Apple",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_green_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "78",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition.html", 
+            "name": "RED BULL WINTER EDITION 2016 Zwetschke-Zimtnelke",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_winter_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "79",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_total_zero_cherry_edition.html", 
+            "name": "Red Bull TOTAL ZERO Cherry edition",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_total_zero_cherry_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "80",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_kiwi_twist.html", 
+            "name": "Red Bull SUMMER EDITION 2016 Kiwi Twist",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_kiwi_twist.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "81",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_orange_edition.html", 
+            "name": "Red Bull ORANGE EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_orange_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "82",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_spring_edition_sakura.html", 
+            "name": "Red Bull Spring Edition 2016 Japan",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_spring_edition_sakura.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "83",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_blue_edition_budou_japan.html", 
+            "name": "Red Bull Blue Edition 2015 Grape Flavor (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_blue_edition_budou_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "84",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_japan.html", 
+            "name": "Red Bull Summer Edition 2015 (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "85",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_cola.html", 
+            "name": "Red Bull COLA",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_cola.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "86",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_total_zero.html", 
+            "name": "Red Bull TOTAL ZERO",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_total_zero.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "1",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "87",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition.html", 
+            "name": "Red Bull SUMMER EDITION 2014",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_summer_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "88",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull.html", 
+            "name": "Red Bull",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "89",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_sugarfree.html", 
+            "name": "Red Bull Sugar Free",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_sugarfree.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "90",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_blue_edition_japan.html", 
+            "name": "Red Bull Blue Edition (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_blue_edition_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "91",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/bull.html", 
+            "name": "Bull (Red Bull limited edition energy drink)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/bull.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "92",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_f1_edition.html", 
+            "name": "Red Bull F1 Edition",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_f1_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "93",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_red_edition.html", 
+            "name": "Red Bull RED EDITION",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_red_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "94",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_blue_edition.html", 
+            "name": "Red Bull Blue Edition",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_blue_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "95",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_silver_edition.html", 
+            "name": "Red Bull Silver Edition",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_silver_edition.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "3",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "96",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_japan.html", 
+            "name": "Red Bull (Japan)",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        },
+         
+        {
+          "@type": "ListItem",
+          "position": "97",
+          "item": {
+            "@type": "Product",
+            "@id": "https://www.energydrinkmania.net/en/red_bull/redbull_sugarfree_japan.html", 
+            "name": "Red Bull Sugar Free",
+            "url": "https://www.energydrinkmania.net/en/red_bull/redbull_sugarfree_japan.html",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "2",
+              "bestRating": "5",
+              "worstRating": "1",
+              "reviewCount": "1"
+            }
+          }
+        }
+        
+      ]
+    },
+    
+    // -----------------------------------------------------
+    // 3. 著者情報 (Person) の独立した定義 【★ E-E-A-T要素】
+    // -----------------------------------------------------
+    {
+      "@type": "Person",
+      "@id": "https://www.energydrinkmania.net/en/profile/",
+      "name": "Energy Drin' Kun",
+      "url": "https://www.energydrinkmania.net/en/profile/",
+      "sameAs": [
+        "https://twitter.com/energydrinkun",
+        "https://www.instagram.com/energydrinkun/",
+        "https://note.com/energydrinkmania",
+        "https://ja-jp.facebook.com/energydrinkmania.net/"
+      ],
+      "image": "https://www.energydrinkmania.net/img/profile.svg",
+      "jobTitle": "Energy Drink Expert", 
+      "description": "Inspired by energy drinks encountered in the United States in 2001. Traveling the world, he is an expert critic who shares the true appeal of energy drinks based on over 20 years of experience and a collection of over 8,000 varieties, and has been featured in various media outlets."
+    }
+  ]
+}
+</script>
+
+
+</body>
