@@ -22,18 +22,36 @@ type SavedEntry = {
 type ExistingResultsByDrink = Record<string, Record<string, SavedEntry>>;
 
 type RemoteFetchResult = {
-  key: string;
   participantName: string;
   rows: RemoteResultRow[];
   error?: string;
 };
 
+// 1. Parse Keys (used for logging in)
 const configuredKeys = (import.meta.env.VITE_REDBULL_KEYS || '')
   .split(',')
   .map((key: string) => key.trim().toLowerCase())
   .filter(Boolean);
+
+// 2. Parse Names (used for display and database)
+const rawNames = (import.meta.env.VITE_REDBULL_NAMES || '')
+  .split(',')
+  .map((name: string) => name.trim());
+
+// 3. Create maps for tying a Key to a Name
+const keyToNameMap: Record<string, string> = {};
+const displayNames: string[] = []; // List of all valid names for the UI
+
+configuredKeys.forEach((key: string, index: number) => {
+  // Use the mapped name if available, otherwise strip '_redbull' as a fallback
+  const name = rawNames[index] || key.replace(/_redbull$/i, '');
+  keyToNameMap[key] = name;
+  displayNames.push(name);
+});
+
 const googleSheetsUrl = import.meta.env.VITE_GOOGLE_SHEETS_URL || '';
 
+// Local storage still relies on the secure key so your local data isn't lost
 const ratingsStorageKey = (participantKey: string) => `redbull-drinks-ratings-${participantKey}`;
 const opinionsStorageKey = (participantKey: string) => `redbull-drinks-opinions-${participantKey}`;
 const savedStateStorageKey = (participantKey: string) => `redbull-drinks-saved-state-${participantKey}`;
@@ -42,7 +60,11 @@ function Redbull() {
   const [drinks, setDrinks] = useState<RedbullDrink[]>([]);
   const [drinksLoading, setDrinksLoading] = useState(true);
   const [drinksError, setDrinksError] = useState<string | null>(null);
+  
+  // The user types a KEY to login
   const [participantKey, setParticipantKey] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [opinions, setOpinions] = useState<Record<string, string>>({});
   const [savedState, setSavedState] = useState<Record<string, SavedEntry>>({});
@@ -51,13 +73,13 @@ function Redbull() {
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [hasAutoLoadedResults, setHasAutoLoadedResults] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
-  const isAuthorized = configuredKeys.includes(participantKey);
 
-  useEffect(() => {
-    if (!participantKey && configuredKeys.length > 0) {
-      setParticipantKey(configuredKeys[0]);
-    }
-  }, [participantKey]);
+  // Authorization checks the KEY
+  const normalizedKey = participantKey.trim().toLowerCase();
+  const isAuthorized = configuredKeys.includes(normalizedKey);
+  
+  // The active name is determined by mapping the authorized key
+  const activeName = isAuthorized ? keyToNameMap[normalizedKey] : '';
 
   useEffect(() => {
     let active = true;
@@ -99,7 +121,7 @@ function Redbull() {
       return;
     }
 
-    const stored = localStorage.getItem(ratingsStorageKey(participantKey));
+    const stored = localStorage.getItem(ratingsStorageKey(normalizedKey));
     if (!stored) {
       setRatings({});
       return;
@@ -113,7 +135,7 @@ function Redbull() {
     } catch {
       setRatings({});
     }
-  }, [isAuthorized, participantKey]);
+  }, [isAuthorized, normalizedKey]);
 
   useEffect(() => {
     if (!isAuthorized) {
@@ -121,7 +143,7 @@ function Redbull() {
       return;
     }
 
-    const stored = localStorage.getItem(opinionsStorageKey(participantKey));
+    const stored = localStorage.getItem(opinionsStorageKey(normalizedKey));
     if (!stored) {
       setOpinions({});
       return;
@@ -135,7 +157,7 @@ function Redbull() {
     } catch {
       setOpinions({});
     }
-  }, [isAuthorized, participantKey]);
+  }, [isAuthorized, normalizedKey]);
 
   useEffect(() => {
     if (!isAuthorized) {
@@ -143,7 +165,7 @@ function Redbull() {
       return;
     }
 
-    const stored = localStorage.getItem(savedStateStorageKey(participantKey));
+    const stored = localStorage.getItem(savedStateStorageKey(normalizedKey));
     if (!stored) {
       setSavedState({});
       return;
@@ -157,26 +179,16 @@ function Redbull() {
     } catch {
       setSavedState({});
     }
-  }, [isAuthorized, participantKey]);
+  }, [isAuthorized, normalizedKey]);
 
   const getDrinkKey = (drink: RedbullDrink, index: number) => `${drink.name}-${index}`;
-
-  const participantNameFromKey = (key: string) => {
-    const cleaned = key.replace(/_redbull$/i, '');
-    if (cleaned === 'martinho') {
-      return 'marte';
-    }
-    return cleaned;
-  };
-
-  const formatParticipantName = (key: string) => participantNameFromKey(key);
 
   const updateRating = (drink: RedbullDrink, index: number, score: number) => {
     if (!isAuthorized) return;
     const key = getDrinkKey(drink, index);
     setRatings((current) => {
       const next = { ...current, [key]: score };
-      localStorage.setItem(ratingsStorageKey(participantKey), JSON.stringify(next));
+      localStorage.setItem(ratingsStorageKey(normalizedKey), JSON.stringify(next));
       return next;
     });
   };
@@ -186,7 +198,7 @@ function Redbull() {
     const key = getDrinkKey(drink, index);
     setOpinions((current) => {
       const next = { ...current, [key]: opinion };
-      localStorage.setItem(opinionsStorageKey(participantKey), JSON.stringify(next));
+      localStorage.setItem(opinionsStorageKey(normalizedKey), JSON.stringify(next));
       return next;
     });
   };
@@ -214,7 +226,7 @@ function Redbull() {
 
         return {
           drinkKey,
-          participant: participantNameFromKey(participantKey),
+          participant: activeName, // Send the NAME to Google Sheets, not the key
           flavour: drink.name,
           rating,
           opinion,
@@ -260,7 +272,7 @@ function Redbull() {
             opinion: payload.opinion,
           };
         });
-        localStorage.setItem(savedStateStorageKey(participantKey), JSON.stringify(next));
+        localStorage.setItem(savedStateStorageKey(normalizedKey), JSON.stringify(next));
         return next;
       });
 
@@ -270,7 +282,7 @@ function Redbull() {
           const drinkExisting = next[payload.drinkKey] || {};
           next[payload.drinkKey] = {
             ...drinkExisting,
-            [participantKey]: {
+            [activeName]: {
               rating: payload.rating,
               opinion: payload.opinion,
             },
@@ -295,9 +307,9 @@ function Redbull() {
       return;
     }
 
-    if (configuredKeys.length === 0) {
+    if (displayNames.length === 0) {
       if (showStatusMessage) {
-        setSaveMessage('No participant keys found in VITE_REDBULL_KEYS.');
+        setSaveMessage('No participant names mapped.');
       }
       return;
     }
@@ -308,26 +320,26 @@ function Redbull() {
     }
 
     try {
-      const fetches = configuredKeys.map(async (key: string) => {
-        const participantName = participantNameFromKey(key);
-        const url = `${googleSheetsUrl}?participant=${encodeURIComponent(participantName)}`;
+      // Fetch by NAME
+      const fetches = displayNames.map(async (name: string) => {
+        const url = `${googleSheetsUrl}?participant=${encodeURIComponent(name)}`;
         const response = await fetch(url, { method: 'GET' });
         if (!response.ok) {
-          return { key, participantName, rows: [] as RemoteResultRow[], error: `HTTP ${response.status}` };
+          return { participantName: name, rows: [] as RemoteResultRow[], error: `HTTP ${response.status}` };
         }
 
         const responseText = await response.text();
         if (!responseText.trim().startsWith('{') && !responseText.trim().startsWith('[')) {
           if (responseText.includes('Função de script não encontrada: doGet') || responseText.includes('script function not found: doGet')) {
-            return { key, participantName, rows: [] as RemoteResultRow[], error: 'Apps Script doGet is missing in this deployment' };
+            return { participantName: name, rows: [] as RemoteResultRow[], error: 'Apps Script doGet is missing in this deployment' };
           }
 
-          return { key, participantName, rows: [] as RemoteResultRow[], error: 'Non-JSON response from Apps Script' };
+          return { participantName: name, rows: [] as RemoteResultRow[], error: 'Non-JSON response from Apps Script' };
         }
 
         const data = JSON.parse(responseText);
         if (data?.error) {
-          return { key, participantName, rows: [] as RemoteResultRow[], error: String(data.error) };
+          return { participantName: name, rows: [] as RemoteResultRow[], error: String(data.error) };
         }
 
         const rows: RemoteResultRow[] = Array.isArray(data)
@@ -336,7 +348,7 @@ function Redbull() {
             ? data.rows
             : [];
 
-        return { key, participantName, rows };
+        return { participantName: name, rows };
       });
 
       const byParticipant: RemoteFetchResult[] = await Promise.all(fetches);
@@ -347,7 +359,7 @@ function Redbull() {
       let loadedRows = 0;
       const fetchErrors = byParticipant.filter((entry) => entry.error).map((entry) => `${entry.participantName}: ${entry.error}`);
 
-      byParticipant.forEach(({ key: participant, rows }) => {
+      byParticipant.forEach(({ participantName: fetchParticipantName, rows }) => {
         rows.forEach((row: RemoteResultRow) => {
           if (!row.flavour) {
             return;
@@ -367,13 +379,14 @@ function Redbull() {
           const drinkExisting = nextExistingResultsByDrink[drinkKey] || {};
           nextExistingResultsByDrink[drinkKey] = {
             ...drinkExisting,
-            [participant]: {
+            [fetchParticipantName]: {
               rating: normalizedRating,
               opinion: normalizedOpinion,
             },
           };
 
-          if (participant === participantKey) {
+          // Compare the fetched name to the active logged-in user's name
+          if (isAuthorized && fetchParticipantName === activeName) {
             if (normalizedRating !== '') {
               nextRatings[drinkKey] = normalizedRating;
             }
@@ -398,9 +411,9 @@ function Redbull() {
         setRatings(nextRatings);
         setOpinions(nextOpinions);
         setSavedState(nextSavedState);
-        localStorage.setItem(ratingsStorageKey(participantKey), JSON.stringify(nextRatings));
-        localStorage.setItem(opinionsStorageKey(participantKey), JSON.stringify(nextOpinions));
-        localStorage.setItem(savedStateStorageKey(participantKey), JSON.stringify(nextSavedState));
+        localStorage.setItem(ratingsStorageKey(normalizedKey), JSON.stringify(nextRatings));
+        localStorage.setItem(opinionsStorageKey(normalizedKey), JSON.stringify(nextOpinions));
+        localStorage.setItem(savedStateStorageKey(normalizedKey), JSON.stringify(nextSavedState));
       }
 
       if (fetchErrors.length > 0) {
@@ -416,21 +429,57 @@ function Redbull() {
   };
 
   useEffect(() => {
-    if (hasAutoLoadedResults) {
-      return;
-    }
-
-    if (drinksLoading || drinksError || drinks.length === 0) {
-      return;
-    }
-
-    if (!participantKey || configuredKeys.length === 0 || !googleSheetsUrl) {
+    if (
+      hasAutoLoadedResults ||
+      drinksLoading ||
+      drinksError ||
+      drinks.length === 0 ||
+      displayNames.length === 0 ||
+      !googleSheetsUrl
+    ) {
       return;
     }
 
     setHasAutoLoadedResults(true);
     void loadResults(false);
-  }, [hasAutoLoadedResults, drinksLoading, drinksError, drinks.length, participantKey]);
+  }, [
+    hasAutoLoadedResults,
+    drinksLoading,
+    drinksError,
+    drinks.length,
+  ]);
+
+  const getProcessedDrinks = () => {
+    let processed = drinks.map((drink, index) => ({
+      drink,
+      originalIndex: index,
+      key: getDrinkKey(drink, index)
+    }));
+
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      processed = processed.filter(({ drink }) => 
+        drink.name.toLowerCase().includes(lowerQuery) || 
+        (drink.flavor && drink.flavor.toLowerCase().includes(lowerQuery))
+      );
+    }
+
+    processed.sort((a, b) => {
+      const aHasRemoteRating = Object.values(existingResultsByDrink[a.key] || {}).some(res => Boolean(res.rating));
+      const aHasRating = !!ratings[a.key] || aHasRemoteRating;
+
+      const bHasRemoteRating = Object.values(existingResultsByDrink[b.key] || {}).some(res => Boolean(res.rating));
+      const bHasRating = !!ratings[b.key] || bHasRemoteRating;
+
+      if (aHasRating && !bHasRating) return -1;
+      if (!aHasRating && bHasRating) return 1;
+      return 0; 
+    });
+
+    return processed;
+  };
+
+  const processedDrinks = getProcessedDrinks();
 
   return (
     <main className="redbull-page">
@@ -446,14 +495,31 @@ function Redbull() {
             id="participant-key"
             type="text"
             value={participantKey}
-            onChange={(event) => setParticipantKey(event.target.value.trim().toLowerCase())}
-            placeholder="Type your participant key"
+            onChange={(event) => setParticipantKey(event.target.value)}
+            placeholder="Type your secure key..."
             autoComplete="off"
           />
-          <small>{isAuthorized ? `Rating as ${participantKey}` : 'Choose one key from VITE_REDBULL_KEYS.'}</small>
+          <small>
+            {isAuthorized
+              ? `Logged in. Rating as ${activeName}`
+              : 'Enter a valid participant key to unlock.'}
+          </small>
         </div>
+
+        <div className="search-panel" style={{ marginTop: '1rem' }}>
+          <label htmlFor="search-drinks">Search Drinks</label>
+          <input
+            id="search-drinks"
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name or flavor..."
+            autoComplete="off"
+          />
+        </div>
+
         <div className="save-panel">
-          <button className="save-button secondary" type="button" onClick={() => { void loadResults(); }} disabled={configuredKeys.length === 0 || isLoadingResults || isSaving}>
+          <button className="save-button secondary" type="button" onClick={() => { void loadResults(); }} disabled={displayNames.length === 0 || isLoadingResults || isSaving}>
             {isLoadingResults ? 'Loading...' : 'Load Results'}
           </button>
           <button className="save-button" type="button" onClick={saveResults} disabled={!isAuthorized || isSaving || isLoadingResults}>
@@ -465,26 +531,27 @@ function Redbull() {
 
       {!drinksLoading && !drinksError && (
         <section className="drinks-grid" aria-label="Red Bull JSON cards">
-          {drinks.map((drink, index) => {
-            const key = getDrinkKey(drink, index);
+          {processedDrinks.map(({ drink, originalIndex, key }) => {
             const currentRating = ratings[key] || 0;
             const currentOpinion = opinions[key] || '';
 
           return (
-            <article className="drink-card" key={`${drink.name}-${index}`}>
+            <article className="drink-card" key={key}>
               <img className="drink-image" src={drink.image_url} alt={drink.name} loading="lazy" />
               <div className="drink-content">
                 <h2>{drink.name}</h2>
                 <p className="drink-flavor">{drink.flavor || 'Unknown flavor'}</p>
+                
+                {/* Iterate over the clean displayNames */}
                 <ul className="existing-results-list" aria-label={`Existing results for ${drink.name}`}>
-                  {configuredKeys.map((participant: string) => {
-                    const result = existingResultsByDrink[key]?.[participant];
+                  {displayNames.map((name: string) => {
+                    const result = existingResultsByDrink[key]?.[name];
                     const ratingLabel = result?.rating ? String(result.rating) : '-';
                     const opinionLabel = result?.opinion ? result.opinion : '-';
 
                     return (
-                      <li key={participant}>
-                        <strong>{formatParticipantName(participant)}</strong>
+                      <li key={name}>
+                        <strong>{name}</strong>
                         <span>Rating: {ratingLabel}</span>
                         <span>Opinion: {opinionLabel}</span>
                       </li>
@@ -497,7 +564,7 @@ function Redbull() {
                       key={score}
                       type="button"
                       className={score <= currentRating ? 'rating-button active' : 'rating-button'}
-                      onClick={() => updateRating(drink, index, score)}
+                      onClick={() => updateRating(drink, originalIndex, score)}
                       aria-label={`Rate ${drink.name} ${score} out of 5`}
                       disabled={!isAuthorized}
                     >
@@ -508,7 +575,7 @@ function Redbull() {
                 <textarea
                   className="opinion-input"
                   value={currentOpinion}
-                  onChange={(event) => updateOpinion(drink, index, event.target.value)}
+                  onChange={(event) => updateOpinion(drink, originalIndex, event.target.value)}
                   rows={3}
                   placeholder="Write your opinion..."
                   disabled={!isAuthorized}
