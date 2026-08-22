@@ -514,7 +514,7 @@ function Redbull() {
                   })}
                 </ul>
                 <div className="rating-group"><p className="field-label">Your rating</p><div className="rating-row" aria-label={`Rating for ${drink.name}`}>
-                  {[1, 2, 3, 4, 5].map((score) => (
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
                     <button
                       key={score}
                       type="button"
