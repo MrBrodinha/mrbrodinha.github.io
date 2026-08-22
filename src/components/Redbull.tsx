@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 type RedbullDrink = {
   name: string;
@@ -43,7 +44,6 @@ const keyToNameMap: Record<string, string> = {};
 const displayNames: string[] = []; // List of all valid names for the UI
 
 configuredKeys.forEach((key: string, index: number) => {
-  // Use the mapped name if available, otherwise strip '_redbull' as a fallback
   const name = rawNames[index] || key.replace(/_redbull$/i, '');
   keyToNameMap[key] = name;
   displayNames.push(name);
@@ -60,26 +60,38 @@ function Redbull() {
   const [drinks, setDrinks] = useState<RedbullDrink[]>([]);
   const [drinksLoading, setDrinksLoading] = useState(true);
   const [drinksError, setDrinksError] = useState<string | null>(null);
-  
+
   // The user types a KEY to login
   const [participantKey, setParticipantKey] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [opinions, setOpinions] = useState<Record<string, string>>({});
   const [savedState, setSavedState] = useState<Record<string, SavedEntry>>({});
   const [existingResultsByDrink, setExistingResultsByDrink] = useState<ExistingResultsByDrink>({});
-  const [isSaving, setIsSaving] = useState(false);
+
+  const [savingState, setSavingState] = useState<'IDLE' | 'ALL' | string>('IDLE');
+
   const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [hasAutoLoadedResults, setHasAutoLoadedResults] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
+  // Snapshot references to lock the sort order
+  const initialRatedKeys = useRef<Set<string>>(new Set());
+  const hasLockedLocalKeys = useRef(false);
+  const prevAuthKey = useRef('');
+
   // Authorization checks the KEY
   const normalizedKey = participantKey.trim().toLowerCase();
   const isAuthorized = configuredKeys.includes(normalizedKey);
-  
-  // The active name is determined by mapping the authorized key
   const activeName = isAuthorized ? keyToNameMap[normalizedKey] : '';
+
+  // If the user changes their login key, reset the sort locks
+  if (prevAuthKey.current !== normalizedKey) {
+    initialRatedKeys.current.clear();
+    hasLockedLocalKeys.current = false;
+    prevAuthKey.current = normalizedKey;
+  }
 
   useEffect(() => {
     let active = true;
@@ -116,70 +128,54 @@ function Redbull() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthorized) {
+    if (!isAuthorized || !activeName) {
       setRatings({});
-      return;
-    }
-
-    const stored = localStorage.getItem(ratingsStorageKey(normalizedKey));
-    if (!stored) {
-      setRatings({});
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(stored);
-      if (parsed && typeof parsed === 'object') {
-        setRatings(parsed as Record<string, number>);
-      }
-    } catch {
-      setRatings({});
-    }
-  }, [isAuthorized, normalizedKey]);
-
-  useEffect(() => {
-    if (!isAuthorized) {
       setOpinions({});
-      return;
-    }
-
-    const stored = localStorage.getItem(opinionsStorageKey(normalizedKey));
-    if (!stored) {
-      setOpinions({});
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(stored);
-      if (parsed && typeof parsed === 'object') {
-        setOpinions(parsed as Record<string, string>);
-      }
-    } catch {
-      setOpinions({});
-    }
-  }, [isAuthorized, normalizedKey]);
-
-  useEffect(() => {
-    if (!isAuthorized) {
       setSavedState({});
       return;
     }
 
-    const stored = localStorage.getItem(savedStateStorageKey(normalizedKey));
-    if (!stored) {
-      setSavedState({});
-      return;
+    // 1. Get whatever is already in Local Storage
+    const storedRatings = localStorage.getItem(ratingsStorageKey(normalizedKey));
+    const storedOpinions = localStorage.getItem(opinionsStorageKey(normalizedKey));
+    const storedSavedState = localStorage.getItem(savedStateStorageKey(normalizedKey));
+
+    let nextRatings: Record<string, number> = {};
+    let nextOpinions: Record<string, string> = {};
+    let nextSavedState: Record<string, SavedEntry> = {};
+
+    try { if (storedRatings) nextRatings = JSON.parse(storedRatings); } catch {}
+    try { if (storedOpinions) nextOpinions = JSON.parse(storedOpinions); } catch {}
+    try { if (storedSavedState) nextSavedState = JSON.parse(storedSavedState); } catch {}
+
+    // 2. Hydrate from Google Sheets (existingResultsByDrink) if local storage is missing it
+    Object.keys(existingResultsByDrink).forEach((drinkKey) => {
+      const remoteData = existingResultsByDrink[drinkKey]?.[activeName];
+      if (remoteData) {
+        if (nextRatings[drinkKey] === undefined && remoteData.rating !== '') {
+          nextRatings[drinkKey] = Number(remoteData.rating);
+        }
+        if (nextOpinions[drinkKey] === undefined && remoteData.opinion !== '') {
+          nextOpinions[drinkKey] = remoteData.opinion;
+        }
+        if (nextSavedState[drinkKey] === undefined) {
+          nextSavedState[drinkKey] = remoteData;
+        }
+      }
+    });
+
+    // Take snapshot of rated items ONLY on the initial load for this user.
+    if (!hasLockedLocalKeys.current) {
+      Object.keys(nextRatings).forEach(k => initialRatedKeys.current.add(k));
+      Object.keys(nextSavedState).forEach(k => initialRatedKeys.current.add(k));
+      hasLockedLocalKeys.current = true;
     }
 
-    try {
-      const parsed = JSON.parse(stored);
-      if (parsed && typeof parsed === 'object') {
-        setSavedState(parsed as Record<string, SavedEntry>);
-      }
-    } catch {
-      setSavedState({});
-    }
-  }, [isAuthorized, normalizedKey]);
+    setRatings(nextRatings);
+    setOpinions(nextOpinions);
+    setSavedState(nextSavedState);
+
+  }, [isAuthorized, normalizedKey, activeName, existingResultsByDrink]);
 
   const getDrinkKey = (drink: RedbullDrink, index: number) => `${drink.name}-${index}`;
 
@@ -203,7 +199,7 @@ function Redbull() {
     });
   };
 
-  const saveResults = async () => {
+  const saveResults = async (specificDrinkKey?: string) => {
     if (!isAuthorized) {
       setSaveMessage('Type a valid participant key before saving.');
       return;
@@ -217,6 +213,10 @@ function Redbull() {
     const currentRows = drinks
       .map((drink, index) => {
         const drinkKey = getDrinkKey(drink, index);
+
+        // If a specific key was passed, skip all other drinks
+        if (specificDrinkKey && drinkKey !== specificDrinkKey) return null;
+
         const rating = ratings[drinkKey] || '';
         const opinion = (opinions[drinkKey] || '').trim();
 
@@ -226,7 +226,7 @@ function Redbull() {
 
         return {
           drinkKey,
-          participant: activeName, // Send the NAME to Google Sheets, not the key
+          participant: activeName,
           flavour: drink.name,
           rating,
           opinion,
@@ -239,17 +239,16 @@ function Redbull() {
       if (!previous) {
         return true;
       }
-
       return previous.rating !== row.rating || previous.opinion !== row.opinion;
     });
 
     if (payloads.length === 0) {
-      setSaveMessage('No new changes to save.');
+      setSaveMessage(specificDrinkKey ? 'No changes to save on this drink.' : 'No new changes to save.');
       return;
     }
 
-    setIsSaving(true);
-    setSaveMessage('Saving...');
+    setSavingState(specificDrinkKey ? specificDrinkKey : 'ALL');
+    setSaveMessage(specificDrinkKey ? 'Saving drink...' : 'Saving...');
 
     try {
       await Promise.all(payloads.map((payload) => fetch(googleSheetsUrl, {
@@ -291,11 +290,11 @@ function Redbull() {
         return next;
       });
 
-      setSaveMessage(`Saved ${payloads.length} new/updated row${payloads.length === 1 ? '' : 's'} to Google Sheets.`);
+      setSaveMessage(specificDrinkKey ? 'Drink saved!' : `Saved ${payloads.length} new/updated row${payloads.length === 1 ? '' : 's'} to Google Sheets.`);
     } catch {
       setSaveMessage('Failed to send data to Google Sheets. Check the URL and script deployment.');
     } finally {
-      setIsSaving(false);
+      setSavingState('IDLE');
     }
   };
 
@@ -320,7 +319,6 @@ function Redbull() {
     }
 
     try {
-      // Fetch by NAME
       const fetches = displayNames.map(async (name: string) => {
         const url = `${googleSheetsUrl}?participant=${encodeURIComponent(name)}`;
         const response = await fetch(url, { method: 'GET' });
@@ -333,7 +331,6 @@ function Redbull() {
           if (responseText.includes('Função de script não encontrada: doGet') || responseText.includes('script function not found: doGet')) {
             return { participantName: name, rows: [] as RemoteResultRow[], error: 'Apps Script doGet is missing in this deployment' };
           }
-
           return { participantName: name, rows: [] as RemoteResultRow[], error: 'Non-JSON response from Apps Script' };
         }
 
@@ -353,22 +350,15 @@ function Redbull() {
 
       const byParticipant: RemoteFetchResult[] = await Promise.all(fetches);
       const nextExistingResultsByDrink: ExistingResultsByDrink = {};
-      const nextRatings: Record<string, number> = {};
-      const nextOpinions: Record<string, string> = {};
-      const nextSavedState: Record<string, SavedEntry> = {};
       let loadedRows = 0;
       const fetchErrors = byParticipant.filter((entry) => entry.error).map((entry) => `${entry.participantName}: ${entry.error}`);
 
       byParticipant.forEach(({ participantName: fetchParticipantName, rows }) => {
         rows.forEach((row: RemoteResultRow) => {
-          if (!row.flavour) {
-            return;
-          }
+          if (!row.flavour) return;
 
           const drinkIndex = drinks.findIndex((drink) => drink.name === row.flavour);
-          if (drinkIndex === -1) {
-            return;
-          }
+          if (drinkIndex === -1) return;
 
           const drink = drinks[drinkIndex];
           const drinkKey = getDrinkKey(drink, drinkIndex);
@@ -385,20 +375,9 @@ function Redbull() {
             },
           };
 
-          // Compare the fetched name to the active logged-in user's name
-          if (isAuthorized && fetchParticipantName === activeName) {
-            if (normalizedRating !== '') {
-              nextRatings[drinkKey] = normalizedRating;
-            }
-
-            if (normalizedOpinion) {
-              nextOpinions[drinkKey] = normalizedOpinion;
-            }
-
-            nextSavedState[drinkKey] = {
-              rating: normalizedRating,
-              opinion: normalizedOpinion,
-            };
+          // Record that this drink had a rating on the fetch
+          if (normalizedRating !== '') {
+            initialRatedKeys.current.add(drinkKey);
           }
 
           loadedRows += 1;
@@ -406,15 +385,6 @@ function Redbull() {
       });
 
       setExistingResultsByDrink(nextExistingResultsByDrink);
-
-      if (isAuthorized) {
-        setRatings(nextRatings);
-        setOpinions(nextOpinions);
-        setSavedState(nextSavedState);
-        localStorage.setItem(ratingsStorageKey(normalizedKey), JSON.stringify(nextRatings));
-        localStorage.setItem(opinionsStorageKey(normalizedKey), JSON.stringify(nextOpinions));
-        localStorage.setItem(savedStateStorageKey(normalizedKey), JSON.stringify(nextSavedState));
-      }
 
       if (fetchErrors.length > 0) {
         setSaveMessage(`Some participants failed to load: ${fetchErrors.join(' | ')}`);
@@ -458,22 +428,20 @@ function Redbull() {
 
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
-      processed = processed.filter(({ drink }) => 
-        drink.name.toLowerCase().includes(lowerQuery) || 
+      processed = processed.filter(({ drink }) =>
+        drink.name.toLowerCase().includes(lowerQuery) ||
         (drink.flavor && drink.flavor.toLowerCase().includes(lowerQuery))
       );
     }
 
+    // Sort ONLY based on the `initialRatedKeys` reference.
     processed.sort((a, b) => {
-      const aHasRemoteRating = Object.values(existingResultsByDrink[a.key] || {}).some(res => Boolean(res.rating));
-      const aHasRating = !!ratings[a.key] || aHasRemoteRating;
-
-      const bHasRemoteRating = Object.values(existingResultsByDrink[b.key] || {}).some(res => Boolean(res.rating));
-      const bHasRating = !!ratings[b.key] || bHasRemoteRating;
+      const aHasRating = initialRatedKeys.current.has(a.key);
+      const bHasRating = initialRatedKeys.current.has(b.key);
 
       if (aHasRating && !bHasRating) return -1;
       if (!aHasRating && bHasRating) return 1;
-      return 0; 
+      return 0;
     });
 
     return processed;
@@ -483,66 +451,53 @@ function Redbull() {
 
   return (
     <main className="redbull-page">
+      <Link className="back-link" to="/" aria-label="Back to the home page"><span aria-hidden="true">&larr;</span> mrbrodinha</Link>
       <header className="json-header">
-        <p className="eyebrow">Red Bull Data</p>
-        <h1>Drinks JSON Viewer</h1>
-        <p className="json-meta">
-          {drinksLoading ? 'Loading...' : drinksError ? drinksError : `${drinks.length} records loaded from /redbull_drinks.json`}
-        </p>
-        <div className="participant-panel">
-          <label htmlFor="participant-key">Who is rating?</label>
-          <input
-            id="participant-key"
-            type="text"
-            value={participantKey}
-            onChange={(event) => setParticipantKey(event.target.value)}
-            placeholder="Type your secure key..."
-            autoComplete="off"
-          />
-          <small>
-            {isAuthorized
-              ? `Logged in. Rating as ${activeName}`
-              : 'Enter a valid participant key to unlock.'}
-          </small>
+        <div className="hero-copy">
+          <p className="eyebrow">Taste test</p>
+          <h1>Red Bull<br />Rater</h1>
+          <p className="json-meta">{drinksLoading ? 'Loading catalog...' : drinksError || 'Rate every flavour, leave your verdict, and compare notes.'}</p>
         </div>
-
-        <div className="search-panel" style={{ marginTop: '1rem' }}>
-          <label htmlFor="search-drinks">Search Drinks</label>
-          <input
-            id="search-drinks"
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name or flavor..."
-            autoComplete="off"
-          />
-        </div>
-
-        <div className="save-panel">
-          <button className="save-button secondary" type="button" onClick={() => { void loadResults(); }} disabled={displayNames.length === 0 || isLoadingResults || isSaving}>
-            {isLoadingResults ? 'Loading...' : 'Load Results'}
-          </button>
-          <button className="save-button" type="button" onClick={saveResults} disabled={!isAuthorized || isSaving || isLoadingResults}>
-            {isSaving ? 'Saving...' : 'Save Results'}
-          </button>
-          {saveMessage && <p className="save-status">{saveMessage}</p>}
+        <div className="control-panel">
+          <form className="participant-panel" onSubmit={(event) => event.preventDefault()}>
+            <label htmlFor="participant-key">Who is rating?</label>
+            <input id="participant-key" type="password" value={participantKey} onChange={(event) => setParticipantKey(event.target.value)} placeholder="Type your secure key..." autoComplete="current-password" />
+            <small className={isAuthorized ? 'login-status authorized' : 'login-status'}>{isAuthorized ? `Rating as ${activeName}` : 'Enter a valid key to unlock rating.'}</small>
+          </form>
+          <div className="search-panel">
+            <label htmlFor="search-drinks">Find a drink</label>
+            <input id="search-drinks" type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search by name or flavour..." autoComplete="off" />
+          </div>
+          <div className="save-panel">
+            <button className="save-button secondary" type="button" onClick={() => { void loadResults(); }} disabled={displayNames.length === 0 || isLoadingResults || savingState !== 'IDLE'}>{isLoadingResults ? 'Loading...' : 'Load results'}</button>
+            <button className="save-button" type="button" onClick={() => saveResults()} disabled={!isAuthorized || savingState !== 'IDLE' || isLoadingResults}>{savingState === 'ALL' ? 'Saving all...' : 'Save all'}</button>
+          </div>
+          {saveMessage && <p className="save-status" role="status">{saveMessage}</p>}
         </div>
       </header>
 
       {!drinksLoading && !drinksError && (
-        <section className="drinks-grid" aria-label="Red Bull JSON cards">
+        <section className="catalog" aria-label="Red Bull drinks">
+          <div className="drinks-grid">
           {processedDrinks.map(({ drink, originalIndex, key }) => {
             const currentRating = ratings[key] || 0;
             const currentOpinion = opinions[key] || '';
 
+            // Check if this specific card has unsaved changes
+            const prev = savedState[key];
+            const hasChanges = prev
+              ? (prev.rating !== (currentRating || '') || prev.opinion !== currentOpinion)
+              : (currentRating !== 0 || currentOpinion !== '');
+
+            const isSavingThis = savingState === key;
+
           return (
             <article className="drink-card" key={key}>
-              <img className="drink-image" src={drink.image_url} alt={drink.name} loading="lazy" />
+              <div className="drink-visual"><img className="drink-image" src={drink.image_url} alt={drink.name} loading="lazy" /></div>
               <div className="drink-content">
-                <h2>{drink.name}</h2>
                 <p className="drink-flavor">{drink.flavor || 'Unknown flavor'}</p>
-                
-                {/* Iterate over the clean displayNames */}
+                <h2>{drink.name}</h2>
+
                 <ul className="existing-results-list" aria-label={`Existing results for ${drink.name}`}>
                   {displayNames.map((name: string) => {
                     const result = existingResultsByDrink[key]?.[name];
@@ -558,7 +513,7 @@ function Redbull() {
                     );
                   })}
                 </ul>
-                <div className="rating-row" aria-label={`Rating for ${drink.name}`}>
+                <div className="rating-group"><p className="field-label">Your rating</p><div className="rating-row" aria-label={`Rating for ${drink.name}`}>
                   {[1, 2, 3, 4, 5].map((score) => (
                     <button
                       key={score}
@@ -571,8 +526,10 @@ function Redbull() {
                       {score}
                     </button>
                   ))}
-                </div>
+                </div></div>
+                <label className="field-label" htmlFor={`opinion-${originalIndex}`}>Your opinion</label>
                 <textarea
+                  id={`opinion-${originalIndex}`}
                   className="opinion-input"
                   value={currentOpinion}
                   onChange={(event) => updateOpinion(drink, originalIndex, event.target.value)}
@@ -580,11 +537,25 @@ function Redbull() {
                   placeholder="Write your opinion..."
                   disabled={!isAuthorized}
                 />
-                <a className="drink-link" href={drink.url} target="_blank" rel="noreferrer">Visit source</a>
+
+                <div className="card-actions">
+                  <a className="drink-link" href={drink.url} target="_blank" rel="noreferrer">Visit source</a>
+                  <button
+                    className="save-button card-save"
+                    type="button"
+                    onClick={() => saveResults(key)}
+                    disabled={!isAuthorized || savingState !== 'IDLE' || !hasChanges}
+                  >
+                    {isSavingThis ? 'Saving...' : 'Save drink'}
+                  </button>
+                </div>
+
               </div>
             </article>
           );
           })}
+          {processedDrinks.length === 0 && <p className="empty-state">No drinks match “{searchQuery}”.</p>}
+          </div>
         </section>
       )}
     </main>

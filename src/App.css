@@ -1,248 +1,254 @@
-.principal {
-    min-height: 100vh;
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #171b2d;
+  background: #f4f6fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
+* { box-sizing: border-box; }
+html { background: #f4f6fb; }
+body { min-width: 320px; min-height: 100vh; margin: 0; }
+button, input, textarea { font: inherit; }
+.principal { min-height: 100vh; }
+
+/* Landing page */
+.home-page {
+  position: relative;
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+.home-page::before {
+  position: absolute;
+  z-index: -1;
+  width: min(72vw, 860px);
+  aspect-ratio: 1;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 14vw rgb(255 255 255 / 2%);
+  content: "";
+}
+.home-title {
+  margin: 0;
+  padding: 24px;
+  color: #ff70ad;
+  font-size: clamp(3.3rem, 13vw, 11rem);
+  font-weight: 900;
+  letter-spacing: -.09em;
+  line-height: .8;
+  text-align: center;
+  text-shadow: 0 12px 45px rgb(0 0 0 / 28%);
+  user-select: none;
+}
+.redbull-letter {
+  position: relative;
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+  transition: color 180ms ease, transform 180ms ease;
+}
+.redbull-letter::after {
+  position: absolute;
+  right: .04em;
+  bottom: -.17em;
+  left: .12em;
+  height: .055em;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  opacity: 0;
+  transform: scaleX(.35);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.redbull-letter:hover, .redbull-letter:focus-visible {
+  color: #fff;
+  outline: none;
+  transform: translateY(-.04em);
+}
+.redbull-letter:hover::after, .redbull-letter:focus-visible::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* Red Bull page */
 .redbull-page {
-    --ink: #1e241d;
-    min-height: 100vh;
-    padding: 56px clamp(20px, 6vw, 96px) 40px;
-    color: var(--ink);
-    background: linear-gradient(165deg, #f7f3eb 0%, #ece5d8 100%);
-    font-family: Georgia, 'Times New Roman', serif;
+  --blue: #132f72;
+  --red: #e21b36;
+  min-height: 100vh;
+  padding: 28px clamp(18px, 5vw, 72px) 72px;
+  background: radial-gradient(circle at 100% 0%, rgb(255 206 75 / 20%), transparent 25rem), linear-gradient(180deg, #f8faff 0, #eff2f9 100%);
 }
-
-.json-header,
-.drinks-grid {
-    max-width: 1180px;
-    margin: 0 auto;
+.back-link {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 28px;
+  color: var(--blue);
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-decoration: none;
+  text-transform: uppercase;
 }
-
+.back-link:hover { color: var(--red); }
+.json-header, .catalog { width: min(1180px, 100%); margin-inline: auto; }
 .json-header {
-    border-bottom: 1px solid #b8b4ab;
-    padding-bottom: 24px;
-    margin-bottom: 28px;
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(350px, 1.1fr);
+  gap: clamp(30px, 7vw, 100px);
+  align-items: center;
+  padding: clamp(28px, 5vw, 64px);
+  border-radius: 28px;
+  background: var(--blue);
+  box-shadow: 0 24px 70px rgb(25 44 87 / 18%);
+  color: #fff;
 }
-
 .eyebrow {
-    font-family: Arial, sans-serif;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+  margin: 0 0 14px;
+  color: #ffd34e;
+  font-size: .73rem;
+  font-weight: 900;
+  letter-spacing: .2em;
+  text-transform: uppercase;
 }
-
-.eyebrow { color: #d22c28; font-size: 11px; font-weight: 700; }
-.json-header h1 { margin: 10px 0 8px; font-size: clamp(38px, 6vw, 72px); line-height: .95; font-weight: 400; }
-
+.json-header h1 {
+  margin: 0;
+  font-size: clamp(3.3rem, 7vw, 6.8rem);
+  font-weight: 900;
+  letter-spacing: -.065em;
+  line-height: .82;
+}
 .json-meta {
-    margin: 8px 0 0;
-    color: #73736d;
-    font: 13px Arial, sans-serif;
+  max-width: 38rem;
+  margin: 24px 0 0;
+  color: rgb(255 255 255 / 70%);
+  font-size: .95rem;
+  line-height: 1.65;
 }
-
-.participant-panel {
-    margin-top: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    max-width: 320px;
+.control-panel {
+  padding: clamp(22px, 4vw, 36px);
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 8%);
+  backdrop-filter: blur(8px);
 }
-
-.participant-panel label,
-.participant-panel small {
-    font-family: Arial, sans-serif;
-    letter-spacing: .04em;
+.participant-panel, .search-panel { display: grid; gap: 8px; }
+.search-panel { margin-top: 20px; }
+.participant-panel label, .search-panel label, .field-label {
+  margin: 0;
+  color: inherit;
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
 }
-
-.participant-panel label {
-    font-size: 11px;
-    text-transform: uppercase;
-    color: #4e5b47;
-    font-weight: 700;
+.participant-panel input, .search-panel input, .opinion-input {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
-
-.participant-panel input {
-    border: 1px solid #b8b4ab;
-    background: #fffdf8;
-    color: #1e241d;
-    padding: 8px 10px;
-    font: 14px Arial, sans-serif;
+.participant-panel input, .search-panel input {
+  min-height: 48px;
+  padding: 0 14px;
+  background: #fff;
+  color: #151b2d;
 }
-
-.participant-panel small {
-    color: #73736d;
-    font-size: 11px;
+.participant-panel input:focus, .search-panel input:focus, .opinion-input:focus {
+  border-color: #ffcf40;
+  box-shadow: 0 0 0 4px rgb(255 207 64 / 22%);
 }
-
-.save-panel {
-    margin-top: 14px;
-}
-
-.save-panel {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-}
-
+.login-status { color: rgb(255 255 255 / 55%); font-size: .75rem; }
+.login-status.authorized { color: #8df0b1; }
+.save-panel { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .save-button {
-    border: 1px solid #1e241d;
-    background: #1e241d;
-    color: #fff;
-    padding: 10px 14px;
-    cursor: pointer;
-    font: 700 11px Arial, sans-serif;
-    letter-spacing: .06em;
-    text-transform: uppercase;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--red);
+  box-shadow: 0 8px 20px rgb(167 13 37 / 20%);
+  color: #fff;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  transition: filter 160ms ease, transform 160ms ease;
 }
-
-.save-button.secondary {
-    background: transparent;
-    color: #1e241d;
-}
-
-.save-button:disabled {
-    opacity: .5;
-    cursor: not-allowed;
-}
-
-.save-status {
-    width: 100%;
-    margin: 2px 0 0;
-    color: #4e5b47;
-    font: 12px Arial, sans-serif;
-}
-
-.drinks-grid {
-    display: grid;
-    gap: 18px;
-    grid-template-columns: 1fr;
-}
-
-.drinks-grid {
-    max-width: 760px;
-}
-
+.save-button:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.save-button.secondary { border: 1px solid rgb(255 255 255 / 28%); background: transparent; box-shadow: none; }
+.save-button:disabled { cursor: not-allowed; opacity: .42; }
+.save-status { margin: 16px 0 0; color: rgb(255 255 255 / 72%); font-size: .78rem; line-height: 1.5; }
+.catalog { margin-top: 36px; }
+.drinks-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 .drink-card {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #d6d2c9;
-    background: #fffdf8;
-    box-shadow: 0 4px 0 rgba(23, 33, 29, .08);
-    overflow: hidden;
+  display: grid;
+  grid-template-rows: 220px 1fr;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e1e5ef;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 38px rgb(33 49 83 / 8%);
+  transition: box-shadow 180ms ease, transform 180ms ease;
 }
-
-.drink-image {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    background: #ece7de;
-}
-
-.drink-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-}
-
-.drink-content h2 {
-    margin: 0;
-    font-size: 24px;
-    line-height: 1.15;
-    font-weight: 400;
-}
-
-.drink-flavor {
-    margin: 0;
-    color: #4e5b47;
-    font: 700 11px Arial, sans-serif;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-}
-
-.existing-results-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px solid #e0dbd1;
-    border-bottom: 1px solid #e0dbd1;
-}
-
-.existing-results-list li {
-    display: grid;
-    grid-template-columns: minmax(90px, 130px) minmax(90px, 120px) 1fr;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px dashed #e6e0d6;
-    font: 12px/1.4 Arial, sans-serif;
-    color: #3c4637;
-}
-
-.existing-results-list li:last-child {
-    border-bottom: 0;
-}
-
-.existing-results-list strong {
-    text-transform: lowercase;
-}
-
-.rating-row {
-    display: flex;
-    gap: 6px;
-}
-
+.drink-card:hover { box-shadow: 0 18px 46px rgb(33 49 83 / 13%); transform: translateY(-3px); }
+.drink-visual { overflow: hidden; background: linear-gradient(145deg, #edf1fa, #f9faff); }
+.drink-image { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 300ms ease; }
+.drink-card:hover .drink-image { transform: scale(1.025); }
+.drink-content { display: flex; min-width: 0; padding: 24px; flex-direction: column; gap: 13px; }
+.drink-content h2 { margin: -5px 0 3px; color: #151b2d; font-size: 1.45rem; letter-spacing: -.035em; line-height: 1.12; }
+.drink-flavor { margin: 0; color: var(--red); font-size: .65rem; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+.existing-results-list { margin: 2px 0; padding: 0; overflow: hidden; border: 1px solid #e9ebf2; border-radius: 10px; background: #f7f8fb; list-style: none; }
+.existing-results-list li { display: grid; grid-template-columns: 78px 74px minmax(0, 1fr); gap: 7px; padding: 9px 10px; border-bottom: 1px solid #e9ebf2; color: #5a647f; font-size: .7rem; line-height: 1.35; }
+.existing-results-list li:last-child { border-bottom: 0; }
+.existing-results-list strong { overflow: hidden; color: #252d47; text-overflow: ellipsis; text-transform: lowercase; }
+.rating-group { display: grid; gap: 8px; }
+.field-label { color: #69728c; }
+.rating-row { display: flex; gap: 7px; }
 .rating-button {
-    width: 30px;
-    height: 30px;
-    border: 1px solid #b8b4ab;
-    background: #f6f2e9;
-    color: #1e241d;
-    cursor: pointer;
-    font: 700 12px Arial, sans-serif;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #dce0eb;
+  border-radius: 50%;
+  background: #f6f7fb;
+  color: #424b65;
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 900;
+  transition: all 150ms ease;
 }
+.rating-button.active, .rating-button:hover:not(:disabled) { border-color: var(--red); background: var(--red); color: #fff; }
+.rating-button:disabled, .opinion-input:disabled { cursor: not-allowed; opacity: .5; }
+.opinion-input { min-height: 82px; padding: 11px 12px; border-color: #dfe3ec; background: #fbfcfe; color: #20263b; font-size: .8rem; line-height: 1.45; resize: vertical; }
+.card-actions { display: flex; gap: 14px; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 4px; }
+.drink-link { color: var(--blue); font-size: .73rem; font-weight: 850; text-decoration: none; }
+.drink-link:hover { color: var(--red); }
+.card-save { min-height: 34px; padding-inline: 13px; font-size: .63rem; }
+.empty-state { grid-column: 1 / -1; margin: 0; padding: 70px 24px; border: 1px dashed #cfd5e3; border-radius: 18px; color: #6d7690; text-align: center; }
 
-.rating-button.active,
-.rating-button:hover {
-    border-color: #b62325;
-    background: #b62325;
-    color: #fff;
+@media (max-width: 1040px) {
+  .json-header { grid-template-columns: 1fr 1fr; gap: 36px; }
+  .drinks-grid { grid-template-columns: 1fr; }
+  .drink-card { grid-template-rows: 260px 1fr; }
 }
-
-.rating-button:disabled {
-    opacity: .45;
-    cursor: not-allowed;
+@media (max-width: 720px) {
+  .redbull-page { padding: 20px 14px 48px; }
+  .back-link { margin-left: 5px; margin-bottom: 18px; }
+  .json-header { grid-template-columns: 1fr; padding: 26px 20px 20px; border-radius: 20px; }
+  .json-header h1 { font-size: clamp(3.5rem, 20vw, 5.4rem); }
+  .control-panel { padding: 18px; }
+  .catalog { margin-top: 24px; }
+  .drink-card { grid-template-rows: 190px 1fr; }
+  .drink-content { padding: 20px; }
+  .existing-results-list li { grid-template-columns: 1fr; gap: 3px; }
 }
-
-.opinion-input {
-    width: 100%;
-    border: 1px solid #d6d2c9;
-    background: #fdfbf5;
-    color: #1e241d;
-    padding: 10px;
-    resize: vertical;
-    font: 13px/1.4 Arial, sans-serif;
-}
-
-.opinion-input:disabled {
-    opacity: .6;
-    cursor: not-allowed;
-}
-
-.drink-link {
-    width: fit-content;
-    color: #b62325;
-    font: 700 12px Arial, sans-serif;
-    text-decoration: none;
-}
-
-.drink-link:hover {
-    text-decoration: underline;
-}
-
-@media (max-width: 760px) {
-    .redbull-page { padding-top: 32px; }
-    .drink-image { height: 170px; }
-    .existing-results-list li {
-        grid-template-columns: 1fr;
-        gap: 4px;
-    }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
