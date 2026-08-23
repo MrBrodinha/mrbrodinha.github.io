@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 type RedbullDrink = {
+  id: number;
   name: string;
   url: string;
   image_url: string;
@@ -9,6 +10,8 @@ type RedbullDrink = {
 };
 
 type RemoteResultRow = {
+  id?: number | string;
+  drink_id?: number | string;
   participant?: string;
   flavour?: string;
   rating?: number | string;
@@ -26,6 +29,16 @@ type RemoteFetchResult = {
   participantName: string;
   rows: RemoteResultRow[];
   error?: string;
+};
+
+const MIN_RATING = 1;
+const MAX_RATING = 10;
+
+const normalizeRating = (value: unknown): number | '' => {
+  const rating = Number(value);
+  return Number.isInteger(rating) && rating >= MIN_RATING && rating <= MAX_RATING
+    ? rating
+    : '';
 };
 
 // 1. Parse Keys (used for logging in)
@@ -86,12 +99,13 @@ function Redbull() {
   const isAuthorized = configuredKeys.includes(normalizedKey);
   const activeName = isAuthorized ? keyToNameMap[normalizedKey] : '';
 
-  // If the user changes their login key, reset the sort locks
-  if (prevAuthKey.current !== normalizedKey) {
-    initialRatedKeys.current.clear();
-    hasLockedLocalKeys.current = false;
-    prevAuthKey.current = normalizedKey;
-  }
+  useEffect(() => {
+    if (prevAuthKey.current !== normalizedKey) {
+      initialRatedKeys.current.clear();
+      hasLockedLocalKeys.current = false;
+      prevAuthKey.current = normalizedKey;
+    }
+  }, [normalizedKey]);
 
   useEffect(() => {
     let active = true;
@@ -148,19 +162,24 @@ function Redbull() {
     try { if (storedOpinions) nextOpinions = JSON.parse(storedOpinions); } catch {}
     try { if (storedSavedState) nextSavedState = JSON.parse(storedSavedState); } catch {}
 
-    // 2. Hydrate from Google Sheets (existingResultsByDrink) if local storage is missing it
+    // Migrate data saved before drinks had permanent numeric IDs.
+    drinks.forEach((drink, index) => {
+      const stableKey = getDrinkKey(drink);
+      const legacyKey = `${drink.name}-${index}`;
+      if (nextRatings[stableKey] === undefined && nextRatings[legacyKey] !== undefined) nextRatings[stableKey] = nextRatings[legacyKey];
+      if (nextOpinions[stableKey] === undefined && nextOpinions[legacyKey] !== undefined) nextOpinions[stableKey] = nextOpinions[legacyKey];
+      if (nextSavedState[stableKey] === undefined && nextSavedState[legacyKey] !== undefined) nextSavedState[stableKey] = nextSavedState[legacyKey];
+    });
+
+    // Google Sheets becomes the baseline after results are refreshed.
     Object.keys(existingResultsByDrink).forEach((drinkKey) => {
       const remoteData = existingResultsByDrink[drinkKey]?.[activeName];
       if (remoteData) {
-        if (nextRatings[drinkKey] === undefined && remoteData.rating !== '') {
-          nextRatings[drinkKey] = Number(remoteData.rating);
-        }
-        if (nextOpinions[drinkKey] === undefined && remoteData.opinion !== '') {
-          nextOpinions[drinkKey] = remoteData.opinion;
-        }
-        if (nextSavedState[drinkKey] === undefined) {
-          nextSavedState[drinkKey] = remoteData;
-        }
+        if (remoteData.rating !== '') nextRatings[drinkKey] = Number(remoteData.rating);
+        else delete nextRatings[drinkKey];
+        if (remoteData.opinion !== '') nextOpinions[drinkKey] = remoteData.opinion;
+        else delete nextOpinions[drinkKey];
+        nextSavedState[drinkKey] = remoteData;
       }
     });
 
@@ -175,23 +194,36 @@ function Redbull() {
     setOpinions(nextOpinions);
     setSavedState(nextSavedState);
 
-  }, [isAuthorized, normalizedKey, activeName, existingResultsByDrink]);
+  }, [isAuthorized, normalizedKey, activeName, existingResultsByDrink, drinks]);
 
-  const getDrinkKey = (drink: RedbullDrink, index: number) => `${drink.name}-${index}`;
+  const getDrinkKey = (drink: RedbullDrink) => String(drink.id);
 
-  const updateRating = (drink: RedbullDrink, index: number, score: number) => {
+  const updateRating = (drink: RedbullDrink, score: number) => {
     if (!isAuthorized) return;
-    const key = getDrinkKey(drink, index);
+    const normalizedScore = normalizeRating(score);
+    if (normalizedScore === '') return;
+    const key = getDrinkKey(drink);
     setRatings((current) => {
-      const next = { ...current, [key]: score };
+      const next = { ...current, [key]: normalizedScore };
       localStorage.setItem(ratingsStorageKey(normalizedKey), JSON.stringify(next));
       return next;
     });
   };
 
-  const updateOpinion = (drink: RedbullDrink, index: number, opinion: string) => {
+  const clearRating = (drink: RedbullDrink) => {
     if (!isAuthorized) return;
-    const key = getDrinkKey(drink, index);
+    const key = getDrinkKey(drink);
+    setRatings((current) => {
+      const next = { ...current };
+      delete next[key];
+      localStorage.setItem(ratingsStorageKey(normalizedKey), JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const updateOpinion = (drink: RedbullDrink, opinion: string) => {
+    if (!isAuthorized) return;
+    const key = getDrinkKey(drink);
     setOpinions((current) => {
       const next = { ...current, [key]: opinion };
       localStorage.setItem(opinionsStorageKey(normalizedKey), JSON.stringify(next));
@@ -211,8 +243,8 @@ function Redbull() {
     }
 
     const currentRows = drinks
-      .map((drink, index) => {
-        const drinkKey = getDrinkKey(drink, index);
+      .map((drink) => {
+        const drinkKey = getDrinkKey(drink);
 
         // If a specific key was passed, skip all other drinks
         if (specificDrinkKey && drinkKey !== specificDrinkKey) return null;
@@ -220,19 +252,20 @@ function Redbull() {
         const rating = ratings[drinkKey] || '';
         const opinion = (opinions[drinkKey] || '').trim();
 
-        if (!rating && !opinion) {
+        if (!rating && !opinion && !savedState[drinkKey]) {
           return null;
         }
 
         return {
           drinkKey,
+          drinkId: drink.id,
           participant: activeName,
           flavour: drink.name,
           rating,
           opinion,
         };
       })
-      .filter(Boolean) as Array<{ drinkKey: string; participant: string; flavour: string; rating: number | ''; opinion: string }>;
+      .filter(Boolean) as Array<{ drinkKey: string; drinkId: number; participant: string; flavour: string; rating: number | ''; opinion: string }>;
 
     const payloads = currentRows.filter((row) => {
       const previous = savedState[row.drinkKey];
@@ -247,21 +280,33 @@ function Redbull() {
       return;
     }
 
+    if (payloads.some(({ rating }) => rating !== '' && normalizeRating(rating) === '')) {
+      setSaveMessage(`Ratings must be whole numbers from ${MIN_RATING} to ${MAX_RATING}.`);
+      return;
+    }
+
     setSavingState(specificDrinkKey ? specificDrinkKey : 'ALL');
     setSaveMessage(specificDrinkKey ? 'Saving drink...' : 'Saving...');
 
     try {
-      await Promise.all(payloads.map((payload) => fetch(googleSheetsUrl, {
+      const responses = await Promise.all(payloads.map((payload) => fetch(googleSheetsUrl, {
         method: 'POST',
-        mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           participant: payload.participant,
-          flavour: payload.flavour,
+          flavour: payload.drinkId,
           rating: payload.rating,
           opinion: payload.opinion,
         }),
       })));
+
+      await Promise.all(responses.map(async (response) => {
+        if (!response.ok) throw new Error(`Save failed with HTTP ${response.status}`);
+        const responseText = await response.text();
+        if (!responseText.trim()) return;
+        const result = JSON.parse(responseText);
+        if (result?.error) throw new Error(String(result.error));
+      }));
 
       setSavedState((current) => {
         const next = { ...current };
@@ -299,6 +344,10 @@ function Redbull() {
   };
 
   const loadResults = async (showStatusMessage = true) => {
+    if (showStatusMessage && hasUnsavedChanges && !window.confirm('Loading remote results will replace your unsaved local changes. Continue?')) {
+      return;
+    }
+
     if (!googleSheetsUrl) {
       if (showStatusMessage) {
         setSaveMessage('VITE_GOOGLE_SHEETS_URL is missing in .env.');
@@ -355,15 +404,18 @@ function Redbull() {
 
       byParticipant.forEach(({ participantName: fetchParticipantName, rows }) => {
         rows.forEach((row: RemoteResultRow) => {
-          if (!row.flavour) return;
+          const flavourValue = String(row.flavour ?? '').trim();
+          const flavourId = Number(flavourValue);
 
-          const drinkIndex = drinks.findIndex((drink) => drink.name === row.flavour);
+          const drinkIndex =
+            Number.isInteger(flavourId) && flavourId > 0
+              ? drinks.findIndex((drink) => drink.id === flavourId)
+              : drinks.findIndex((drink) => drink.name === flavourValue);
           if (drinkIndex === -1) return;
 
           const drink = drinks[drinkIndex];
-          const drinkKey = getDrinkKey(drink, drinkIndex);
-          const numericRating = Number(row.rating);
-          const normalizedRating = !Number.isNaN(numericRating) && numericRating >= 1 && numericRating <= 5 ? numericRating : '';
+          const drinkKey = getDrinkKey(drink);
+          const normalizedRating = normalizeRating(row.rating);
           const normalizedOpinion = typeof row.opinion === 'string' ? row.opinion : '';
 
           const drinkExisting = nextExistingResultsByDrink[drinkKey] || {};
@@ -420,11 +472,22 @@ function Redbull() {
   ]);
 
   const getProcessedDrinks = () => {
-    let processed = drinks.map((drink, index) => ({
-      drink,
-      originalIndex: index,
-      key: getDrinkKey(drink, index)
-    }));
+    let processed = drinks.map((drink, index) => {
+      const key = getDrinkKey(drink);
+      const drinkResults = Object.values(existingResultsByDrink[key] || {});
+      const validRatings = drinkResults
+        .map((result) => normalizeRating(result.rating))
+        .filter((rating): rating is number => rating !== '');
+
+      return {
+        drink,
+        originalIndex: index,
+        key,
+        averageRating: validRatings.length > 0
+          ? validRatings.reduce((total, rating) => total + rating, 0) / validRatings.length
+          : null,
+      };
+    });
 
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -434,24 +497,57 @@ function Redbull() {
       );
     }
 
-    // Sort ONLY based on the `initialRatedKeys` reference.
+    // Rated drinks come first, ordered by the average of all participant ratings.
+    // Ties and unrated drinks retain their original catalogue order.
     processed.sort((a, b) => {
-      const aHasRating = initialRatedKeys.current.has(a.key);
-      const bHasRating = initialRatedKeys.current.has(b.key);
-
-      if (aHasRating && !bHasRating) return -1;
-      if (!aHasRating && bHasRating) return 1;
-      return 0;
+      if (a.averageRating === null && b.averageRating === null) return a.originalIndex - b.originalIndex;
+      if (a.averageRating === null) return 1;
+      if (b.averageRating === null) return -1;
+      return b.averageRating - a.averageRating || a.originalIndex - b.originalIndex;
     });
 
     return processed;
   };
 
   const processedDrinks = getProcessedDrinks();
+  const hasUnsavedChanges = drinks.some((drink) => {
+    const key = getDrinkKey(drink);
+    const rating = ratings[key] || '';
+    const opinion = (opinions[key] || '').trim();
+    const previous = savedState[key];
+    return previous
+      ? previous.rating !== rating || previous.opinion !== opinion
+      : rating !== '' || opinion !== '';
+  });
+
+  useEffect(() => {
+    const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnAboutUnsavedChanges);
+    return () => window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
+  }, [hasUnsavedChanges]);
 
   return (
     <main className="redbull-page">
-      <Link className="back-link" to="/" aria-label="Back to the home page"><span aria-hidden="true">&larr;</span> mrbrodinha</Link>
+      <style>{`
+        .redbull-page .unsaved-badge { display: inline-block; margin-bottom: .75rem; padding: .2rem .5rem; border-radius: 999px; background: #fff0b3; color: #6b4f00; font-size: .75rem; font-weight: 700; }
+        .redbull-page .unsaved-status { color: #8a6300; font-weight: 700; }
+        .redbull-page .clear-rating-button { border: 0; background: transparent; color: inherit; cursor: pointer; text-decoration: underline; }
+        @media (max-width: 560px) { .redbull-page .rating-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .4rem; } .redbull-page .rating-button { width: 100%; min-width: 0; } .redbull-page .clear-rating-button { grid-column: 1 / -1; } }
+      `}</style>
+      <Link
+        className="back-link"
+        to="/"
+        aria-label="Back to the home page"
+        onClick={(event) => {
+          if (hasUnsavedChanges && !window.confirm('You have unsaved changes. Leave this page anyway?')) event.preventDefault();
+        }}
+      >
+        <span aria-hidden="true">&larr;</span> mrbrodinha
+      </Link>
       <header className="json-header">
         <div className="hero-copy">
           <p className="eyebrow">Taste test</p>
@@ -473,6 +569,7 @@ function Redbull() {
             <button className="save-button" type="button" onClick={() => saveResults()} disabled={!isAuthorized || savingState !== 'IDLE' || isLoadingResults}>{savingState === 'ALL' ? 'Saving all...' : 'Save all'}</button>
           </div>
           {saveMessage && <p className="save-status" role="status">{saveMessage}</p>}
+          {hasUnsavedChanges && <p className="save-status unsaved-status">You have unsaved changes.</p>}
         </div>
       </header>
 
@@ -497,6 +594,7 @@ function Redbull() {
               <div className="drink-content">
                 <p className="drink-flavor">{drink.flavor || 'Unknown flavor'}</p>
                 <h2>{drink.name}</h2>
+                {hasChanges && <span className="unsaved-badge">Unsaved</span>}
 
                 <ul className="existing-results-list" aria-label={`Existing results for ${drink.name}`}>
                   {displayNames.map((name: string) => {
@@ -514,25 +612,30 @@ function Redbull() {
                   })}
                 </ul>
                 <div className="rating-group"><p className="field-label">Your rating</p><div className="rating-row" aria-label={`Rating for ${drink.name}`}>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                  {Array.from({ length: MAX_RATING }, (_, index) => index + MIN_RATING).map((score) => (
                     <button
                       key={score}
                       type="button"
                       className={score <= currentRating ? 'rating-button active' : 'rating-button'}
-                      onClick={() => updateRating(drink, originalIndex, score)}
-                      aria-label={`Rate ${drink.name} ${score} out of 5`}
+                      onClick={() => updateRating(drink, score)}
+                      aria-label={`Rate ${drink.name} ${score} out of ${MAX_RATING}`}
                       disabled={!isAuthorized}
                     >
                       {score}
                     </button>
                   ))}
+                  {currentRating > 0 && (
+                    <button type="button" className="clear-rating-button" onClick={() => clearRating(drink)} disabled={!isAuthorized}>
+                      Clear
+                    </button>
+                  )}
                 </div></div>
                 <label className="field-label" htmlFor={`opinion-${originalIndex}`}>Your opinion</label>
                 <textarea
                   id={`opinion-${originalIndex}`}
                   className="opinion-input"
                   value={currentOpinion}
-                  onChange={(event) => updateOpinion(drink, originalIndex, event.target.value)}
+                  onChange={(event) => updateOpinion(drink, event.target.value)}
                   rows={3}
                   placeholder="Write your opinion..."
                   disabled={!isAuthorized}
