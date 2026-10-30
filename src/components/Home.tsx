@@ -19,7 +19,8 @@ function Home() {
         <Link className="redbull-letter" to="/redbull" aria-label="Open the Red Bull ratings" title="Red Bull ratings">r</Link>
         <span>b</span>
         <Link className="redbull-letter" to="/redbull" aria-label="Open the Red Bull ratings" title="Red Bull ratings">r</Link>
-        <span>odinha</span>
+        <span>odinh</span>
+        <Link className="piano-letter" to="/piano" aria-label="Open the Piano" title="Piano">a</Link>
       </h1>
     </main>
   );

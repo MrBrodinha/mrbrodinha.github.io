@@ -1,7 +1,8 @@
-export type Feedback = 'correct' | 'present' | 'octave' | 'transposed' | 'absent';
+export type Feedback = 'correct' | 'low' | 'high';
 export type Attempt = { notes: number[]; feedback: Feedback[] };
+export type NoteNaming = 'letters' | 'solfege';
 
-// Fixed five-note challenge. Durations are hints, never guessed or scored.
+// Challenge pitches and rhythm. Durations are hints, never guessed or scored.
 export const MELODY = [
   { midi: 72, length: '1', beats: 1, rhythm: 'Quarter note' },
   { midi: 74, length: '3/4', beats: .75, rhythm: 'Dotted eighth note' },
@@ -10,11 +11,12 @@ export const MELODY = [
   { midi: 69, length: '1', beats: 1, rhythm: 'Quarter note' },
 ];
 export const TARGET = MELODY.map((note) => note.midi);
-export const MAX_ATTEMPTS = 6;
-const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
+const SOLFEGE_NAMES = ['Dó', 'Dó#', 'Ré', 'Mib', 'Mi', 'Fá', 'Fá#', 'Sol', 'Sol#', 'Lá', 'Sib', 'Si'];
 
-export function noteName(midi: number): string {
-  return `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+export function noteName(midi: number, naming: NoteNaming = 'letters'): string {
+  const names = naming === 'solfege' ? SOLFEGE_NAMES : NAMES;
+  return `${names[midi % 12]}${Math.floor(midi / 12) - 1}`;
 }
 
 export function transpositionOffset(guess: readonly number[], target: readonly number[]): number | null {
@@ -25,58 +27,64 @@ export function transpositionOffset(guess: readonly number[], target: readonly n
 
 export function scoreGuess(guess: readonly number[], target: readonly number[]): Feedback[] {
   if (guess.length !== target.length) throw new Error('A guess must match the target length.');
-  // A consistent shift preserves the entire melody, including repeated notes.
-  if (transpositionOffset(guess, target) !== null) return guess.map(() => 'transposed');
-  const used = target.map(() => false);
-  const result: Feedback[] = guess.map((note, i) => {
-    if (note !== target[i]) return 'absent';
-    used[i] = true;
-    return 'correct';
+  // Every note is compared with the target pitch at the same position.
+  return guess.map((note, i) => {
+    if (note === target[i]) return 'correct';
+    return note < target[i] ? 'low' : 'high';
   });
-  // Reserve exact pitches before octave-only matches. Each occurrence counts once.
-  guess.forEach((note, i) => {
-    if (result[i] === 'correct') return;
-    const match = target.findIndex((pitch, j) => !used[j] && pitch === note);
-    if (match !== -1) {
-      result[i] = 'present';
-      used[match] = true;
-    }
-  });
-  // Prefer the corresponding position when allocating wrong-octave matches.
-  guess.forEach((note, i) => {
-    if (result[i] === 'absent' && !used[i] && note % 12 === target[i] % 12) {
-      result[i] = 'octave';
-      used[i] = true;
-    }
-  });
-  guess.forEach((note, i) => {
-    if (result[i] !== 'absent') return;
-    const match = target.findIndex((pitch, j) => !used[j] && pitch % 12 === note % 12);
-    if (match !== -1) {
-      result[i] = 'octave';
-      used[match] = true;
-    }
-  });
-  return result;
+}
+
+export function buildShareText(attempts: readonly Attempt[], target: readonly number[], url: string): string {
+  const symbols: Record<Feedback, string> = { correct: '✓', low: '↑', high: '↓' };
+  const recent = attempts.slice(-4);
+  const start = attempts.length - recent.length;
+  const exactWin = attempts.findIndex((attempt) => attempt.feedback.every((value) => value === 'correct'));
+  const melodyWin = attempts.findIndex((attempt) => transpositionOffset(attempt.notes, target) !== null);
+  const count = (value: number) => `${value} ${value === 1 ? 'attempt' : 'attempts'}`;
+  const summary = exactWin !== -1
+    ? `Exact pitch found in ${count(exactWin + 1)}!`
+    : melodyWin !== -1
+      ? `Melody found in ${count(melodyWin + 1)} — still chasing the correct pitch!`
+      : `${count(attempts.length)} so far`;
+  const shifted = recent.some((attempt) => transpositionOffset(attempt.notes, target) !== null);
+
+  return [
+    'Brodle', summary, `Latest ${recent.length} of ${count(attempts.length)}:`,
+    ...recent.map((attempt, index) =>
+      `${start + index + 1}. ${attempt.feedback.map((value) => symbols[value]).join('')}${transpositionOffset(attempt.notes, target) !== null ? ' ♪' : ''}`,
+    ),
+    '', '✓ correct · ↑ play higher · ↓ play lower',
+    ...(shifted ? ['♪ right melody, shifted pitch'] : []),
+    url,
+  ].join('\n');
 }
 
 export function toAbc(notes: readonly number[]): string {
   const altered = new Set<string>();
-  const tokens = MELODY.slice(0, notes.length).map(({ length }, i) => {
+  const tokens: string[] = [];
+  let beatsInBar = 0;
+  MELODY.slice(0, notes.length).forEach(({ length, beats }, i) => {
+    if (beatsInBar >= 4) {
+      tokens.push('|');
+      altered.clear();
+      beatsInBar = 0;
+    }
     const midi = notes[i];
     const name = NAMES[midi % 12];
     const octave = Math.floor(midi / 12) - 1;
     const letter = octave >= 5 ? name[0].toLowerCase() : name[0];
     const suffix = octave >= 5 ? "'".repeat(octave - 5) : ','.repeat(4 - octave);
+    const pitch = `${name[0]}${octave}`;
     let accidental = '';
-    if (name.includes('#')) {
-      accidental = '^';
-      altered.add(name[0]);
-    } else if (altered.has(name[0])) {
+    if (name.length > 1) {
+      accidental = name.includes('#') ? '^' : '_';
+      altered.add(pitch);
+    } else if (altered.has(pitch)) {
       accidental = '=';
-      altered.delete(name[0]);
+      altered.delete(pitch);
     }
-    return `${accidental}${letter}${suffix}${length}`;
+    tokens.push(`${accidental}${letter}${suffix}${length}`);
+    beatsInBar += beats;
   });
   // No future durations are visible. An invisible spacer draws an empty staff.
   const music = tokens.length ? tokens.join(' ') : 'x4';
@@ -86,7 +94,7 @@ export function toAbc(notes: readonly number[]): string {
 const keys = Array.from({ length: 37 }, (_, i) => ({
   midi: 48 + i,
   name: noteName(48 + i),
-  black: NAMES[(48 + i) % 12].includes('#'),
+  black: NAMES[(48 + i) % 12].length > 1,
 }));
 export const whiteKeys = keys.filter((key) => !key.black);
 export const blackKeys = keys.filter((key) => key.black).map((key) => ({
