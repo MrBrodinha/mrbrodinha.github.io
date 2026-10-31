@@ -165,6 +165,11 @@
 .sound-credits { margin: 0; font-size: .61rem; line-height: 1.8; }
 .sound-credits a { color: #93a1b8; text-decoration-color: #434a60; text-underline-offset: 3px; }
 .sound-credits a:hover { color: var(--accent); text-decoration-color: currentColor; }
+.creator-invite { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 0 0 22px; margin-bottom: 19px; border-bottom: 1px solid #252939; }
+.creator-invite strong { color: #d6dced; font-size: .83rem; font-weight: 600; }
+.creator-invite p { margin: 5px 0 0; color: #8c99b0; font-size: .7rem; }
+.creator-link { display: inline-flex; align-items: center; gap: 9px; padding: 10px 14px; border: 1px solid #4d405f; border-radius: 8px; background: #272033; color: #d8c6f4; font-size: .74rem; text-decoration: none; }
+.creator-link:hover { border-color: #a58acb; background: #342a48; color: #f3eaff; }
 
 .win-confetti { position: fixed; inset: 0; z-index: 30; overflow: hidden; pointer-events: none; }
 .confetti-piece { position: absolute; top: -20px; width: 8px; height: 14px; border-radius: 2px; opacity: 0; animation: brodle-confetti-fall ease-in both; }
@@ -208,6 +213,7 @@
   .sound-credits { flex-basis: 100%; }
 }
 @media (max-width: 520px) {
+  .creator-invite { justify-content: center; text-align: center; }
   .brodle-brand p { max-width: 170px; }
   .brodle-panel { padding: 16px 13px; }
   .round-meta { gap: 10px; }

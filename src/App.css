@@ -11,6 +11,7 @@ html { background: #f4f6fb; }
 body { min-width: 320px; min-height: 100vh; margin: 0; }
 button, input, textarea { font: inherit; }
 .principal { min-height: 100vh; }
+.route-loading { display: grid; min-height: 100svh; place-items: center; background: #0f111a; color: #c4b5fd; font-size: .9rem; }
 
 /* Landing page */
 .home-page {

@@ -43,11 +43,6 @@
 .composer-export textarea { display: block; width: 100%; min-height: 170px; max-height: 420px; padding: 17px; border: 1px solid #37354c; border-radius: 9px; background: #11131e; color: #c3b9db; font: .74rem/1.9 ui-monospace, SFMono-Regular, Consolas, monospace; tab-size: 2; resize: vertical; white-space: pre; }
 .composer-export-status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; min-height: 18px; margin-top: 12px; color: #8a99af; font-size: .64rem; line-height: 1.6; }
 .composer-export-status > :first-child { color: #c8b6ee; }
-.creator-invite { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 0 0 22px; margin-bottom: 19px; border-bottom: 1px solid #252939; }
-.creator-invite strong { color: #d6dced; font-size: .83rem; font-weight: 600; }
-.creator-invite p { margin: 5px 0 0; color: #8c99b0; font-size: .7rem; }
-.creator-link { display: inline-flex; align-items: center; gap: 9px; padding: 10px 14px; border: 1px solid #4d405f; border-radius: 8px; background: #272033; color: #d8c6f4; font-size: .74rem; text-decoration: none; }
-.creator-link:hover { border-color: #a58acb; background: #342a48; color: #f3eaff; }
 @media (max-width: 850px) {
   .composer-settings-grid { grid-template-columns: minmax(0, 1fr) 120px; gap: 20px; }
   .duration-field { grid-column: 1 / -1; }
@@ -66,5 +61,4 @@
   .composer-score-heading .game-controls button, .composer-export-heading .game-controls button { width: 100%; }
   .composer-score .piano-sheet { min-height: 115px; }
   .composer-export textarea { padding: 12px; font-size: .65rem; }
-  .creator-invite { justify-content: center; text-align: center; }
 }
