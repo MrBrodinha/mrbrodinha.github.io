@@ -1,16 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import type { ButtonHTMLAttributes } from 'react';
 import SheetMusic from './SheetMusic';
 import WinConfetti from './WinConfetti';
 import BrodleIcon from './BrodleIcon';
+import BrodleFooter from './BrodleFooter';
+import PianoKeyboard from './PianoKeyboard';
+import PianoControls from './PianoControls';
 import { usePianoAudio } from './usePianoAudio';
 import { useBrodleProgress } from './useBrodleProgress';
 import { isFinished } from './gameProgress';
-import { PIANO_SOUNDS } from './pianoSounds';
-import type { PianoSound } from './pianoSounds';
 import {
-  CHALLENGE, KEY, MELODY, MELODY_FINAL, TARGET, whiteKeys, blackKeys, noteName, scoreGuess, toAbc, melodyForGuess,
+  CHALLENGE, KEY, MELODY, MELODY_FINAL, TARGET, noteName, scoreGuess, toAbc, melodyForGuess,
   transpositionOffset, buildShareText, notationKey, getWinKind,
 } from './musicGame';
 import type { Attempt, Feedback, MelodyStep, MusicalKey, NoteNaming } from './musicGame';
@@ -46,9 +46,8 @@ function notationLabel(notes: readonly number[], naming: NoteNaming, feedback?: 
 }
 
 function Brodle() {
-  const { sound, setSound, soundStatus, soundProgress, retrySound,
-    volume, setVolume, playing, audioError, pressedNotes,
-    playNotes, startNote, releaseNote, stopAudio } = usePianoAudio();
+  const audio = usePianoAudio();
+  const { soundStatus, playing, audioError, playNotes, stopAudio } = audio;
   const { progress, updateProgress, storageError } = useBrodleProgress();
   const { guess, attempts, selectedAttempt } = progress;
   const [celebration, setCelebration] = useState<'exact' | 'octave' | 'melody' | null>(null);
@@ -58,7 +57,6 @@ function Brodle() {
   const [manualShareText, setManualShareText] = useState<string | null>(null);
   const shareRequest = useRef(0);
   const attemptTabs = useRef<HTMLDivElement>(null);
-  const keyboardScroll = useRef<HTMLDivElement>(null);
 
   const exactWinIndex = attempts.findIndex((attempt) => attempt.feedback.every((value) => value === 'correct'));
   const octaveWinIndex = attempts.findIndex((attempt) => getWinKind(attempt.notes, TARGET) === 'octave');
@@ -97,18 +95,6 @@ function Brodle() {
   }, [attempts.length, selectedAttempt]);
 
   useEffect(() => {
-    if (!playing || !pressedNotes.size) return;
-    const area = keyboardScroll.current;
-    const midi = pressedNotes.values().next().value;
-    const key = area?.querySelector<HTMLButtonElement>('[data-midi="' + midi + '"]');
-    if (!area || !key) return;
-    const bounds = area.getBoundingClientRect();
-    const note = key.getBoundingClientRect();
-    if (note.left < bounds.left + 8) area.scrollLeft += note.left - bounds.left - 8;
-    else if (note.right > bounds.right - 8) area.scrollLeft += note.right - bounds.right + 8;
-  }, [playing, pressedNotes]);
-
-  useEffect(() => {
     function handleBackspace(event: KeyboardEvent) {
       if (event.key !== 'Backspace' || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || finished) return;
       const target = event.target;
@@ -125,42 +111,6 @@ function Brodle() {
     if (finished) return;
     updateProgress((previous) => isFinished(previous) || previous.guess.length >= TARGET.length
       ? previous : { ...previous, guess: [...previous.guess, midi] });
-  }
-
-  function keyHandlers(midi: number): ButtonHTMLAttributes<HTMLButtonElement> {
-    return {
-      onPointerDown: (event) => {
-        if (event.button !== 0) return;
-        event.currentTarget.setPointerCapture(event.pointerId);
-        void startNote(midi, `pointer-${event.pointerId}`);
-        addNote(midi);
-      },
-      onPointerUp: (event) => releaseNote(`pointer-${event.pointerId}`),
-      onPointerCancel: (event) => releaseNote(`pointer-${event.pointerId}`, true),
-      onLostPointerCapture: (event) => releaseNote(`pointer-${event.pointerId}`, true),
-      onKeyDown: (event) => {
-        if (event.key !== ' ' && event.key !== 'Enter') return;
-        event.preventDefault();
-        if (event.repeat) return;
-        void startNote(midi, `keyboard-${midi}-${event.key}`);
-        addNote(midi);
-      },
-      onKeyUp: (event) => {
-        if (event.key !== ' ' && event.key !== 'Enter') return;
-        event.preventDefault();
-        releaseNote(`keyboard-${midi}-${event.key}`);
-      },
-      onBlur: () => {
-        releaseNote(`keyboard-${midi}- `, true);
-        releaseNote(`keyboard-${midi}-Enter`, true);
-      },
-      onClick: (event) => {
-        // Assistive technology can activate a button without pointer/key events.
-        if (event.detail !== 0) return;
-        void playNotes([midi], null, [{ midi, beats: 1 }]);
-        addNote(midi);
-      },
-    };
   }
 
   function togglePlayback(notes: readonly number[], id: string, rhythm?: readonly Pick<MelodyStep, 'midi' | 'beats'>[]) {
@@ -417,53 +367,8 @@ function Brodle() {
           )}
 
           <section className="keyboard-section brodle-panel" aria-label="Piano">
-            <div className="piano-toolbar">
-              <div className="note-naming-control" role="group" aria-label="Note names">
-                <button type="button" aria-label="Use A–G note names" aria-pressed={noteNaming === 'letters'} onClick={() => setNoteNaming('letters')}>A–G</button>
-                <button type="button" aria-label="Use Dó–Si note names" aria-pressed={noteNaming === 'solfege'} onClick={() => setNoteNaming('solfege')}>Dó–Si</button>
-              </div>
-              <div className="piano-sound">
-                <label htmlFor="piano-sound">Instrument</label>
-                <select id="piano-sound" value={sound} onChange={(event) => setSound(event.currentTarget.value as PianoSound)}>
-                  {Object.entries(PIANO_SOUNDS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
-              </div>
-              <div className="piano-volume">
-                <label htmlFor="piano-volume" title="Volume"><BrodleIcon name="volume" size={17} /><span className="sr-only">Volume</span></label>
-                <input id="piano-volume" type="range" min="0" max="100" step="1" value={volume}
-                  aria-valuetext={volume + '%'} onChange={(event) => setVolume(Number(event.currentTarget.value))} />
-                <output htmlFor="piano-volume">{volume}%</output>
-              </div>
-            </div>
-            {soundStatus === 'loading' && (
-              <div className="sound-status" role="status">
-                <span>Loading {PIANO_SOUNDS[sound]}… {soundProgress}%</span>
-                <progress value={soundProgress} max="100" aria-label={'Loading ' + PIANO_SOUNDS[sound]} />
-              </div>
-            )}
-            {soundStatus === 'error' && (
-              <div className="sound-status sound-error" role="alert">
-                <span>This sound couldn’t load. Try again or choose Synth.</span>
-                <button type="button" className="brodle-button" onClick={retrySound}>Retry sound</button>
-              </div>
-            )}
-            <div ref={keyboardScroll} className="piano-scroll" tabIndex={0} role="region" aria-label="Scrollable piano keyboard">
-              <div className="piano-keyboard">
-                {whiteKeys.map(({ midi }) => (
-                  <button key={midi} type="button" data-midi={midi} className={'piano-key piano-white' + (pressedNotes.has(midi) ? ' is-held' : '')}
-                    aria-label={'Play ' + noteName(midi, noteNaming)} {...keyHandlers(midi)}>
-                    <span className="key-label">{noteName(midi, noteNaming)}</span>
-                  </button>
-                ))}
-                {blackKeys.map(({ midi, position }) => (
-                  <button key={midi} type="button" data-midi={midi} className={'piano-key piano-black' + (pressedNotes.has(midi) ? ' is-held' : '')}
-                    style={{ left: position / whiteKeys.length * 100 + '%', width: 60 / whiteKeys.length + '%' }}
-                    aria-label={'Play ' + noteName(midi, noteNaming)} {...keyHandlers(midi)}>
-                    <span className="key-label">{noteName(midi, noteNaming)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <PianoControls audio={audio} naming={noteNaming} onNaming={setNoteNaming} />
+            <PianoKeyboard {...audio} naming={noteNaming} onNote={addNote} />
             <div className="piano-help">
               <p>Tap to play. Hold to sustain.<span className="piano-scroll-hint"> Swipe for more keys.</span></p>
               {!finished && <span className="keyboard-shortcut"><kbd>⌫</kbd> Undo</span>}
@@ -472,17 +377,7 @@ function Brodle() {
         </div>
       </main>
 
-      <footer className="brodle-footer">
-        <div className="brodle-content footer-content">
-          <Link to="/" className="footer-brand">MrBrodinha</Link>
-          <p className="sound-credits">
-            Piano: <a href="https://github.com/sfzinstruments/SplendidGrandPiano">Splendid Grand / AKAI</a>
-            <span aria-hidden="true"> · </span>Electric: <a href="https://github.com/sfzinstruments/GregSullivan.E-Pianos">Greg Sullivan / kinwie</a>
-            {' '}(<a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>)
-            <span aria-hidden="true"> · </span>via <a href="https://github.com/danigb/smplr">smplr</a>
-          </p>
-        </div>
-      </footer>
+      <BrodleFooter />
     </div>
   );
 }

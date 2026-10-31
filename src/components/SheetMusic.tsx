@@ -9,9 +9,11 @@ type SheetMusicProps = {
   label?: string;
   musicalKey?: MusicalKey;
   naming?: NoteNaming;
+  bpm?: number;
+  wrap?: boolean;
 };
 
-function SheetMusic({ abc, feedback, label = 'Musical notation', musicalKey = KEY, naming = 'letters' }: SheetMusicProps) {
+function SheetMusic({ abc, feedback, label = 'Musical notation', musicalKey = KEY, naming = 'letters', bpm = BPM, wrap = false }: SheetMusicProps) {
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,6 +36,7 @@ function SheetMusic({ abc, feedback, label = 'Musical notation', musicalKey = KE
         paddingright: 16,
         paddingtop: 20,
         paddingbottom: 16,
+        ...(wrap ? { wrap: { preferredMeasuresPerLine: 2, minSpacing: 1.8, maxSpacing: 2.7 } } : {}),
         format: { stretchlast: 1, annotationfont: 'Helvetica 11', tempofont: 'Helvetica 11' },
       });
 
@@ -46,11 +49,11 @@ function SheetMusic({ abc, feedback, label = 'Musical notation', musicalKey = KE
     const observer = new ResizeObserver(render);
     observer.observe(element);
     return () => { observer.disconnect(); element.replaceChildren(); };
-  }, [abc, feedback]);
+  }, [abc, feedback, wrap]);
 
   const keyLabel = keyName(musicalKey, naming);
   return (
-    <div className="piano-sheet" role="img" aria-label={`${keyLabel}. ${BPM} beats per minute. ${label}`}>
+    <div className="piano-sheet" role="img" aria-label={`${keyLabel}. ${bpm} beats per minute. ${label}`}>
       <span className="sheet-key" aria-hidden="true">Key: <strong>{keyLabel}</strong></span>
       <div ref={container} />
     </div>

@@ -14,6 +14,7 @@ const KEY_SIGNATURES = {
   Am: 0, Em: 1, Bm: 2, 'F#m': 3, 'C#m': 4, 'G#m': 5, 'D#m': 6, 'A#m': 7,
 } as const;
 export type MusicalKey = keyof typeof KEY_SIGNATURES;
+export const MUSICAL_KEYS = Object.keys(KEY_SIGNATURES) as MusicalKey[];
 // ABC key names: 'C' = C major, 'G' = G major, 'Am' = A minor, etc.
 // MIDI pitches stay literal: in F major, 70 is B-flat and 71 is B natural.
 export const KEY: MusicalKey = 'C';
@@ -185,11 +186,41 @@ export function melodyForGuess<T extends { midi: number | null }>(notes: readonl
 }
 
 export function toAbc(notes: readonly number[], naming: NoteNaming = 'letters', melody: readonly MelodyStep[] = MELODY, key: MusicalKey = KEY): string {
+  return renderMelodyAbc(melodyForGuess(notes, melody), naming, key, BPM);
+}
+
+// Render a complete authored melody, including rest-only scores and tied notes
+// crossing a bar line. Guesses keep one rendered note per scored pitch above.
+export function melodyToAbc(melody: readonly MelodyStep[], naming: NoteNaming, key: MusicalKey, bpm: number): string {
+  const fragments: (MelodyStep & { tie?: boolean; hideLabel?: boolean })[] = [];
+  let position = 0;
+  for (const step of melody) {
+    let remaining = step.beats;
+    let first = true;
+    while (remaining > 0) {
+      const beats = Math.min(remaining, 4 - position);
+      remaining -= beats;
+      fragments.push({ ...step, beats, length: abcLength(beats), tie: step.midi !== null && remaining > 0, hideLabel: !first });
+      first = false;
+      position = (position + beats) % 4;
+    }
+  }
+  return renderMelodyAbc(fragments, naming, key, bpm);
+}
+
+export function abcLength(beats: number): string {
+  let numerator = Math.round(beats * 8);
+  let denominator = 8;
+  while (denominator > 1 && numerator % 2 === 0) { numerator /= 2; denominator /= 2; }
+  return denominator === 1 ? String(numerator) : numerator === 1 ? `/${denominator}` : `${numerator}/${denominator}`;
+}
+
+function renderMelodyAbc(melody: readonly (MelodyStep & { tie?: boolean; hideLabel?: boolean })[], naming: NoteNaming, key: MusicalKey, bpm: number): string {
   const altered = new Map<string, number>();
   const signature = keyAccidentals(key);
   const tokens: string[] = [];
   let beatsInBar = 0;
-  melodyForGuess(notes, melody).forEach(({ midi, length, beats }) => {
+  melody.forEach(({ midi, length, beats, tie, hideLabel }) => {
     if (beatsInBar >= 4) {
       tokens.push('|');
       altered.clear();
@@ -210,12 +241,12 @@ export function toAbc(notes: readonly number[], naming: NoteNaming = 'letters', 
       accidental = spelling.accidental === 1 ? '^' : spelling.accidental === -1 ? '_' : '=';
     }
     altered.set(pitch, spelling.accidental);
-    tokens.push(`"_${noteName(midi, naming, key)}"${accidental}${letter}${suffix}${length}`);
+    tokens.push(`${hideLabel ? '' : `"_${noteName(midi, naming, key)}"`}${accidental}${letter}${suffix}${length}${tie ? '-' : ''}`);
     beatsInBar += beats;
   });
   // No future durations are visible. An invisible spacer draws an empty staff.
   const music = tokens.length ? tokens.join(' ') : 'x4';
-  return `X:1\nM:4/4\nL:1/4\nQ:1/4=${BPM}\nK:${key} clef=treble\n${music} |]\n`;
+  return `X:1\nM:4/4\nL:1/4\nQ:1/4=${bpm}\nK:${key} clef=treble\n${music} |]\n`;
 }
 
 const keys = Array.from({ length: 37 }, (_, i) => ({

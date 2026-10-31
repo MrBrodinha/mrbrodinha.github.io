@@ -9,7 +9,13 @@ const source = await readFile(new URL('../src/components/musicGame.ts', import.m
 const { outputText } = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
 });
-const { toAbc, noteName, notationKey, getWinKind, scoreGuess, buildShareText } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+const musicModuleUrl = `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`;
+const { toAbc, noteName, notationKey, getWinKind, scoreGuess, buildShareText, melodyToAbc } = await import(musicModuleUrl);
+const composerSource = await readFile(new URL('../src/components/melodyComposer.ts', import.meta.url), 'utf8');
+const composerJs = ts.transpileModule(composerSource, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
+}).outputText.replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`);
+const { DURATIONS, makeStep, durationForStep, exportMelodyCode, parseComposerDraft, emptyComposerDraft } = await import(`data:text/javascript;base64,${Buffer.from(composerJs).toString('base64')}`);
 
 const pattern = (notes) => notes.map((midi) => ({ midi, length: '1', beats: 1, rhythm: 'Quarter note' }));
 const parse = (notes, key) => abcjs.parseOnly(toAbc(notes, 'letters', pattern(notes), key))[0];
@@ -90,4 +96,49 @@ test('octave results have their own share, and exact wins upgrade them', () => {
   const exact = buildShareText([shifted, octave, attempt(target)], target, url);
   assert.match(exact, /^Brodle 🎉\nExact pitch found in 3 attempts!/);
   assert.match(exact, /3\. ✓✓✓/);
+});
+
+test('every composer duration and dotted variant produces valid notes and rests', () => {
+  for (const duration of DURATIONS) {
+    for (const dotted of [false, true]) {
+      for (const midi of [70, null]) {
+        const step = makeStep(midi, duration.id, dotted);
+        const tune = abcjs.parseOnly(melodyToAbc([step], 'letters', 'F', 96))[0];
+        assert.equal(tune.metaText.tempo.bpm, 96);
+        assert.equal(tune.setUpAudio({}).totalDuration, step.beats / 4);
+        assert.deepEqual(soundingPitches(tune), midi === null ? [] : [midi]);
+        assert.deepEqual(durationForStep(step), { duration: duration.id, dotted });
+        assert.equal(step.beats, duration.beats * (dotted ? 1.5 : 1));
+      }
+    }
+  }
+});
+
+test('authored notes and rests cross bar lines without changing their timing', () => {
+  const melody = [makeStep(60, 'quarter', false), makeStep(62, 'whole', false), makeStep(null, 'whole', false), makeStep(70, 'sixteenth', true)];
+  const abc = melodyToAbc(melody, 'letters', 'F', 144);
+  const tune = abcjs.parseOnly(abc)[0];
+  assert.match(abc, /D3- \| D1/);
+  assert.equal(tune.setUpAudio({}).totalDuration, 9.375 / 4);
+  assert.deepEqual(soundingPitches(tune), [60, 62, 70]);
+  assert.equal(tune.warnings, undefined);
+});
+
+test('exported constants compile and preserve the authored melody exactly', async () => {
+  const draft = { bpm: 132, key: 'Bb', melody: [makeStep(70, 'sixteenth', true), makeStep(null, 'half', false), makeStep(71, 'whole', false)] };
+  const code = exportMelodyCode(draft);
+  const js = ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
+  const exported = await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+  assert.equal(exported.BPM, draft.bpm);
+  assert.equal(exported.KEY, draft.key);
+  assert.deepEqual(exported.MELODY, draft.melody);
+  assert.match(code, /length: '3\/8'/);
+});
+
+test('composer drafts restore independently and reject damaged data', () => {
+  const draft = { bpm: 180, key: 'F#m', melody: [makeStep(null, 'eighth', false), makeStep(66, 'half', true)] };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)), draft);
+  for (const invalid of [null, '{broken', JSON.stringify({ ...draft, bpm: 0 }), JSON.stringify({ ...draft, key: 'Invalid' }), JSON.stringify({ ...draft, melody: [{ midi: 100, beats: 1 }] })]) {
+    assert.deepEqual(parseComposerDraft(invalid), emptyComposerDraft());
+  }
 });

@@ -218,15 +218,16 @@ export function usePianoAudio() {
     return voice;
   }, []);
 
-  const playNotes = useCallback(async (
-    notes: readonly number[], id: string | null, rhythm: readonly Pick<MelodyStep, 'midi' | 'beats'>[] = MELODY,
+  const playMelody = useCallback(async (
+    melody: readonly Pick<MelodyStep, 'midi' | 'beats'>[], id: string | null, bpm = BPM,
   ) => {
     stopAudio();
-    if (!notes.length) return;
+    if (!melody.length) return;
     const request = playbackRequest.current;
     setPlaying(id);
     setAudioError('');
     try {
+      if (!Number.isFinite(bpm) || bpm <= 0) throw new Error('Invalid tempo.');
       const { context, output, instrument } = await getAudio();
       if (request !== playbackRequest.current || context.state === 'closed') return;
       const highlight = (midi: number | null, at: number) => {
@@ -239,8 +240,8 @@ export function usePianoAudio() {
         visualTimers.current.add(timer);
       };
       let time = context.currentTime + .03;
-      melodyForGuess(notes, rhythm).forEach(({ midi, beats }) => {
-        const duration = beats * 60 / BPM;
+      melody.forEach(({ midi, beats }) => {
+        const duration = beats * 60 / bpm;
         if (midi !== null) {
           const voice = createVoice(context, output, instrument, midi, time, duration);
           sequenceVoices.current.add(voice);
@@ -264,6 +265,10 @@ export function usePianoAudio() {
       setAudioError(error instanceof PianoSoundError ? error.message : 'Audio could not start. You can still enter and submit notes.');
     }
   }, [createVoice, getAudio, stopAudio, updatePressedNotes]);
+
+  const playNotes = useCallback((
+    notes: readonly number[], id: string | null, rhythm: readonly Pick<MelodyStep, 'midi' | 'beats'>[] = MELODY,
+  ) => playMelody(melodyForGuess(notes, rhythm), id), [playMelody]);
 
   const startNote = useCallback(async (midi: number, source: string) => {
     if (heldNotes.current.has(source)) return;
@@ -376,5 +381,5 @@ export function usePianoAudio() {
   }, [stopAudio]);
 
   return { sound, setSound, soundStatus, soundProgress, retrySound, volume, setVolume,
-    playing, audioError, setAudioError, pressedNotes, playNotes, startNote, releaseNote, stopAudio };
+    playing, audioError, setAudioError, pressedNotes, playNotes, playMelody, startNote, releaseNote, stopAudio };
 }
