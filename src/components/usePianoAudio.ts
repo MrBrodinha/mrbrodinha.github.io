@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Smplr } from 'smplr';
-import { MELODY } from './musicGame';
+import { BPM, MELODY, melodyForGuess } from './musicGame';
+import type { MelodyStep } from './musicGame';
 import { createSampledPiano, PIANO_SOUNDS } from './pianoSounds';
 import type { PianoSound, SampledPianoSound } from './pianoSounds';
 
@@ -218,7 +219,7 @@ export function usePianoAudio() {
   }, []);
 
   const playNotes = useCallback(async (
-    notes: readonly number[], id: string | null, rhythm: readonly { beats: number }[] = MELODY,
+    notes: readonly number[], id: string | null, rhythm: readonly Pick<MelodyStep, 'midi' | 'beats'>[] = MELODY,
   ) => {
     stopAudio();
     if (!notes.length) return;
@@ -238,12 +239,16 @@ export function usePianoAudio() {
         visualTimers.current.add(timer);
       };
       let time = context.currentTime + .03;
-      notes.forEach((midi, index) => {
-        const duration = rhythm[index].beats * .5;
-        const voice = createVoice(context, output, instrument, midi, time, duration);
-        sequenceVoices.current.add(voice);
-        highlight(midi, time);
-        highlight(null, time + duration * .9);
+      melodyForGuess(notes, rhythm).forEach(({ midi, beats }) => {
+        const duration = beats * 60 / BPM;
+        if (midi !== null) {
+          const voice = createVoice(context, output, instrument, midi, time, duration);
+          sequenceVoices.current.add(voice);
+          highlight(midi, time);
+          highlight(null, time + duration * .9);
+        } else {
+          highlight(null, time);
+        }
         time += duration;
       });
       playbackTimer.current = setTimeout(() => {

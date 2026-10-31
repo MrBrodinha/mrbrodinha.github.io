@@ -1,14 +1,17 @@
 import { useEffect, useRef } from 'react';
 import abcjs from 'abcjs';
-import type { Feedback } from './musicGame';
+import { BPM, KEY, keyName } from './musicGame';
+import type { Feedback, MusicalKey, NoteNaming } from './musicGame';
 
 type SheetMusicProps = {
   abc: string;
   feedback?: readonly Feedback[];
   label?: string;
+  musicalKey?: MusicalKey;
+  naming?: NoteNaming;
 };
 
-function SheetMusic({ abc, feedback, label = 'Musical notation' }: SheetMusicProps) {
+function SheetMusic({ abc, feedback, label = 'Musical notation', musicalKey = KEY, naming = 'letters' }: SheetMusicProps) {
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,7 +34,7 @@ function SheetMusic({ abc, feedback, label = 'Musical notation' }: SheetMusicPro
         paddingright: 16,
         paddingtop: 20,
         paddingbottom: 16,
-        format: { stretchlast: 1, annotationfont: 'Helvetica 11' },
+        format: { stretchlast: 1, annotationfont: 'Helvetica 11', tempofont: 'Helvetica 11' },
       });
 
       element.querySelectorAll<SVGElement>('.abcjs-note').forEach((note, index) => {
@@ -45,7 +48,13 @@ function SheetMusic({ abc, feedback, label = 'Musical notation' }: SheetMusicPro
     return () => { observer.disconnect(); element.replaceChildren(); };
   }, [abc, feedback]);
 
-  return <div className="piano-sheet" role="img" aria-label={label}><div ref={container} /></div>;
+  const keyLabel = keyName(musicalKey, naming);
+  return (
+    <div className="piano-sheet" role="img" aria-label={`${keyLabel}. ${BPM} beats per minute. ${label}`}>
+      <span className="sheet-key" aria-hidden="true">Key: <strong>{keyLabel}</strong></span>
+      <div ref={container} />
+    </div>
+  );
 }
 
 export default SheetMusic;

@@ -5,22 +5,24 @@ import SheetMusic from './SheetMusic';
 import WinConfetti from './WinConfetti';
 import BrodleIcon from './BrodleIcon';
 import { usePianoAudio } from './usePianoAudio';
+import { useBrodleProgress } from './useBrodleProgress';
+import { isFinished } from './gameProgress';
 import { PIANO_SOUNDS } from './pianoSounds';
 import type { PianoSound } from './pianoSounds';
 import {
-  CHALLENGE, MELODY_FINAL, TARGET, whiteKeys, blackKeys, noteName, scoreGuess, toAbc,
-  transpositionOffset, buildShareText,
+  CHALLENGE, MELODY, MELODY_FINAL, TARGET, whiteKeys, blackKeys, noteName, scoreGuess, toAbc, melodyForGuess,
+  transpositionOffset, buildShareText, notationKey,
 } from './musicGame';
-import type { Attempt, Feedback, NoteNaming } from './musicGame';
+import type { Attempt, Feedback, MelodyStep, NoteNaming } from './musicGame';
 import './Brodle.css';
 
 const labels: Record<Feedback, string> = {
   correct: 'Correct pitch and position',
+  shifted: 'Correct melody, shifted pitch',
   low: 'Too low. Try a higher note',
   high: 'Too high. Try a lower note',
 };
-const finalMelodyNotes = MELODY_FINAL.map((note) => note.midi);
-const feedbackIcons = { correct: 'check', low: 'up', high: 'down' } as const;
+const feedbackIcons = { correct: 'check', shifted: 'music', low: 'up', high: 'down' } as const;
 
 function attemptSummary(attempt: Attempt): string {
   const offset = transpositionOffset(attempt.notes, TARGET);
@@ -33,18 +35,22 @@ function attemptSummary(attempt: Attempt): string {
 
 function notationLabel(notes: readonly number[], naming: NoteNaming, feedback?: readonly Feedback[]): string {
   if (!notes.length) return 'Empty staff. Use the piano to enter your guess.';
-  return notes.map((note, index) =>
-    `Note ${index + 1}: ${noteName(note, naming)}${feedback ? `, ${labels[feedback[index]]}` : ''}`,
-  ).join('. ');
+  let position = 0;
+  const key = notationKey(notes);
+  return melodyForGuess(notes, MELODY).map((step) => {
+    if (step.midi === null) return step.rhythm;
+    const index = position++;
+    return `Note ${index + 1}: ${noteName(step.midi, naming, key)}${feedback ? `, ${labels[feedback[index]]}` : ''}`;
+  }).join('. ');
 }
 
 function Brodle() {
   const { sound, setSound, soundStatus, soundProgress, retrySound,
-    volume, setVolume, playing, audioError, setAudioError, pressedNotes,
+    volume, setVolume, playing, audioError, pressedNotes,
     playNotes, startNote, releaseNote, stopAudio } = usePianoAudio();
-  const [guess, setGuess] = useState<number[]>([]);
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [selectedAttempt, setSelectedAttempt] = useState(0);
+  const { progress, updateProgress, storageError } = useBrodleProgress();
+  const { guess, attempts, selectedAttempt } = progress;
+  const [celebration, setCelebration] = useState<'exact' | 'melody' | null>(null);
   const [noteNaming, setNoteNaming] = useState<NoteNaming>('letters');
   const [sharing, setSharing] = useState(false);
   const [shareStatus, setShareStatus] = useState('');
@@ -60,7 +66,11 @@ function Brodle() {
   const exactWon = exactWinIndex !== -1;
   const won = melodyWinIndex !== -1;
   const finished = exactWon;
-  const celebration = exactWon ? 'exact' : won ? 'melody' : null;
+  const winOffset = exactWon ? 0 : attempts.reduce((offset, attempt) =>
+    transpositionOffset(attempt.notes, TARGET) ?? offset, 0,
+  );
+  const finalMelodyNotes = MELODY_FINAL.flatMap((note) => note.midi === null ? [] : [note.midi]);
+  const winMelodyNotes = finalMelodyNotes.map((midi) => midi + winOffset);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -102,15 +112,16 @@ function Brodle() {
       if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select'))) return;
       event.preventDefault();
       stopAudio();
-      setGuess((previous) => previous.slice(0, -1));
+      updateProgress((previous) => isFinished(previous) ? previous : { ...previous, guess: previous.guess.slice(0, -1) });
     }
     window.addEventListener('keydown', handleBackspace);
     return () => window.removeEventListener('keydown', handleBackspace);
-  }, [finished, stopAudio]);
+  }, [finished, stopAudio, updateProgress]);
 
   function addNote(midi: number) {
     if (finished) return;
-    setGuess((previous) => previous.length < TARGET.length ? [...previous, midi] : previous);
+    updateProgress((previous) => isFinished(previous) || previous.guess.length >= TARGET.length
+      ? previous : { ...previous, guess: [...previous.guess, midi] });
   }
 
   function keyHandlers(midi: number): ButtonHTMLAttributes<HTMLButtonElement> {
@@ -143,49 +154,46 @@ function Brodle() {
       onClick: (event) => {
         // Assistive technology can activate a button without pointer/key events.
         if (event.detail !== 0) return;
-        void playNotes([midi], null);
+        void playNotes([midi], null, [{ midi, beats: 1 }]);
         addNote(midi);
       },
     };
   }
 
-  function togglePlayback(notes: readonly number[], id: string, rhythm?: readonly { beats: number }[]) {
+  function togglePlayback(notes: readonly number[], id: string, rhythm?: readonly Pick<MelodyStep, 'midi' | 'beats'>[]) {
     if (playing === id) stopAudio();
     else void playNotes(notes, id, rhythm);
   }
 
   function editGuess(notes: number[]) {
     stopAudio();
-    setGuess(notes);
+    updateProgress((previous) => isFinished(previous) ? previous : { ...previous, guess: notes });
   }
 
   function submitGuess() {
     if (guess.length !== TARGET.length || finished) return;
-    const attempt: Attempt = { notes: [...guess], feedback: scoreGuess(guess, TARGET) };
+    const { previous, next } = updateProgress((saved) => {
+      if (saved.guess.length !== TARGET.length || isFinished(saved)) return saved;
+      const attempt: Attempt = { notes: [...saved.guess], feedback: scoreGuess(saved.guess, TARGET) };
+      return { guess: [], attempts: [...saved.attempts, attempt], selectedAttempt: saved.attempts.length };
+    });
+    if (previous === next) return;
+    const attempt = next.attempts[next.selectedAttempt];
     clearShare();
-    setAttempts((previous) => [...previous, attempt]);
-    setSelectedAttempt(attempts.length);
-    setGuess([]);
-    if (attempt.feedback.every((feedback) => feedback === 'correct')) {
-      void playNotes(finalMelodyNotes, 'final', MELODY_FINAL);
+    const offset = transpositionOffset(attempt.notes, TARGET);
+    if (offset !== null || attempt.feedback.every((feedback) => feedback === 'correct')) {
+      if (offset === null) setCelebration('exact');
+      else if (!previous.attempts.some((entry) => transpositionOffset(entry.notes, TARGET) !== null)) setCelebration('melody');
+      void playNotes(finalMelodyNotes.map((midi) => midi + (offset ?? 0)), 'final', MELODY_FINAL);
     } else {
-      void playNotes(attempt.notes, `attempt-${attempts.length}`);
+      void playNotes(attempt.notes, `attempt-${next.selectedAttempt}`);
     }
-  }
-
-  function restart() {
-    stopAudio();
-    clearShare();
-    setAudioError('');
-    setGuess([]);
-    setAttempts([]);
-    setSelectedAttempt(0);
   }
 
   function selectAttempt(index: number) {
     if (index === selectedAttempt || index < 0 || index >= attempts.length) return;
     stopAudio();
-    setSelectedAttempt(index);
+    updateProgress((previous) => ({ ...previous, selectedAttempt: index }));
   }
 
   function clearShare() {
@@ -233,22 +241,24 @@ function Brodle() {
   }
 
   const visibleAttempt = attempts[selectedAttempt];
+  const visibleKey = notationKey(visibleAttempt?.notes ?? []);
+  const guessKey = notationKey(guess);
   const visibleAttemptId = 'attempt-' + selectedAttempt;
   const isAttemptPlaying = playing === visibleAttemptId;
   const isTransposedAttempt = visibleAttempt ? transpositionOffset(visibleAttempt.notes, TARGET) !== null : false;
-  const winPlaybackId = exactWon ? 'final' : 'win-pitch';
+  const winPlaybackId = 'final';
   const isWinPlaying = playing === winPlaybackId;
   const winCount = (exactWon ? exactWinIndex : melodyWinIndex) + 1;
   const shareLabel = sharing ? 'Sharing…' : shareStatus === 'Copied!' || shareStatus === 'Shared!' ? shareStatus : 'Share';
   const message = exactWon
     ? 'You found the tune in ' + winCount + (winCount === 1 ? ' attempt!' : ' attempts!')
     : won
-      ? 'You won in ' + winCount + (winCount === 1 ? ' attempt' : ' attempts') + ', but can you guess on the correct pitch?'
+      ? 'You won in ' + winCount + (winCount === 1 ? ' attempt' : ' attempts') + ' with the correct melody at a shifted pitch!'
       : 'Attempt ' + (attempts.length + 1) + '. Enter ' + TARGET.length + ' notes. Unlimited attempts.';
 
   return (
     <div className="brodle-page">
-      {celebration && <WinConfetti key={celebration} />}
+      {celebration && <WinConfetti key={celebration} variant={celebration} />}
       <main className="brodle-content brodle-main">
         <header className="brodle-header">
           <div className="brodle-brand">
@@ -260,9 +270,6 @@ function Brodle() {
           </div>
           <nav className="brodle-header-actions" aria-label="Game navigation">
             <Link to="/" className="brodle-home" aria-label="Back to home" title="Home"><BrodleIcon name="home" /><span>Home</span></Link>
-            <button type="button" className="brodle-button ghost-button" onClick={restart}>
-              <BrodleIcon name="restart" /><span>Restart</span>
-            </button>
           </nav>
         </header>
 
@@ -272,21 +279,21 @@ function Brodle() {
             <section className={'win-section' + (exactWon ? ' win-exact' : '')} aria-labelledby="win-title">
               <div className="win-emblem"><BrodleIcon name={exactWon ? 'check' : 'sparkle'} size={28} /></div>
               <div className="win-copy">
-                <p className="win-eyebrow">{exactWon ? 'Perfect pitch. You did it!' : 'Melody found!'}</p>
+                <p className="win-eyebrow">{exactWon ? 'Perfect pitch. You did it!' : 'Correct melody. Shifted pitch!'}</p>
                 <h2 id="win-title">{CHALLENGE.title}</h2>
                 <p className="song-source">{CHALLENGE.source}</p>
                 <p className="win-result">
                   Solved in <strong>{winCount}</strong> {winCount === 1 ? 'attempt' : 'attempts'}.
-                  {!exactWon && <span className="melody-hint"> But can you guess on the correct pitch?</span>}
+                  {!exactWon && <span className="melody-hint">Find the exact pitch for a bigger celebration.</span>}
                 </p>
               </div>
               <div className="win-actions game-controls">
                 <button type="button" className="primary-button"
-                  aria-label={isWinPlaying ? 'Stop melody' : exactWon ? 'Play full melody' : 'Play melody at the correct pitch'}
-                  onClick={() => togglePlayback(exactWon ? finalMelodyNotes : TARGET, winPlaybackId, exactWon ? MELODY_FINAL : undefined)}>
+                  aria-label={isWinPlaying ? 'Stop melody' : exactWon ? 'Play full melody' : 'Play full melody at your shifted pitch'}
+                  onClick={() => togglePlayback(winMelodyNotes, winPlaybackId, MELODY_FINAL)}>
                   <BrodleIcon name={isWinPlaying ? 'stop' : 'play'} />{isWinPlaying ? 'Stop melody' : 'Play melody'}
                 </button>
-                <button type="button" disabled={sharing} aria-label="Share results"
+                <button type="button" disabled={sharing} aria-label={exactWon ? 'Share exact-pitch result' : 'Share shifted-melody result'}
                   title="Share the latest four attempts" onClick={() => void shareResults()}>
                   <BrodleIcon name={shareStatus === 'Copied!' || shareStatus === 'Shared!' ? 'check' : 'share'} />{shareLabel}
                 </button>
@@ -313,6 +320,7 @@ function Brodle() {
           )}
 
           {audioError && soundStatus !== 'error' && <p role="alert" className="audio-error">{audioError}</p>}
+          {storageError && <p role="status" className="progress-error">Your progress couldn’t be saved in this browser. Keep this tab open to avoid losing it.</p>}
 
           {visibleAttempt && (
             <section className="attempt-history brodle-panel" aria-labelledby="history-heading">
@@ -335,7 +343,9 @@ function Brodle() {
                   <button key={index} type="button" role="tab" id={'attempt-tab-' + index}
                     data-attempt={index} aria-selected={selectedAttempt === index} aria-controls="attempt-panel"
                     tabIndex={selectedAttempt === index ? 0 : -1} onClick={() => selectAttempt(index)}>
-                    {attempt.feedback.every((value) => value === 'correct') && <BrodleIcon name="check" size={13} />}
+                    {attempt.feedback.every((value) => value === 'correct' || value === 'shifted') && (
+                      <BrodleIcon name={transpositionOffset(attempt.notes, TARGET) !== null ? 'music' : 'check'} size={13} />
+                    )}
                     Attempt {index + 1}
                   </button>
                 ))}
@@ -361,14 +371,15 @@ function Brodle() {
                     <BrodleIcon name={isAttemptPlaying ? 'stop' : 'play'} />{isAttemptPlaying ? 'Stop' : 'Replay'}
                   </button>
                 </div>
-                <SheetMusic abc={toAbc(visibleAttempt.notes, noteNaming)} feedback={visibleAttempt.feedback}
+                <SheetMusic abc={toAbc(visibleAttempt.notes, noteNaming, MELODY, visibleKey)} feedback={visibleAttempt.feedback}
+                  musicalKey={visibleKey} naming={noteNaming}
                   label={notationLabel(visibleAttempt.notes, noteNaming, visibleAttempt.feedback)} />
               </div>
               <ul className="feedback-legend" aria-label="Feedback rules">
                 <li className="feedback-pill feedback-correct"><BrodleIcon name="check" size={13} />Correct</li>
                 <li className="feedback-pill feedback-low" title="Too low. Try a higher note"><BrodleIcon name="up" size={13} />Too low</li>
                 <li className="feedback-pill feedback-high" title="Too high. Try a lower note"><BrodleIcon name="down" size={13} />Too high</li>
-                <li className="feedback-pill feedback-shifted" title="Right melody in a different pitch"><BrodleIcon name="music" size={13} />Shifted pitch</li>
+                <li className="feedback-pill feedback-shifted" title="Correct melody at a shifted pitch"><BrodleIcon name="music" size={13} />Correct · shifted</li>
               </ul>
             </section>
           )}
@@ -379,7 +390,8 @@ function Brodle() {
                 <h2>Your guess</h2>
                 <span className="note-count">{guess.length}<span> / {TARGET.length} notes</span></span>
               </div>
-              <SheetMusic abc={toAbc(guess, noteNaming)} label={notationLabel(guess, noteNaming)} />
+              <SheetMusic abc={toAbc(guess, noteNaming, MELODY, guessKey)} musicalKey={guessKey} naming={noteNaming}
+                label={notationLabel(guess, noteNaming)} />
               <div className="game-controls guess-actions">
                 <button type="button" className={'play-guess' + (playing === 'current' ? ' is-playing' : '')} disabled={!guess.length}
                   aria-label={playing === 'current' ? 'Stop current guess' : 'Play current guess'}

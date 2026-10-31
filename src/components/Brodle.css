@@ -65,9 +65,10 @@
 .tune-tip > svg { color: var(--accent); }
 .tune-tip > span { color: var(--muted); }
 .tune-tip > strong { font-weight: 500; color: #d4dbea; }
-.audio-error { margin: 0; padding: 12px 16px; border: 1px solid #633143; border-radius: 9px; color: #fda4af; background: #331d29; font-size: .8rem; line-height: 1.6; }
+.audio-error, .progress-error { margin: 0; padding: 12px 16px; border: 1px solid #633143; border-radius: 9px; color: #fda4af; background: #331d29; font-size: .8rem; line-height: 1.6; }
 
 .win-section { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 20px; padding: 27px; border: 1px solid #4b3f6a; border-radius: 16px; background: radial-gradient(ellipse at 0 0, #322746 0, transparent 70%), #1a1d28; }
+.win-section.win-exact { border-color: #4d8664; background: radial-gradient(ellipse at 0 0, #244935 0, transparent 70%), #1a1d28; box-shadow: 0 0 36px #4ade8018; }
 .win-emblem { display: grid; width: 58px; height: 58px; place-items: center; border: 1px solid #6c549c; border-radius: 50%; background: #35294e; color: #d8c7ff; box-shadow: 0 0 35px #a78bfa14; }
 .win-exact .win-emblem { border-color: #3d7866; background: #203c35; color: #86efac; box-shadow: 0 0 35px #4ade8014; }
 .win-copy { min-width: 0; }
@@ -110,12 +111,14 @@
 
 .note-count { color: var(--text); font-size: .75rem; font-variant-numeric: tabular-nums; }
 .note-count > span { color: var(--muted); }
-.piano-sheet { width: min(100%, 760px); min-height: 124px; margin: 8px auto 12px; color: #e2e8f0; }
+.piano-sheet { position: relative; width: min(100%, 760px); min-height: 124px; margin: 8px auto 12px; color: #e2e8f0; }
+.sheet-key { position: absolute; top: 16px; right: 16px; color: #aab9cd; font-size: .7rem; line-height: 1.4; }
+.sheet-key strong { color: #dbe3f0; font-weight: 550; }
 .piano-sheet svg { display: block; width: 100%; min-width: 0; }
 .piano-sheet .abcjs-staff { fill: #68758a; }
 .piano-sheet .abcjs-annotation { fill: #aab9cd; }
-.piano-sheet :is(.feedback-correct, .feedback-low, .feedback-high),
-.piano-sheet :is(.feedback-correct, .feedback-low, .feedback-high) * { fill: var(--feedback-color) !important; color: var(--feedback-color) !important; }
+.piano-sheet :is(.feedback-correct, .feedback-shifted, .feedback-low, .feedback-high),
+.piano-sheet :is(.feedback-correct, .feedback-shifted, .feedback-low, .feedback-high) * { fill: var(--feedback-color) !important; color: var(--feedback-color) !important; }
 .guess-actions { padding-top: 14px; border-top: 1px solid var(--border); }
 .brodle-page .game-controls .clear-guess { border-color: transparent; background: transparent; color: var(--muted); }
 .brodle-page .submit-guess { margin-left: auto; }
@@ -163,6 +166,9 @@
 .confetti-piece { position: absolute; top: -20px; width: 8px; height: 14px; border-radius: 2px; opacity: 0; animation: brodle-confetti-fall ease-in both; }
 .confetti-piece:nth-child(3n) { width: 10px; height: 10px; border-radius: 50%; }
 .confetti-piece:nth-child(4n) { width: 5px; height: 16px; }
+.win-confetti-exact .confetti-piece { width: 11px; height: 18px; }
+.win-confetti-exact .confetti-piece:nth-child(3n) { width: 15px; height: 15px; }
+.win-confetti-exact .confetti-piece:nth-child(4n) { width: 7px; height: 22px; }
 @keyframes brodle-confetti-fall {
   0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); }
   10%, 80% { opacity: 1; }
