@@ -74,6 +74,9 @@
 .win-copy { min-width: 0; }
 .win-eyebrow { margin: 0 0 7px; color: #cbb7ff; font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
 .win-exact .win-eyebrow { color: #86efac; }
+.win-octave { border-color: #3e6984; }
+.win-octave .win-emblem { border-color: #3e6984; background: #203647; color: #7dd3fc; }
+.win-octave .win-eyebrow, .win-octave .melody-hint, .attempt-summary.octave-result { color: #7dd3fc; }
 .win-section h2 { margin: 0; font-size: clamp(1.3rem, 3.5vw, 1.8rem); font-weight: 750; line-height: 1.2; letter-spacing: -.035em; }
 .song-source { margin: 5px 0 0; color: #aaa9c0; font-size: .75rem; }
 .win-result { margin: 13px 0 0; color: #c5cadd; font-size: .8rem; line-height: 1.7; }
@@ -104,6 +107,7 @@
 .brodle-page .feedback-low { --feedback-color: #fcd34d; --feedback-bg: #fbbf2412; --feedback-border: #fbbf2438; }
 .brodle-page .feedback-high { --feedback-color: #fda4af; --feedback-bg: #fb718512; --feedback-border: #fb718538; }
 .brodle-page .feedback-shifted { --feedback-color: #c4b5fd; --feedback-bg: #a78bfa12; --feedback-border: #a78bfa38; }
+.brodle-page .feedback-octave { --feedback-color: #7dd3fc; --feedback-bg: #38bdf812; --feedback-border: #38bdf838; }
 .feedback-dot, .feedback-pill { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--feedback-border); background: var(--feedback-bg); color: var(--feedback-color); }
 .feedback-dot { width: 25px; height: 25px; border-radius: 6px; }
 .feedback-legend { display: flex; flex-wrap: wrap; gap: 7px; margin: 6px 0 0; padding: 0; list-style: none; }
@@ -117,8 +121,8 @@
 .piano-sheet svg { display: block; width: 100%; min-width: 0; }
 .piano-sheet .abcjs-staff { fill: #68758a; }
 .piano-sheet .abcjs-annotation { fill: #aab9cd; }
-.piano-sheet :is(.feedback-correct, .feedback-shifted, .feedback-low, .feedback-high),
-.piano-sheet :is(.feedback-correct, .feedback-shifted, .feedback-low, .feedback-high) * { fill: var(--feedback-color) !important; color: var(--feedback-color) !important; }
+.piano-sheet :is(.feedback-correct, .feedback-octave, .feedback-shifted, .feedback-low, .feedback-high),
+.piano-sheet :is(.feedback-correct, .feedback-octave, .feedback-shifted, .feedback-low, .feedback-high) * { fill: var(--feedback-color) !important; color: var(--feedback-color) !important; }
 .guess-actions { padding-top: 14px; border-top: 1px solid var(--border); }
 .brodle-page .game-controls .clear-guess { border-color: transparent; background: transparent; color: var(--muted); }
 .brodle-page .submit-guess { margin-left: auto; }

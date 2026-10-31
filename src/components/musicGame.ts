@@ -1,4 +1,5 @@
-export type Feedback = 'correct' | 'shifted' | 'low' | 'high';
+export type Feedback = 'correct' | 'octave' | 'shifted' | 'low' | 'high';
+export type WinKind = 'exact' | 'octave' | 'shifted';
 export type Attempt = { notes: number[]; feedback: Feedback[] };
 export type NoteNaming = 'letters' | 'solfege';
 export type MelodyStep = { midi: number | null; length: string; beats: number; rhythm: string };
@@ -14,6 +15,7 @@ const KEY_SIGNATURES = {
 } as const;
 export type MusicalKey = keyof typeof KEY_SIGNATURES;
 // ABC key names: 'C' = C major, 'G' = G major, 'Am' = A minor, etc.
+// MIDI pitches stay literal: in F major, 70 is B-flat and 71 is B natural.
 export const KEY: MusicalKey = 'C';
 
 export const CHALLENGE = {
@@ -119,10 +121,18 @@ export function transpositionOffset(guess: readonly number[], target: readonly n
   return offset !== 0 && guess.every((note, i) => note - target[i] === offset) ? offset : null;
 }
 
+export function getWinKind(guess: readonly number[], target: readonly number[]): WinKind | null {
+  if (!guess.length || guess.length !== target.length) return null;
+  if (guess.every((note, index) => note === target[index])) return 'exact';
+  const offset = transpositionOffset(guess, target);
+  return offset === null ? null : offset % 12 === 0 ? 'octave' : 'shifted';
+}
+
 export function scoreGuess(guess: readonly number[], target: readonly number[]): Feedback[] {
   if (guess.length !== target.length) throw new Error('A guess must match the target length.');
   // A consistent transposition is a correct melody in a different pitch.
-  if (transpositionOffset(guess, target) !== null) return guess.map(() => 'shifted');
+  const kind = getWinKind(guess, target);
+  if (kind === 'octave' || kind === 'shifted') return guess.map(() => kind);
   return guess.map((note, i) => {
     if (note === target[i]) return 'correct';
     return note < target[i] ? 'low' : 'high';
@@ -130,27 +140,32 @@ export function scoreGuess(guess: readonly number[], target: readonly number[]):
 }
 
 export function buildShareText(attempts: readonly Attempt[], target: readonly number[], url: string): string {
-  const symbols: Record<Feedback, string> = { correct: '✓', shifted: '♪', low: '↑', high: '↓' };
+  const symbols: Record<Feedback, string> = { correct: '✓', octave: '↕', shifted: '♪', low: '↑', high: '↓' };
   const recent = attempts.slice(-4);
   const start = attempts.length - recent.length;
   const exactWin = attempts.findIndex((attempt) => attempt.feedback.every((value) => value === 'correct'));
-  const melodyWin = attempts.findIndex((attempt) => transpositionOffset(attempt.notes, target) !== null);
+  const octaveWin = attempts.findIndex((attempt) => getWinKind(attempt.notes, target) === 'octave');
+  const melodyWin = attempts.findIndex((attempt) => getWinKind(attempt.notes, target) === 'shifted');
   const count = (value: number) => `${value} ${value === 1 ? 'attempt' : 'attempts'}`;
   const summary = exactWin !== -1
     ? `Exact pitch found in ${count(exactWin + 1)}!`
-    : melodyWin !== -1
-      ? `Melody found in ${count(melodyWin + 1)} — shifted pitch!`
-      : `${count(attempts.length)} so far`;
-  const shifted = recent.some((attempt) => transpositionOffset(attempt.notes, target) !== null);
+    : octaveWin !== -1
+      ? `Melody found in ${count(octaveWin + 1)} — different octave!`
+      : melodyWin !== -1
+        ? `Melody found in ${count(melodyWin + 1)} — shifted pitch!`
+        : `${count(attempts.length)} so far`;
+  const shifted = recent.some((attempt) => getWinKind(attempt.notes, target) === 'shifted');
+  const octave = recent.some((attempt) => getWinKind(attempt.notes, target) === 'octave');
 
   return [
-    `Brodle${exactWin !== -1 ? ' 🎉' : melodyWin !== -1 ? ' ♪' : ''}`,
+    `Brodle${exactWin !== -1 ? ' 🎉' : octaveWin !== -1 ? ' ↕' : melodyWin !== -1 ? ' ♪' : ''}`,
     summary, `Latest ${recent.length} of ${count(attempts.length)}:`,
     ...recent.map((attempt, index) =>
       `${start + index + 1}. ${attempt.feedback.map((value) => symbols[value]).join('')}`,
     ),
     '', '✓ exact pitch · ↑ play higher · ↓ play lower',
     ...(shifted ? ['♪ correct melody, shifted pitch'] : []),
+    ...(octave ? ['↕ correct melody, different octave'] : []),
     url,
   ].join('\n');
 }
