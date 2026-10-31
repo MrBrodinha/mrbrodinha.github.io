@@ -1,8 +1,9 @@
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import Mvg from './components/Mvg';
-import Redbull from './components/Redbull';
-import Piano from './components/Piano';
+// Keep Redbull.tsx out of the browser bundle while the ratings page is paused.
+import RedbullUnavailable from './components/RedbullUnavailable';
+import Brodle from './components/Brodle';
 import './App.css';
 
 function App() {
@@ -11,8 +12,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/mvg" element={<Mvg />} />
-        <Route path="/redbull" element={<Redbull />} />
-        <Route path="/piano" element={<Piano />} />
+        <Route path="/redbull/*" element={<RedbullUnavailable />} />
+        <Route path="/brodle" element={<Brodle />} />
+        <Route path="/piano" element={<Navigate to="/brodle" replace />} />
       </Routes>
     </div>
   );

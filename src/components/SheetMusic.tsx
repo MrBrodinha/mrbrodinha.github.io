@@ -22,7 +22,7 @@ function SheetMusic({ abc, feedback, label = 'Musical notation' }: SheetMusicPro
       staffwidth: 600,
       paddingleft: 15,
       paddingright: 15,
-      format: { stretchlast: 1 },
+      format: { stretchlast: 1, annotationfont: 'Helvetica 8' },
     });
 
     // The challenge has one rendered note per guessed pitch.

@@ -16,11 +16,11 @@ function Home() {
     <main className="home-page" style={{ background }}>
       <h1 className="home-title" aria-label="mrbrodinha">
         <Link className="mvg-letter" to="/mvg" aria-label="Open the MVG page" title="MVG">m</Link>
-        <Link className="redbull-letter" to="/redbull" aria-label="Open the Red Bull ratings" title="Red Bull ratings">r</Link>
-        <span>b</span>
-        <Link className="redbull-letter" to="/redbull" aria-label="Open the Red Bull ratings" title="Red Bull ratings">r</Link>
+        <span>r</span>
+        <Link className="brodle-letter" to="/brodle" aria-label="Open Brodle" title="Brodle">b</Link>
+        <span>r</span>
         <span>odinh</span>
-        <Link className="piano-letter" to="/piano" aria-label="Open the Piano" title="Piano">a</Link>
+        <span>a</span>
       </h1>
     </main>
   );

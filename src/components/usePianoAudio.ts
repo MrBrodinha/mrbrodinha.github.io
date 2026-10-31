@@ -209,7 +209,9 @@ export function usePianoAudio() {
     return voice;
   }, []);
 
-  const playNotes = useCallback(async (notes: readonly number[], id: string | null) => {
+  const playNotes = useCallback(async (
+    notes: readonly number[], id: string | null, rhythm: readonly { beats: number }[] = MELODY,
+  ) => {
     stopAudio();
     if (!notes.length) return;
     const request = playbackRequest.current;
@@ -220,7 +222,7 @@ export function usePianoAudio() {
       if (request !== playbackRequest.current || context.state === 'closed') return;
       let time = context.currentTime + .03;
       notes.forEach((midi, index) => {
-        const duration = MELODY[index].beats * .5;
+        const duration = rhythm[index].beats * .5;
         const voice = createVoice(context, output, instrument, midi, time, duration);
         sequenceVoices.current.add(voice);
         time += duration;

@@ -10,6 +10,19 @@ export const MELODY = [
   { midi: 69, length: '1', beats: 1, rhythm: 'Quarter note' },
   { midi: 69, length: '1', beats: 1, rhythm: 'Quarter note' },
 ];
+
+export const MELODY_FINAL = [
+  { midi: 72, length: '1', beats: 1, rhythm: 'Quarter note' },
+  { midi: 74, length: '3/4', beats: .75, rhythm: 'Dotted eighth note' },
+  { midi: 72, length: '/4', beats: .25, rhythm: 'Sixteenth note' },
+  { midi: 69, length: '1', beats: 1, rhythm: 'Quarter note' },
+  { midi: 69, length: '1', beats: 1, rhythm: 'Quarter note' },
+  { midi: 69, length: '3/4', beats: .75, rhythm: 'Dotted eighth note' },
+  { midi: 67, length: '/4', beats: .25, rhythm: 'Sixteenth note' },
+  { midi: 69, length: '3/4', beats: .75, rhythm: 'Dotted eighth note' },
+  { midi: 70, length: '/4', beats: .25, rhythm: 'Sixteenth note' },
+  { midi: 69, length: '1', beats: 1, rhythm: 'Quarter note' },
+];
 export const TARGET = MELODY.map((note) => note.midi);
 const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
 const SOLFEGE_NAMES = ['Dó', 'Dó#', 'Ré', 'Mib', 'Mi', 'Fá', 'Fá#', 'Sol', 'Sol#', 'Lá', 'Sib', 'Si'];
@@ -59,7 +72,7 @@ export function buildShareText(attempts: readonly Attempt[], target: readonly nu
   ].join('\n');
 }
 
-export function toAbc(notes: readonly number[]): string {
+export function toAbc(notes: readonly number[], naming: NoteNaming = 'letters'): string {
   const altered = new Set<string>();
   const tokens: string[] = [];
   let beatsInBar = 0;
@@ -83,7 +96,7 @@ export function toAbc(notes: readonly number[]): string {
       accidental = '=';
       altered.delete(pitch);
     }
-    tokens.push(`${accidental}${letter}${suffix}${length}`);
+    tokens.push(`"_${noteName(midi, naming)}"${accidental}${letter}${suffix}${length}`);
     beatsInBar += beats;
   });
   // No future durations are visible. An invisible spacer draws an empty staff.

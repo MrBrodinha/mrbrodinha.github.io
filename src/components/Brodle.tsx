@@ -7,17 +7,18 @@ import { usePianoAudio } from './usePianoAudio';
 import { PIANO_SOUNDS } from './pianoSounds';
 import type { PianoSound } from './pianoSounds';
 import {
-  TARGET, whiteKeys, blackKeys, noteName, scoreGuess, toAbc,
+  MELODY_FINAL, TARGET, whiteKeys, blackKeys, noteName, scoreGuess, toAbc,
   transpositionOffset, buildShareText,
 } from './musicGame';
 import type { Attempt, Feedback, NoteNaming } from './musicGame';
-import './Piano.css';
+import './Brodle.css';
 
 const labels: Record<Feedback, string> = {
   correct: 'Correct pitch and position',
   low: 'Too low. Try a higher note',
   high: 'Too high. Try a lower note',
 };
+const finalMelodyNotes = MELODY_FINAL.map((note) => note.midi);
 
 function attemptSummary(attempt: Attempt): string {
   const offset = transpositionOffset(attempt.notes, TARGET);
@@ -35,7 +36,7 @@ function notationLabel(notes: readonly number[], naming: NoteNaming, feedback?: 
   ).join('. ');
 }
 
-function Piano() {
+function Brodle() {
   const { sound, setSound, soundStatus, soundProgress, retrySound,
     volume, setVolume, playing, audioError, setAudioError, pressedNotes,
     playNotes, startNote, releaseNote, stopAudio } = usePianoAudio();
@@ -56,6 +57,12 @@ function Piano() {
   const won = melodyWinIndex !== -1;
   const finished = exactWon;
   const celebration = exactWon ? 'exact' : won ? 'melody' : null;
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = 'Brodle · MrBrodinha';
+    return () => { document.title = previousTitle; };
+  }, []);
 
   useEffect(() => () => { shareRequest.current += 1; }, []);
 
@@ -113,9 +120,9 @@ function Piano() {
     };
   }
 
-  function togglePlayback(notes: readonly number[], id: string) {
+  function togglePlayback(notes: readonly number[], id: string, rhythm?: readonly { beats: number }[]) {
     if (playing === id) stopAudio();
-    else void playNotes(notes, id);
+    else void playNotes(notes, id, rhythm);
   }
 
   function editGuess(notes: number[]) {
@@ -130,7 +137,11 @@ function Piano() {
     setAttempts((previous) => [...previous, attempt]);
     setSelectedAttempt(attempts.length);
     setGuess([]);
-    void playNotes(attempt.notes, `attempt-${attempts.length}`);
+    if (attempt.feedback.every((feedback) => feedback === 'correct')) {
+      void playNotes(finalMelodyNotes, 'final', MELODY_FINAL);
+    } else {
+      void playNotes(attempt.notes, `attempt-${attempts.length}`);
+    }
   }
 
   function restart() {
@@ -156,12 +167,12 @@ function Piano() {
   }
 
   async function shareResults() {
-    if (!attempts.length || sharing) return;
+    if (!won || sharing) return;
     const request = ++shareRequest.current;
     const current = () => request === shareRequest.current;
     const count = Math.min(4, attempts.length);
     const detail = `the latest ${count} ${count === 1 ? 'attempt' : 'attempts'}`;
-    const text = buildShareText(attempts, TARGET, `${window.location.origin}${window.location.pathname}`);
+    const text = buildShareText(attempts, TARGET, `${window.location.origin}/brodle`);
     const data = { title: 'Brodle', text };
     setSharing(true);
     setShareStatus('');
@@ -200,6 +211,7 @@ function Piano() {
   const isTransposedAttempt = visibleAttempt ? transpositionOffset(visibleAttempt.notes, TARGET) !== null : false;
   const correctPitchId = `correct-pitch-${selectedAttempt}`;
   const isCorrectPitchPlaying = playing === correctPitchId;
+  const isFinalMelodyPlaying = playing === 'final';
   const message = exactWon
     ? `You found the tune in ${exactWinIndex + 1} ${exactWinIndex === 0 ? 'attempt' : 'attempts'}!`
     : won
@@ -207,25 +219,46 @@ function Piano() {
       : `Attempt ${attempts.length + 1}. Enter ${TARGET.length} notes. Unlimited attempts.`;
 
   return (
-    <main className="piano-page">
+    <main className="brodle-page">
       {celebration && <WinConfetti key={celebration} />}
-      <div className="piano-content">
-        <Link to="/" className="piano-home">← Home</Link>
-        <header className="piano-header">
-          <div>
-            <h1>Brodle</h1>
-            <p>Find the melody. We’ll take care of the rhythm.</p>
+      <div className="brodle-content">
+        <Link to="/" className="brodle-home">← Home</Link>
+        <header className="brodle-header">
+          <div className="brodle-brand">
+            <span className="brodle-mark" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none">
+                <rect x="6" y="7" width="28" height="27" rx="4" fill="currentColor" />
+                <path d="M15 8V33M25 8V33" stroke="#6d4b91" strokeWidth="1.5" />
+                <path d="M13 7H17V22H13ZM23 7H27V22H23Z" fill="#332440" />
+              </svg>
+            </span>
+            <div>
+              <p className="brodle-kicker">The melody game</p>
+              <h1>Brodle</h1>
+              <p className="brodle-subtitle">Find the melody. We’ll take care of the rhythm.</p>
+            </div>
           </div>
           <div className="game-controls">
             <button type="button" onClick={restart}>Restart</button>
           </div>
         </header>
+      </div>
+
+      <div className="brodle-content brodle-workspace">
         <p className="tune-tip">Tip: freddy jumpscare in fnaf 1</p>
         {audioError && <p role="alert" className="audio-error">{audioError}</p>}
 
         <p className={`game-status${won ? ' game-status-won' : ''}`} role="status">
           {message}
         </p>
+        {exactWon && (
+          <div className="game-controls final-melody-playback">
+            <button type="button" aria-label={isFinalMelodyPlaying ? 'Stop full melody' : 'Play full melody'}
+              onClick={() => togglePlayback(finalMelodyNotes, 'final', MELODY_FINAL)}>
+              {isFinalMelodyPlaying ? '■ Stop melody' : '▶ Play full melody'}
+            </button>
+          </div>
+        )}
         {won && !exactWon && (
           <p className="melody-hint">
             Correct-pitch challenge: attempt {attempts.length + 1}. Keep the same intervals and try a different starting note.
@@ -237,8 +270,8 @@ function Piano() {
             <h2 id="history-heading">Your attempts</h2>
             <div className="game-controls history-actions">
               <span className="attempt-count">{attempts.length} submitted</span>
-              <button type="button" disabled={!attempts.length || sharing} aria-label="Share results"
-                title="Share only the latest four attempts" onClick={() => void shareResults()}>
+              <button type="button" disabled={!won || sharing} aria-label="Share results"
+                title={won ? 'Share only the latest four attempts' : 'Win to share your results'} onClick={() => void shareResults()}>
                 {sharing ? 'Sharing…' : 'Share'}
               </button>
             </div>
@@ -293,7 +326,7 @@ function Piano() {
                     </button>
                   </div>
                 </div>
-                <SheetMusic abc={toAbc(visibleAttempt.notes)} feedback={visibleAttempt.feedback}
+                <SheetMusic abc={toAbc(visibleAttempt.notes, noteNaming)} feedback={visibleAttempt.feedback}
                   label={notationLabel(visibleAttempt.notes, noteNaming, visibleAttempt.feedback)} />
                 {isTransposedAttempt && (
                   <div className="game-controls correct-pitch-playback">
@@ -323,7 +356,7 @@ function Piano() {
               <h2>Your guess</h2>
               <span className="note-count">{guess.length} / {TARGET.length} notes</span>
             </div>
-            <SheetMusic abc={toAbc(guess)} label={notationLabel(guess, noteNaming)} />
+            <SheetMusic abc={toAbc(guess, noteNaming)} label={notationLabel(guess, noteNaming)} />
             <div className="game-controls guess-actions">
               <button type="button" className="play-guess" disabled={!guess.length}
                 aria-label={playing === 'current' ? 'Stop current guess' : 'Play current guess'}
@@ -405,4 +438,4 @@ function Piano() {
   );
 }
 
-export default Piano;
+export default Brodle;
