@@ -38,6 +38,8 @@ export function usePianoAudio() {
   const sequenceVoices = useRef(new Set<Voice>());
   const heldNotes = useRef(new Map<string, HeldNote>());
   const playbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visualTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const sequenceNote = useRef<number | null>(null);
   const playbackRequest = useRef(0);
   const audioGeneration = useRef(0);
   const nextVoiceId = useRef(0);
@@ -52,17 +54,23 @@ export function usePianoAudio() {
   const [pressedNotes, setPressedNotes] = useState<Set<number>>(new Set());
 
   const updatePressedNotes = useCallback(() => {
-    setPressedNotes(new Set([...heldNotes.current.values()].map((note) => note.midi)));
+    const notes = new Set([...heldNotes.current.values()].map((note) => note.midi));
+    if (sequenceNote.current !== null) notes.add(sequenceNote.current);
+    setPressedNotes(notes);
   }, []);
 
   const stopSequence = useCallback(() => {
     playbackRequest.current += 1;
     if (playbackTimer.current) clearTimeout(playbackTimer.current);
     playbackTimer.current = null;
+    visualTimers.current.forEach(clearTimeout);
+    visualTimers.current.clear();
+    sequenceNote.current = null;
+    updatePressedNotes();
     sequenceVoices.current.forEach((voice) => voice.stop());
     sequenceVoices.current.clear();
     setPlaying(null);
-  }, []);
+  }, [updatePressedNotes]);
 
   const stopAudio = useCallback(() => {
     audioGeneration.current += 1;
@@ -220,16 +228,29 @@ export function usePianoAudio() {
     try {
       const { context, output, instrument } = await getAudio();
       if (request !== playbackRequest.current || context.state === 'closed') return;
+      const highlight = (midi: number | null, at: number) => {
+        const timer = setTimeout(() => {
+          visualTimers.current.delete(timer);
+          if (request !== playbackRequest.current || context.state === 'closed') return;
+          sequenceNote.current = midi;
+          updatePressedNotes();
+        }, Math.max(0, (at - context.currentTime) * 1000));
+        visualTimers.current.add(timer);
+      };
       let time = context.currentTime + .03;
       notes.forEach((midi, index) => {
         const duration = rhythm[index].beats * .5;
         const voice = createVoice(context, output, instrument, midi, time, duration);
         sequenceVoices.current.add(voice);
+        highlight(midi, time);
+        highlight(null, time + duration * .9);
         time += duration;
       });
       playbackTimer.current = setTimeout(() => {
         if (request !== playbackRequest.current) return;
         playbackTimer.current = null;
+        sequenceNote.current = null;
+        updatePressedNotes();
         setPlaying(null);
       }, (time - context.currentTime) * 1000);
     } catch (error) {
@@ -237,7 +258,7 @@ export function usePianoAudio() {
       stopAudio();
       setAudioError(error instanceof PianoSoundError ? error.message : 'Audio could not start. You can still enter and submit notes.');
     }
-  }, [createVoice, getAudio, stopAudio]);
+  }, [createVoice, getAudio, stopAudio, updatePressedNotes]);
 
   const startNote = useCallback(async (midi: number, source: string) => {
     if (heldNotes.current.has(source)) return;

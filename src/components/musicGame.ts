@@ -2,6 +2,12 @@ export type Feedback = 'correct' | 'low' | 'high';
 export type Attempt = { notes: number[]; feedback: Feedback[] };
 export type NoteNaming = 'letters' | 'solfege';
 
+export const CHALLENGE = {
+  title: 'Freddy’s Jumpscare',
+  source: 'Five Nights at Freddy’s 1',
+  hint: 'freddy jumpscare in fnaf 1',
+};
+
 // Challenge pitches and rhythm. Durations are hints, never guessed or scored.
 export const MELODY = [
   { midi: 72, length: '1', beats: 1, rhythm: 'Quarter note' },
