@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="referrer" content="no-referrer">
     <title>Unity WebGL Player | Projeto_teste</title>
     <link rel="icon" type="image/gif" href="/media/icon.gif">
     <link rel="stylesheet" href="TemplateData/style.css">
@@ -44,7 +45,7 @@
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
         }
         var div = document.createElement('div');
-        div.innerHTML = msg;
+        div.textContent = String(msg);
         warningBanner.appendChild(div);
         if (type == 'error') div.style = 'background: red; padding: 10px;';
         else {
