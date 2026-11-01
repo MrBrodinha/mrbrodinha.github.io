@@ -26,3 +26,23 @@ dist-ssr
 *.sln
 *.sw?
 *.zip
+
+# Private credentials, local database state, and editor/agent credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+*.sql.gz
+*.dump
+.aws/
+.codex/
+.agents/
+__pycache__/
+*.pyc
+.npmrc
+.netrc
+id_rsa
+id_ed25519

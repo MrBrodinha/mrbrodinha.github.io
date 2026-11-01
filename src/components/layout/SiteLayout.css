@@ -1,0 +1,53 @@
+.site-layout {
+  --site-bg: #0f111a; --site-surface: #1a1d28; --site-border: #2a2e3f;
+  --site-text: #cbd5e1; --site-muted: #94a3b8; --site-accent: #c4b5fd;
+  display: flex; flex-direction: column; min-height: 100svh; background: var(--site-bg); color: var(--site-text);
+}
+.site-layout-light { --site-bg: #f4f6fb; --site-surface: #fff; --site-border: #dbe1ee; --site-text: #213253; --site-muted: #596b88; --site-accent: #324f97; }
+.site-header { padding: 20px 24px; border-bottom: 1px solid var(--site-border); background: var(--site-bg); }
+.site-header-inner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px 24px; width: min(1180px, 100%); margin-inline: auto; }
+.site-home-link { grid-column: 1; grid-row: 1; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; color: var(--site-text); font-size: .8rem; font-weight: 700; text-decoration: none; }
+.site-home-link:hover { color: var(--site-accent); }
+.site-home-link span { font-size: 1.1rem; }
+.site-header .account-controls { grid-column: 3; grid-row: 1; justify-self: end; justify-content: flex-end; gap: 7px; min-width: 0; text-align: right; }
+.site-header .account-controls :is(a, button) { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; }
+.site-header .account-controls > [role='alert'] { overflow-wrap: anywhere; }
+.site-header .brodle-library-nav { grid-column: 2; grid-row: 1; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.site-header .brodle-library-nav a { display: inline-flex; align-items: center; min-height: 36px; padding: 8px 10px; border-radius: 8px; color: var(--site-muted); font-size: .74rem; line-height: 1.4; text-decoration: none; }
+.site-header .brodle-library-nav a:hover, .site-header .brodle-library-nav a[aria-current='page'] { background: #c4b5fd14; color: var(--site-accent); }
+.site-header .brodle-library-nav .new-melody-link { color: var(--site-accent); }
+.site-content { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.site-content > :is(.home-page, .mvg-page, .auth-page, .redbull-page, .brodle-page, .route-loading, .wildlife-page) { min-height: 0; flex: 1; }
+.site-content > .home-page { min-height: 420px; }
+.site-content > .auth-page { padding-block: 42px; }
+.site-footer { margin-top: auto; padding: 22px 24px; border-top: 1px solid var(--site-border); background: var(--site-bg); color: var(--site-muted); }
+.site-footer-inner { width: min(1120px, 100%); margin-inline: auto; }
+.site-footer-branding { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px 24px; }
+.site-footer-brand { display: inline-flex; align-items: center; gap: 11px; color: var(--site-text); font-size: .8rem; font-weight: 650; text-decoration: none; }
+.site-footer-face { display: block; flex-shrink: 0; object-fit: contain; }
+.site-github-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid var(--site-border); border-radius: 8px; color: var(--site-muted); font-size: .74rem; text-decoration: none; }
+.site-github-link:hover { border-color: var(--site-accent); color: var(--site-accent); }
+.site-music-credits { max-width: 860px; margin: 16px auto 0; font-size: .64rem; line-height: 1.9; text-align: center; }
+.site-music-credits a { color: inherit; text-decoration-color: #94a3b855; text-underline-offset: 3px; }
+.site-music-credits a:hover { color: var(--site-accent); }
+.site-layout > :is(header, footer) :is(a, button):focus-visible { outline: 2px solid var(--site-accent); outline-offset: 4px; }
+.wildlife-page { display: grid; align-items: center; width: min(1280px, 100%); padding: 24px; margin-inline: auto; }
+.wildlife-player { display: block; width: 100%; height: min(76vh, 780px); border: 1px solid var(--site-border); border-radius: 14px; background: #231f20; }
+@media (max-width: 900px) {
+  .site-header .brodle-library-nav { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (max-width: 700px) {
+  .site-header { padding: 14px 18px; }
+  .site-header-inner { gap: 12px; }
+  .site-header .account-controls { max-width: 160px; }
+  .site-header .brodle-library-nav a { padding-inline: 9px; }
+  .site-footer { padding: 18px; }
+}
+
+/* One continuous landing-page background, including the shared chrome. */
+.site-layout-home { position: relative; isolation: isolate; overflow: hidden; --site-text: #f4eaf5; --site-muted: #e0d2e5; --site-accent: #ffd1e8; }
+.site-layout-home .site-header, .site-layout-home .site-footer { background: transparent; border-color: transparent; }
+.site-layout-home .home-page { background: transparent; }
+.site-layout-home .home-page::before { display: none; }
+.site-layout-home::before { content: ''; position: absolute; z-index: -1; pointer-events: none; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(72vw, 860px); aspect-ratio: 1; border: 1px solid #ffffff2e; border-radius: 50%; box-shadow: 0 0 0 14vw #ffffff05; }
+.site-layout-home .account-controls :is(a,button), .site-layout-home .site-github-link { background: #16131f45; border-color: #e4d5ff35; color: #f4eaf5; }

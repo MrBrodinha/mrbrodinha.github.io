@@ -1,0 +1,58 @@
+/* MVG page */
+.mvg-page {
+  display: flex;
+  min-height: 100svh;
+  padding: clamp(36px, 7vw, 80px) 20px;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  color: #111;
+  font-family: "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+
+.mvg-logo-link {
+  display: block;
+  width: min(240px, 55vw);
+  transition: transform 180ms ease;
+}
+
+.mvg-logo-link:hover {
+  transform: translateY(-3px) rotate(-1deg);
+}
+
+.mvg-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mvg-divider {
+  width: min(760px, 92vw);
+  height: 2px;
+  margin: clamp(34px, 6vw, 58px) 0;
+  background: #111;
+}
+
+.mvg-members {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 5vh, 42px);
+  align-items: center;
+}
+
+.mvg-member {
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 750;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 7%);
+  transition: transform 160ms ease;
+}
+
+.mvg-member:hover,
+.mvg-member:focus-visible {
+  outline: none;
+  text-decoration: underline;
+  transform: scale(1.035);
+}

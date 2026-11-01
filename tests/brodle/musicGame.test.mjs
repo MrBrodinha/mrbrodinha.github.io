@@ -1,0 +1,336 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+import ts from 'typescript';
+import abcjs from 'abcjs';
+
+// Use the project's compiler so the tests also run on Node without TS support.
+const source = await readFile(new URL('../../src/components/brodle/lib/musicGame.ts', import.meta.url), 'utf8');
+const { outputText } = ts.transpileModule(source, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
+});
+const musicModuleUrl = `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`;
+const { toAbc, noteName, notationKey, getWinKind, melodyPitchHint, scoreGuess, buildShareText, melodyToAbc, melodyNotation, notationForGuess, TIME_SIGNATURES, beatsPerBar } = await import(musicModuleUrl);
+const victorySource = await readFile(new URL('../../src/components/brodle/lib/victoryMusic.ts', import.meta.url), 'utf8');
+const victoryJs = ts.transpileModule(victorySource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText.replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`);
+const victoryUrl = `data:text/javascript;base64,${Buffer.from(victoryJs).toString('base64')}`;
+const { restoreVictoryNotes, transposeVictory, arrangementTimeline, victoryNotation, victoryScore } = await import(victoryUrl);
+const composerSource = await readFile(new URL('../../src/components/brodle/creator/melodyComposer.ts', import.meta.url), 'utf8');
+const composerJs = ts.transpileModule(composerSource, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
+}).outputText.replace(/from ['"]\.\.\/lib\/musicGame['"]/g, `from '${musicModuleUrl}'`).replace(/from ['"]\.\.\/lib\/victoryMusic['"]/g, `from '${victoryUrl}'`);
+const { DURATIONS, makeStep, durationForStep, exportMelodyCode, parseComposerDraft, emptyComposerDraft, makeVictoryStep } = await import(`data:text/javascript;base64,${Buffer.from(composerJs).toString('base64')}`);
+const codeSource = await readFile(new URL('../../src/components/brodle/creator/melodyCode.ts', import.meta.url), 'utf8');
+const codeJs = ts.transpileModule(codeSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText
+  .replace(/from ['"]\.\.\/lib\/musicGame['"]/g, `from '${musicModuleUrl}'`).replace(/from ['"]\.\.\/lib\/victoryMusic['"]/g, `from '${victoryUrl}'`);
+const { parseMelodyCode } = await import(`data:text/javascript;base64,${Buffer.from(codeJs).toString('base64')}`);
+
+const pattern = (notes) => notes.map((midi) => ({ midi, length: '1', beats: 1, rhythm: 'Quarter note' }));
+
+test('shifted and octave hints direct the whole melody back toward the target pitch', () => {
+  const target = [60, 64, 67];
+  for (const offset of [-24, -12, -5, -1, 1, 5, 12, 24]) {
+    const hint = melodyPitchHint(target.map((note) => note + offset), target);
+    assert.equal(hint.direction, offset > 0 ? 'down' : 'up');
+    assert.match(hint.text, offset > 0 ? /Too high.*lower/ : /Too low.*higher/);
+    assert.equal(hint.text.includes('octave'), offset % 12 === 0);
+  }
+  for (const notes of [[], [60], [60, 64], target, [61, 64, 68]]) assert.equal(melodyPitchHint(notes, target), null);
+});
+const parse = (notes, key) => abcjs.parseOnly(toAbc(notes, 'letters', pattern(notes), key))[0];
+const soundingPitches = (tune) => tune.setUpAudio({}).tracks.flat()
+  .filter((event) => event.cmd === 'note').map((event) => event.pitch);
+
+test('F major implies B-flat, cancels it for B natural, and restores the flat when needed', () => {
+  const notes = [70, 71, 70, 70];
+  const abc = toAbc(notes, 'letters', pattern(notes), 'F');
+  assert.match(abc, /K:F clef=treble/);
+  assert.match(abc, /"_Bb4"B1 "_B4"=B1 "_Bb4"_B1 "_Bb4"B1/);
+  assert.equal(noteName(70, 'letters', 'F'), 'Bb4');
+  assert.equal(noteName(71, 'letters', 'F'), 'B4');
+  const tune = abcjs.parseOnly(abc)[0];
+  assert.deepEqual(tune.getKeySignature().accidentals.map(({ acc, note }) => ({ acc, note: note.toUpperCase() })), [{ acc: 'flat', note: 'B' }]);
+  assert.deepEqual(soundingPitches(tune), notes);
+});
+
+test('accidentals apply within their octave and reset to the key signature at a bar line', () => {
+  const notes = [71, 71, 82, 83, 70, 71, 70, 70];
+  const abc = toAbc(notes, 'letters', pattern(notes), 'F');
+  assert.match(abc, /"_B4"=B1 "_B4"B1 "_Bb5"b1 "_B5"=b1 \| "_Bb4"B1/);
+  assert.deepEqual(soundingPitches(abcjs.parseOnly(abc)[0]), notes);
+});
+
+test('G major implies F-sharp and writes F natural with a natural sign', () => {
+  const notes = [66, 65, 66];
+  const abc = toAbc(notes, 'letters', pattern(notes), 'G');
+  assert.match(abc, /"_F#4"F1 "_F4"=F1 "_F#4"\^F1/);
+  assert.deepEqual(soundingPitches(abcjs.parseOnly(abc)[0]), notes);
+});
+
+test('every piano pitch survives notation in each supported major and minor key', () => {
+  const keys = ['Cb', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#',
+    'Abm', 'Ebm', 'Bbm', 'Fm', 'Cm', 'Gm', 'Dm', 'Am', 'Em', 'Bm', 'F#m', 'C#m', 'G#m', 'D#m', 'A#m'];
+  const notes = Array.from({ length: 73 }, (_, index) => index + 31);
+  for (const key of keys) assert.deepEqual(soundingPitches(parse(notes, key)), notes, key);
+});
+
+test('a submitted shifted melody can be written in its transposed key', () => {
+  const melody = pattern([65, 69, 70]);
+  assert.equal(notationKey([67, 71, 72], melody, 'F'), 'G');
+  assert.equal(notationKey([65, 69, 70], melody, 'F'), 'F');
+  assert.equal(notationKey([65, 69, 71], melody, 'F'), 'F');
+});
+
+test('consistent octave offsets are a distinct win, while exact and other shifts stay separate', () => {
+  const target = [60, 64, 67];
+  for (const offset of [-24, -12, 12, 24]) {
+    const notes = target.map((note) => note + offset);
+    assert.equal(getWinKind(notes, target), 'octave');
+    assert.deepEqual(scoreGuess(notes, target), ['octave', 'octave', 'octave']);
+    assert.equal(notationKey(notes, pattern(target), 'F'), 'F');
+  }
+  assert.equal(getWinKind(target, target), 'exact');
+  assert.deepEqual(scoreGuess(target, target), ['correct', 'correct', 'correct']);
+  assert.equal(getWinKind([61, 65, 68], target), 'shifted');
+  assert.deepEqual(scoreGuess([61, 65, 68], target), ['shifted', 'shifted', 'shifted']);
+});
+
+test('mixed octave offsets, wrong intervals, and incomplete guesses do not win', () => {
+  const target = [60, 64, 67];
+  for (const notes of [[48, 64, 79], [48, 52, 56], [48, 52], []]) {
+    assert.equal(getWinKind(notes, target), null);
+  }
+});
+
+test('octave results have their own share, and exact wins upgrade them', () => {
+  const target = [60, 64, 67];
+  const attempt = (notes) => ({ notes, feedback: scoreGuess(notes, target) });
+  const shifted = attempt([61, 65, 68]);
+  const octave = attempt([48, 52, 55]);
+  const url = 'https://example.com/brodle';
+  const share = buildShareText([shifted, octave], target, url);
+  assert.match(share, /^Brodle ↕\nMelody found in 2 attempts — different octave!/);
+  assert.match(share, /1\. ♪♪♪\n2\. ↕↕↕/);
+  assert.match(share, /↕ correct melody, different octave/);
+  const exact = buildShareText([shifted, octave, attempt(target)], target, url);
+  assert.match(exact, /^Brodle 🎉\nExact pitch found in 3 attempts!/);
+  assert.match(exact, /3\. ✓✓✓/);
+});
+
+test('every composer duration and dotted variant produces valid notes and rests', () => {
+  for (const duration of DURATIONS) {
+    for (const dotted of [false, true]) {
+      for (const midi of [70, null]) {
+        const step = makeStep(midi, duration.id, dotted);
+        const tune = abcjs.parseOnly(melodyToAbc([step], 'letters', 'F', 96))[0];
+        assert.equal(tune.metaText.tempo.bpm, 96);
+        assert.equal(tune.setUpAudio({}).totalDuration, step.beats / 4);
+        assert.deepEqual(soundingPitches(tune), midi === null ? [] : [midi]);
+        assert.deepEqual(durationForStep(step), { duration: duration.id, dotted });
+        assert.equal(step.beats, duration.beats * (dotted ? 1.5 : 1));
+      }
+    }
+  }
+});
+
+test('authored notes and rests cross bar lines without changing their timing', () => {
+  const melody = [makeStep(60, 'quarter', false), makeStep(62, 'whole', false), makeStep(null, 'whole', false), makeStep(70, 'sixteenth', true)];
+  const abc = melodyToAbc(melody, 'letters', 'F', 144);
+  const tune = abcjs.parseOnly(abc)[0];
+  assert.match(abc, /D3- \| D1/);
+  assert.equal(tune.setUpAudio({}).totalDuration, 9.375 / 4);
+  assert.deepEqual(soundingPitches(tune), [60, 62, 70]);
+  assert.equal(tune.warnings, undefined);
+});
+
+test('exported constants compile and preserve the authored melody exactly', async () => {
+  const draft = { bpm: 132, key: 'Bb', timeSignature: '7/8', melody: [makeStep(70, 'sixteenth', true), makeStep(null, 'half', false), makeStep(71, 'whole', false)] };
+  const code = exportMelodyCode(draft);
+  const js = ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
+  const exported = await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+  assert.equal(exported.BPM, draft.bpm);
+  assert.equal(exported.KEY, draft.key);
+  assert.equal(exported.TIME_SIGNATURE, draft.timeSignature);
+  assert.deepEqual(exported.MELODY, draft.melody);
+  assert.match(code, /length: '3\/8'/);
+});
+
+test('composer drafts restore independently and reject damaged data', () => {
+  const draft = { bpm: 180, key: 'F#m', timeSignature: '6/8', melody: [makeStep(null, 'eighth', false), makeStep(66, 'half', true)] };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)), draft);
+  for (const invalid of [null, '{broken', JSON.stringify({ ...draft, bpm: 0 }), JSON.stringify({ ...draft, key: 'Invalid' }), JSON.stringify({ ...draft, timeSignature: '0/0' }), JSON.stringify({ ...draft, melody: [{ midi: 104, beats: 1 }] })]) {
+    assert.deepEqual(parseComposerDraft(invalid), emptyComposerDraft());
+  }
+});
+
+test('all meters keep pitches, quarter-note tempo, and total playback duration unchanged', () => {
+  const melody = [makeStep(60, 'quarter', false), makeStep(62, 'whole', false), makeStep(null, 'whole', false), makeStep(65, 'sixteenth', true)];
+  for (const meter of TIME_SIGNATURES) {
+    const tune = abcjs.parseOnly(melodyToAbc(melody, 'letters', 'C', 96, meter))[0];
+    assert.equal(tune.getBarLength(), beatsPerBar(meter) / 4, meter);
+    assert.equal(tune.metaText.tempo.bpm, 96, meter);
+    assert.equal(tune.setUpAudio({}).totalDuration, 9.375 / 4, meter);
+    assert.deepEqual(soundingPitches(tune), [60, 62, 65], meter);
+    assert.equal(tune.warnings, undefined, meter);
+  }
+});
+
+test('tied notes and split rests map to their original editable steps and scored pitches', () => {
+  const melody = [makeStep(60, 'whole', false), makeStep(null, 'whole', false), makeStep(62, 'half', false)];
+  const notation = melodyNotation(melody, 'letters', 'C', 120, '3/4', false);
+  assert.deepEqual(notation.stepIndices, [0, 0, 1, 1, 2, 2]);
+  assert.deepEqual(notation.noteIndices, [0, 0, 1, 1]);
+  assert.doesNotMatch(notation.abc, /"_/);
+  assert.deepEqual(soundingPitches(abcjs.parseOnly(notation.abc)[0]), [60, 62]);
+  const guess = notationForGuess([61, 63], 'letters', melody, 'C', '3/4');
+  assert.deepEqual(guess.noteIndices, [0, 0, 1, 1]);
+  assert.deepEqual(soundingPitches(abcjs.parseOnly(guess.abc)[0]), [61, 63]);
+});
+
+test('legacy composer drafts keep their melody and default to 4/4', () => {
+  const legacy = { bpm: 120, key: 'C', melody: [makeStep(60, 'quarter', false)] };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(legacy)), { ...legacy, timeSignature: '4/4' });
+});
+
+const librarySource = await readFile(new URL('../../src/components/brodle/lib/melodyLibrary.ts', import.meta.url), 'utf8');
+const composerUrl = `data:text/javascript;base64,${Buffer.from(composerJs).toString('base64')}`;
+const libraryJs = ts.transpileModule(librarySource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText
+  .replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`)
+  .replace(/from ['"]\.\/victoryMusic['"]/g, `from '${victoryUrl}'`)
+  .replace(/from ['"]\.\.\/creator\/melodyComposer['"]/g, `from '${composerUrl}'`);
+const { restoreNotes, melodyPayload, publishedChallenge, lisbonDate } = await import(`data:text/javascript;base64,${Buffer.from(libraryJs).toString('base64')}`);
+const progressSource = await readFile(new URL('../../src/components/brodle/lib/gameProgress.ts', import.meta.url), 'utf8');
+const progressJs = ts.transpileModule(progressSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText.replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`);
+const { parseProgress, progressStorageKey } = await import(`data:text/javascript;base64,${Buffer.from(progressJs).toString('base64')}`);
+
+test('cloud melody data round-trips metadata, dotted rests and an optional victory melody', () => {
+  const draft = { title:'My tune',source:'An artist',hint:'A clue',bpm:96,key:'F',timeSignature:'3/4',
+    melody:[makeStep(70,'quarter',true),makeStep(null,'sixteenth',true)],finalMelody:[makeStep(71,'whole',true)] };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)),draft);
+  const stored=melodyPayload(draft);
+  assert.deepEqual(stored.notes,[{midi:70,beats:1.5},{midi:null,beats:.375}]);
+  assert.deepEqual(restoreNotes(stored.notes),draft.melody);
+  assert.deepEqual(restoreNotes(stored.final_notes),draft.finalMelody);
+  assert.match(exportMelodyCode(draft),/export const MELODY_FINAL/);
+});
+test('malformed cloud notes are rejected instead of becoming an empty published melody', () => {
+  for (const raw of [null,{},[{midi:104,beats:1}],[{midi:60}],[{beats:1}],[{midi:60,beats:.7}],Array(257).fill({midi:60,beats:1})]) assert.throws(()=>restoreNotes(raw));
+});
+test('published challenges use their own target, meter, key and tempo', () => {
+  const snapshot={title:'Daily tune',source:'Artist',hint:'Hint',author:'Composer',bpm:96,key:'F',timeSignature:'3/4',melody:[{midi:70,beats:1.5},{midi:null,beats:.5},{midi:71,beats:1}],finalMelody:[]};
+  const challenge=publishedChallenge('daily-id','2026-11-01',snapshot);
+  assert.deepEqual(challenge.finalMelody,challenge.melody);
+  const notation=notationForGuess([70,71],'letters',challenge.melody,challenge.key,challenge.timeSignature,challenge.bpm);
+  const tune=abcjs.parseOnly(notation.abc)[0];
+  assert.equal(tune.metaText.tempo.bpm,96);
+  assert.equal(tune.getBarLength(),.75);
+  assert.deepEqual(soundingPitches(tune),[70,71]);
+  const progress=parseProgress(JSON.stringify({guess:[],attempts:[[58,59],[70,71]],selectedAttempt:1}),[70,71]);
+  assert.deepEqual(progress.attempts.map(a=>a.feedback),[['octave','octave'],['correct','correct']]);
+  assert.notEqual(progressStorageKey('day-a',[70,71]),progressStorageKey('day-b',[70,71]));
+});
+test('Lisbon dates respect winter and summer clock offsets', () => {
+  assert.equal(lisbonDate(new Date('2026-07-01T23:30:00Z')),'2026-07-02');
+  assert.equal(lisbonDate(new Date('2026-12-01T23:30:00Z')),'2026-12-01');
+});
+
+test('victory chords and bass parts round-trip without allowing polyphonic challenges', () => {
+  const chord=makeVictoryStep([67,60,64], 'quarter', true);
+  const bass=makeVictoryStep([36], 'whole', false);
+  assert.deepEqual(chord.pitches,[60,64,67]);
+  const draft={...emptyComposerDraft(),melody:[makeStep(60,'quarter',false)],finalMelody:[chord],finalBass:[bass],finalClef:'treble',finalBassClef:'bass'};
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)),draft);
+  const payload=melodyPayload(draft);
+  assert.deepEqual(payload.final_notes,[{midi:60,beats:1.5,pitches:[60,64,67]}]);
+  assert.deepEqual(payload.final_bass_notes,[{midi:36,beats:4}]);
+  assert.throws(()=>restoreNotes([chord]));
+  for(const bad of [[{midi:null,pitches:[60,64],beats:1}],[{midi:60,pitches:[60,60],beats:1}],[{midi:60,pitches:[64,60],beats:1}],[{midi:60,pitches:[60,104],beats:1}]])assert.throws(()=>restoreVictoryNotes(bad));
+  assert.match(exportMelodyCode(draft),/MELODY_FINAL_BASS/);
+});
+test('two victory parts begin together, preserve rests, and finish at the longest part', () => {
+  const main=[makeVictoryStep([60,64,67],'quarter',true),makeStep(null,'eighth',false),makeVictoryStep([62],'quarter',false)];
+  const bass=[makeVictoryStep([36],'whole',false)];
+  const timeline=arrangementTimeline([main,bass],120);
+  assert.deepEqual(timeline.events.map(e=>[e.time,e.pitches]),[[0,[60,64,67]],[0,[36]],[1,[62]]]);
+  assert.equal(timeline.totalDuration,2);
+  assert.deepEqual(transposeVictory(main,12)[0].pitches,[72,76,79]);
+  assert.equal(transposeVictory(bass,12)[0].midi,48);
+  assert.equal(transposeVictory(main,12)[1].midi,null);
+});
+test('victory notation renders treble and bass staves with literal pitches and tied chords', () => {
+  const main=[makeVictoryStep([70,71,74],'whole',false),makeVictoryStep([72],'quarter',false)];
+  const bass=[makeVictoryStep([36,43],'half',true)];
+  const abc=victoryNotation(main,bass,'letters','F',96,'3/4');
+  assert.match(abc,/V:lower clef=bass/);
+  assert.match(abc,/\[.*\]3-/);
+  const tune=abcjs.parseOnly(abc)[0];
+  assert.equal(tune.warnings,undefined);
+  assert.equal(tune.lines[0].staff.length,2);
+  assert.deepEqual(soundingPitches(tune).sort((a,b)=>a-b),[36,43,70,71,72,74]);
+  const bassOnly=abcjs.parseOnly(victoryNotation(bass,[],'letters','C',96,'4/4','bass'))[0];
+  assert.equal(bassOnly.lines[0].staff[0].clef.type,'bass');
+  assert.deepEqual(soundingPitches(bassOnly),[36,43]);
+});
+
+test('editable code round-trips all parts and recalculates labels from beats', () => {
+  const draft = { melody: [makeStep(60, 'quarter', false), makeStep(null, 'eighth', true)], bpm: 132, key: 'F', timeSignature: '3/4',
+    finalMelody: [makeVictoryStep([60,64,67], 'whole', true)], finalBass: [makeVictoryStep([36], 'half', false)], finalClef: 'bass', finalBassClef: 'treble' };
+  assert.deepEqual(parseMelodyCode(exportMelodyCode(draft)), draft);
+  const edited = parseMelodyCode('// Literal code editing\n' + exportMelodyCode(draft).replace('BPM = 132', 'BPM = 95').replace('midi: 60, length', 'midi: 62, length').replace('beats: 1,', 'beats: 2,'));
+  assert.equal(edited.bpm, 95);
+  assert.deepEqual(edited.melody[0], makeStep(62, 'half', false));
+  assert.deepEqual(edited.finalBass, draft.finalBass);
+  const basic = parseMelodyCode(`const BPM = 120; const KEY = "C"; const TIME_SIGNATURE = '4/4'; const MELODY = [{"midi":null,"beats":.5}, {midi: 60, beats: 1,},];`);
+  assert.deepEqual(basic.melody, [makeStep(null, 'eighth', false), makeStep(60, 'quarter', false)]);
+  assert.deepEqual(basic.finalMelody, []);
+  assert.deepEqual(basic.finalBass, []);
+});
+
+test('code edits reject executable expressions and invalid or ambiguous data', () => {
+  const code = exportMelodyCode({ ...emptyComposerDraft(), melody: [makeStep(60, 'quarter', false)] });
+  for (const invalid of [
+    code.replace('BPM = 120', 'BPM = alert(1)'), code + '\nglobalThis.compromised = true;', code + '\nconst BPM = 80;',
+    code.replace('BPM = 120', 'BPM = 0'), code.replace("'C'", "'H'"), code.replace("'4/4'", "'0/0'"),
+    code.replace('midi: 60', 'midi: 30'), code.replace('beats: 1', 'beats: 1.1'), code.replace('midi: 60', 'midi: 60, pitches: [60, 64]'),
+    code.replace('midi: 60', 'midi: 60, midi: 62'), code.replace('midi: 60', '__proto__: null, midi: 60'),
+    code.replace(/export const MELODY[\s\S]*/, 'const MELODY = null;'), code.replace(/export const MELODY[\s\S]*/, 'const MELODY = [{ midi: 60, beats: 1 }]; const MELODY_FINAL = null;'),
+    code.replace('export const BPM = 120;', ''), code + "\nconst FINAL_CLEF = 'alto';",
+    code + '\nconst MELODY_FINAL = [{midi:60,pitches:[64,60],beats:1}];',
+    code.replace(/export const MELODY[\s\S]*/, `const MELODY = [${Array.from({length:257},()=>'{midi:60,beats:1}').join(',')}];`),
+  ]) assert.throws(() => parseMelodyCode(invalid), undefined, invalid);
+  assert.equal(globalThis.compromised, undefined);
+});
+
+test('staff selection maps tied chords, authored rests and padding to their original parts', () => {
+  const main = [makeVictoryStep([60], 'quarter', false), makeVictoryStep([60,64,67], 'whole', false)];
+  const bass = [makeVictoryStep([], 'half', false), makeVictoryStep([36], 'eighth', false)];
+  const score = victoryScore(main, bass, 'letters', 'F', 120, '3/4');
+  assert.deepEqual(score.stepIndices[0], [0,1,1]);
+  assert.equal(score.stepIndices[1][0], 0);
+  assert.equal(score.stepIndices[1][1], 1);
+  assert.ok(score.stepIndices[1].slice(2).every(index=>index===null));
+  assert.deepEqual(soundingPitches(abcjs.parseOnly(score.abc)[0]), [60,60,64,67,36]);
+});
+
+test('G1–G7 boundaries survive keyboard, code, draft, cloud and game-progress restoration', async () => {
+  const { keyboardKeys, PIANO_MIN_MIDI, PIANO_MAX_MIDI } = await import(musicModuleUrl);
+  assert.equal(PIANO_MIN_MIDI, 31);
+  assert.equal(PIANO_MAX_MIDI, 103);
+  const pitches = [...keyboardKeys().whiteKeys, ...keyboardKeys().blackKeys].map(note => note.midi).sort((a,b)=>a-b);
+  assert.deepEqual(pitches, Array.from({length:73}, (_,index)=>31+index));
+  assert.equal(noteName(31), 'G1');
+  assert.equal(noteName(103), 'G7');
+  const draft = { ...emptyComposerDraft(), melody: [makeStep(31,'quarter',false),makeStep(103,'quarter',false)], finalMelody: [makeVictoryStep([31,103],'half',false)], finalBass: [makeStep(31,'whole',false)] };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)),draft);
+  assert.deepEqual(parseMelodyCode(exportMelodyCode(draft)).melody,draft.melody);
+  const payload = melodyPayload(draft);
+  assert.deepEqual(restoreNotes(payload.notes),draft.melody);
+  assert.deepEqual(restoreVictoryNotes(payload.final_notes),draft.finalMelody);
+  assert.deepEqual(parseProgress(JSON.stringify({guess:[31,103],attempts:[]}),[60,64]).guess,[31,103]);
+  assert.deepEqual(parseProgress(JSON.stringify({guess:[],attempts:[[31,103]]}),[31,103]).attempts[0].feedback,['correct','correct']);
+  for (const invalid of [30,104]) {
+    assert.throws(()=>restoreNotes([{midi:invalid,beats:1}]));
+    assert.throws(()=>restoreVictoryNotes([{midi:invalid,beats:1}]));
+    assert.deepEqual(parseProgress(JSON.stringify({guess:[invalid],attempts:[]}),[60]).guess,[]);
+  }
+});

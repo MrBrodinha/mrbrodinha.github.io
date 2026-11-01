@@ -1,0 +1,7 @@
+export const HOME_BACKGROUNDS = [
+  'radial-gradient(circle at 18% 20%, #ff9ac5 0, transparent 35%), radial-gradient(circle at 82% 75%, #8167ff 0, transparent 38%), #17121d',
+  'radial-gradient(circle at 75% 18%, #ffca7a 0, transparent 32%), radial-gradient(circle at 20% 80%, #ff70ae 0, transparent 38%), #20172a',
+  'radial-gradient(circle at 15% 75%, #65d6ce 0, transparent 36%), radial-gradient(circle at 80% 25%, #ff7eb3 0, transparent 40%), #151a24',
+  'linear-gradient(135deg, #18111f 0%, #46305c 45%, #e46a9f 140%)',
+  'linear-gradient(145deg, #16222a 0%, #3a6073 48%, #ed76a8 130%)',
+];
