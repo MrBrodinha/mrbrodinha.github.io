@@ -135,6 +135,9 @@
 
 .note-count { color: var(--text); font-size: .75rem; font-variant-numeric: tabular-nums; }
 .note-count > span { color: var(--muted); }
+.guess-heading { flex-wrap: wrap; }
+.guess-heading-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px 16px; margin-left: auto; }
+.guess-edit-hint { margin: 0 0 12px; color: var(--muted); font-size: .72rem; line-height: 1.5; }
 .piano-sheet { position: relative; width: min(100%, 760px); min-height: 124px; margin: 8px auto 12px; color: #e2e8f0; }
 .sheet-key { position: absolute; top: 16px; right: 16px; color: #aab9cd; font-size: .7rem; line-height: 1.4; }
 .sheet-key strong { color: #dbe3f0; font-weight: 550; }
@@ -143,9 +146,13 @@
 .piano-sheet .abcjs-annotation { fill: #aab9cd; }
 .piano-sheet :is(.feedback-correct, .feedback-octave, .feedback-shifted, .feedback-low, .feedback-high),
 .piano-sheet :is(.feedback-correct, .feedback-octave, .feedback-shifted, .feedback-low, .feedback-high) * { fill: var(--feedback-color) !important; color: var(--feedback-color) !important; }
-.guess-actions { padding-top: 14px; border-top: 1px solid var(--border); }
+.brodle-page .guess-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; padding-top: 14px; border-top: 1px solid var(--border); }
+.guess-edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 .brodle-page .game-controls .clear-guess { border-color: transparent; background: transparent; color: var(--muted); }
-.brodle-page .submit-guess { margin-left: auto; }
+.piano-sheet [data-score-index] { cursor: pointer; pointer-events: bounding-box; }
+.piano-sheet [data-score-index]:hover, .piano-sheet [data-score-index]:focus { filter: drop-shadow(0 0 3px #c4b5fd); outline: none; }
+.piano-sheet .composer-selected-step { color: #c4b5fd; fill: #c4b5fd; filter: drop-shadow(0 0 3px #a78bfa); }
+.piano-sheet .composer-selected-step path { fill: #c4b5fd; }
 
 .keyboard-section { padding-top: 16px; padding-bottom: 13px; }
 .piano-toolbar { display: flex; align-items: center; gap: 22px; min-width: 0; padding-bottom: 15px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
@@ -170,6 +177,8 @@
 .piano-black { position: absolute; top: 0; z-index: 1; height: 60%; transform: translateX(-50%); background: linear-gradient(180deg, #292d3a, #11141e); box-shadow: 0 3px 3px #0005, inset 0 -3px 0 #383c4c; color: #8b96ab; }
 .key-label { pointer-events: none; font-size: 10px; font-weight: 500; line-height: 1; }
 .piano-black .key-label { font-size: 8px; }
+.piano-white.is-selected-note { background: linear-gradient(180deg, #e1d7f5, #bfa9e4); box-shadow: inset 0 -4px 0 #8464ba, inset 0 0 0 2px #a78bfa; color: #49335e; }
+.piano-black.is-selected-note { border-color: #c4b5fd; background: #725296; box-shadow: inset 0 0 0 1px #c4b5fd, 0 0 10px #b298ff66; color: #f2eaff; }
 .piano-white:is(:active, .is-held) { transform: translateY(2px); background: linear-gradient(180deg, #e4dcff, #b39bed); box-shadow: inset 0 -3px 0 #8464ba, 0 0 16px #b298ff48; color: #4f3678; }
 .piano-black:is(:active, .is-held) { z-index: 2; transform: translate(-50%, 2px); border-color: #bba1ed; background: linear-gradient(180deg, #8c70b8, #5b427e); box-shadow: 0 0 18px #b298ff66, inset 0 -3px 0 #45325f; color: #f1eaff; }
 .brodle-page .piano-key:focus-visible { outline-offset: -4px; }
@@ -227,15 +236,16 @@
   .tune-tip { max-width: 100%; font-size: .69rem; }
   .attempt-feedback { gap: 7px; }
   .attempt-summary { flex-basis: 100%; font-size: .7rem; }
-  .attempt-card-heading { align-items: flex-start; gap: 10px; }
+  .attempt-card-heading { flex-wrap: wrap; align-items: flex-start; gap: 10px; }
   .replay-button { min-height: 34px; padding: 7px 9px; font-size: .7rem; }
   .feedback-legend { gap: 5px; }
   .feedback-pill { padding-inline: 6px; font-size: .6rem; }
   .piano-sheet { min-height: 115px; margin-top: 6px; }
-  .brodle-page .guess-actions { gap: 7px; }
+  .brodle-page .guess-actions { grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+  .guess-edit-actions { gap: 7px; }
   .brodle-page .guess-actions button { min-height: 38px; padding-inline: 10px; font-size: .72rem; }
-  .brodle-page .submit-guess { flex-basis: 100%; margin-top: 1px; }
-  .brodle-page .clear-guess { margin-left: auto; }
+  .brodle-page .submit-guess { grid-column: 1 / -1; grid-row: 2; margin-top: 1px; }
+  .guess-actions .clear-guess { grid-column: 2; grid-row: 1; }
   .piano-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
   .note-naming-control { min-width: 0; }
   .note-naming-control button { flex: 1; padding-inline: 6px; }

@@ -8,6 +8,8 @@ export function melodyError(error: unknown): string {
   const issue = error as { code?: string; message?: string } | null;
   const messages: Record<string, string> = {
     brodle_admin_required: 'Only a Brodle administrator can do that.', brodle_not_editable: 'This melody is no longer editable. Make a copy to continue.',
+    brodle_not_reviewable: 'This melody can no longer be reviewed. Refresh the list and try again.',
+    brodle_invalid_review: 'Unable to apply this review. Use a review note of up to 1,000 characters.',
     brodle_not_deletable: 'This melody is no longer available or you do not have permission to delete it.',
     brodle_title_required: 'Add a title before submitting or scheduling.', brodle_notes_required: 'Add at least one note before submitting or scheduling.',
     brodle_not_approved: 'Approve this melody before scheduling it.', brodle_date_past: 'Choose today or a future date.',

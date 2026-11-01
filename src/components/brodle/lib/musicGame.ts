@@ -1,12 +1,12 @@
 export type Feedback = 'correct' | 'octave' | 'shifted' | 'low' | 'high';
 export type WinKind = 'exact' | 'octave' | 'shifted';
-export type Attempt = { notes: number[]; feedback: Feedback[] };
+export type Attempt = { id?: string; notes: number[]; feedback: Feedback[] };
 export type NoteNaming = 'letters' | 'solfege';
 export type MelodyStep = { midi: number | null; length: string; beats: number; rhythm: string };
 
 export const PIANO_MIN_MIDI = 31; // G1
 export const PIANO_MAX_MIDI = 103; // G7
-// Quarter-note beats per minute, shared by MELODY and MELODY_FINAL.
+// Quarter-note beats per minute for the challenge melody.
 export const BPM = 180;
 export const TIME_SIGNATURES = ['2/4', '3/4', '4/4', '5/4', '6/4', '7/4', '3/8', '5/8', '6/8', '7/8', '9/8', '12/8', '2/2', '3/2', '4/2', '5/16', '7/16'] as const;
 export type TimeSignature = typeof TIME_SIGNATURES[number];
@@ -29,6 +29,8 @@ export const MUSICAL_KEYS = Object.keys(KEY_SIGNATURES) as MusicalKey[];
 // ABC key names: 'C' = C major, 'G' = G major, 'Am' = A minor, etc.
 // MIDI pitches stay literal: in F major, 70 is B-flat and 71 is B natural.
 export const KEY: MusicalKey = 'C';
+export const FINAL_BPM = 180;
+export const FINAL_KEY: MusicalKey = 'C';
 
 export const CHALLENGE = {
   // Give each new challenge its own ID so saved rounds stay separate.
@@ -214,7 +216,11 @@ export function toAbc(notes: readonly number[], naming: NoteNaming = 'letters', 
 }
 
 export function notationForGuess(notes: readonly number[], naming: NoteNaming, melody: readonly MelodyStep[], key: MusicalKey, timeSignature: TimeSignature = TIME_SIGNATURE, bpm = BPM) {
-  return melodyNotation(melodyForGuess(notes, melody), naming, key, bpm, timeSignature);
+  const steps = melodyForGuess(notes, melody);
+  const notation = melodyNotation(steps, naming, key, bpm, timeSignature);
+  let noteIndex = 0;
+  const guessPositions = steps.map((step) => step.midi === null ? null : noteIndex++);
+  return { ...notation, guessIndices: notation.stepIndices.map((index) => guessPositions[index]) };
 }
 
 export function melodyToAbc(melody: readonly MelodyStep[], naming: NoteNaming, key: MusicalKey, bpm: number, timeSignature: TimeSignature = TIME_SIGNATURE): string {

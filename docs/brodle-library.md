@@ -11,10 +11,16 @@ Supabase project's SQL Editor:
 4. `database/migrations/202610310005_delete_approved_melodies.sql`
 5. `database/migrations/202611010008_brodle_archive.sql`
 6. `database/migrations/202611010011_brodle_demisemiquavers.sql`
+7. `database/migrations/202611010012_brodle_victory_settings.sql`
+8. `database/migrations/202611010013_brodle_player_progress.sql`
+9. `database/migrations/202611010014_brodle_return_approved_melodies.sql`
 
-If Brodle is already set up through `0008`, run **only `0011`** to allow
-demisemiquavers (32nd notes and rests), including dotted variants, in challenge
-and victory parts. Otherwise, apply any remaining Brodle migrations in order.
+If Brodle is already set up through `0013`, run **only `0014`** before deploying
+this frontend. It allows administrators to return approved melodies for editing.
+Migration `0013` adds private, account-owned player progress and the load/save
+functions. Migration `0012` adds separate victory BPM/key fields to melodies and
+newly scheduled snapshots; `0011` enables demisemiquavers (32nd notes and rests),
+including dotted variants. Apply any missing Brodle migrations in order.
 Existing rows and schedules are preserved. Red Bull migrations are independent.
 
 It uses your existing `public.users(id, username)` and Supabase Auth setup. It
@@ -63,6 +69,14 @@ The challenge stays monophonic and is the only part players guess. The victory
 arrangement has a main part and an optional bass/second part, each with its own
 treble/bass clef. An empty main part reuses the challenge melody.
 
+**Set the feel** has separate **Challenge melody** and **Victory melody** key
+and BPM controls. The victory settings apply to both its main and bass parts,
+including when the main part reuses the challenge notes. The time signature is
+shared. Key signatures control notation; MIDI pitches stay as entered. Preview,
+browser autosave, cloud saves/copies, and newly scheduled challenges retain both
+settings. Older drafts and published snapshots without victory settings inherit
+their original challenge BPM/key.
+
 **Save draft to account** creates a private cloud draft; subsequent saves while
 editing its URL update the same record. My melodies opens that record on any
 device. **Submit for Brodle** saves the latest content and sends it for review.
@@ -82,7 +96,7 @@ composition still restores the current browser draft. **Edit/View melody** loads
 the chosen cloud record; **Duplicate** creates an editable copy.
 
 Code export remains available,
-including `MELODY_FINAL`, `MELODY_FINAL_BASS`, `FINAL_CLEF`, and `FINAL_BASS_CLEF` when applicable. Auth emails/passwords are
+including `FINAL_BPM`, `FINAL_KEY`, `MELODY_FINAL`, `MELODY_FINAL_BASS`, `FINAL_CLEF`, and `FINAL_BASS_CLEF` when applicable. Auth emails/passwords are
 never copied into these tables. Author credit comes from `public.users.username`.
 
 Click a note or rest on the sheet to select it, then use the piano and duration
@@ -100,6 +114,8 @@ are retained. `midi` and `beats` define each entry; `length` and `rhythm` are
 recomputed. Optional victory arrays can be omitted to remove those parts. The
 parser accepts literal data and comments, never executes JavaScript, and rejects
 invalid pitches, durations, chords, or settings without altering the draft.
+`FINAL_BPM` (20–400) and `FINAL_KEY` set the victory tempo and key independently;
+omitting either inherits the matching challenge setting for older code.
 **Reset code to score** discards unapplied text. Apply or reset pending code
 before cloud saving/submitting/scheduling. Only applied changes are autosaved.
 
@@ -133,8 +149,9 @@ dotted values and ties work for chords on both clefs.
 A chord is stored as `{ "midi": 60, "pitches": [60,64,67], "beats": 1.5 }`.
 The root `midi` equals the first pitch; pitches are sorted, unique and limited to
 2–8. Single notes/rests retain the old shape. `final_bass_notes`, `final_clef`,
-and `final_bass_clef` accompany `final_notes` in cloud records. Newly scheduled
-snapshots include both parts/clefs; existing snapshots continue to play exactly
+and `final_bass_clef` accompany `final_notes` in cloud records. `final_bpm` and
+`final_key_signature` store the independent victory settings. Newly scheduled
+snapshots include both parts/clefs and `finalBpm`/`finalKey`; existing snapshots continue to play exactly
 as before. The migration does not rewrite them.
 
 The victory arrangement is a surprise unlocked only by an exact-pitch win,
@@ -155,7 +172,15 @@ review show the victory score and can play the full arrangement.
 Administrators can see submitted, approved, and returned melodies, with author,
 source, hint, music settings, sheet preview, and playback. They cannot browse
 other users' unsubmitted private drafts. Approve a submission or return it with
-a review note. **Edit a copy in Studio** creates an independently owned draft,
+a review note. In **Approved**, **Return for editing** changes the original to
+**Returned** and includes the optional review note. Its author can open
+**My melodies → Edit melody**, save changes, and submit it again. Only an
+administrator can revoke approval; authors cannot approve or return their own
+records without that role. Returned melodies cannot be newly scheduled until
+approved again (administrators may still schedule their own drafts directly).
+Existing scheduled and published copies keep their dates and original content;
+to use a revised version on a future date, cancel that future copy and schedule
+the newly approved version. **Edit a copy in Studio** creates an independently owned draft,
 without modifying the contributor's version.
 
 The calendar shows scheduled and open days. Select an approved melody and a
@@ -188,10 +213,29 @@ service is unavailable on initial load), the original built-in tune remains a
 clearly labelled practice game. A temporary fetch failure after a daily has
 loaded keeps that current daily and its progress instead of replacing it.
 
-Progress is stored by challenge ID and target pitches. Different days have
-independent rounds; refresh restores the selected round. Signing in still
-clears local Brodle rounds as previously requested. Cloud melody drafts, ratings,
-and the SDK session are retained. Player progress is not yet stored in Supabase.
+Progress is stored by **account, challenge ID, and target pitches**. Different days
+have independent rounds. Signing out no longer deletes attempts; signing back
+into the same account restores its attempts, unfinished guess, selected attempt,
+and solved state. A changed target starts a separate round. Authentication is
+restored before showing a round, and changing accounts mounts that user's round.
+
+Signed-in progress has an immediate browser backup and syncs to Supabase. Other
+devices restore the account's saved round before accepting guesses. The game
+shows **Saving your progress…** or **Progress saved to your account**. On a sync
+failure, browser progress remains playable and pending saves retry on focus,
+reconnection, every 30 seconds while visible, or the Retry button. An interrupted
+save can resume from the account's browser backup on the next login. Wait for
+the saved status before relying on a different device to have the latest edits.
+
+Stable attempt IDs and an atomic, row-locked save function merge submissions
+from stale tabs/devices without erasing history or duplicating retries. Solved
+rounds cannot be reset by an older save. Requests include the owner ID and are
+cancelled when leaving a puzzle/account, protecting against late responses.
+
+Guests retain browser-only progress. Existing unowned `brodle:progress:v1:` rounds
+remain guest rounds; they are not silently assigned to a signed-in account.
+Account caches use `brodle:progress:v2:user:<user ID>:`. No email/password fields
+are stored in player progress; feedback is recomputed from the target on restore.
 
 ## Past days
 
@@ -218,6 +262,10 @@ the future. Direct access to the schedule table remains protected by RLS.
   supported pitches/durations, key, meter, tempo, and array lengths. Chords and bass-range notes are accepted only in victory parts.
 - `brodle_daily_challenges`: date, source melody ID, immutable snapshot, scheduler.
 - `brodle_admins`: administrator UUIDs; no browser writes or table reads.
+- `brodle_player_progress`: private attempts, stable attempt IDs, unfinished guess,
+  and selected attempt, keyed by user/challenge/target. RLS permits only the owner
+  to read or write; guests and other accounts have no access. The load/save
+  functions use the caller's permissions and verify the supplied owner ID.
 
 RLS and column grants enforce ownership and protect review/status fields.
 Submission, review, scheduling, movement, and cancellation use narrowly scoped
@@ -231,6 +279,9 @@ empty search path and qualified table references.
 self-promotion, invalid notes, review permissions, snapshots, hidden future
 schedules, date conflicts, published locks, and gaps. Music tests check persisted
 metadata, canonical notes/rests, dynamic targets/settings, and Lisbon DST dates.
+Progress checks cover sign-out/sign-in restoration, another device, guest/account
+isolation, offline retries, slow saves, stale histories, solved rounds, late
+responses, malformed payloads, and database ownership enforcement.
 `npm run build` checks TypeScript and produces the production bundle.
 
 Local SQL tests use fixtures, not the live database. After applying the migration

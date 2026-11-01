@@ -95,7 +95,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     <form onSubmit={(event) => void submit(event)} aria-busy={busy}>
       {mode === 'signup' && <label htmlFor="auth-username">Username<input id="auth-username" name="username" autoComplete="username" value={username}
         onChange={(e) => setUsername(e.target.value)} required minLength={3} maxLength={30} pattern="[A-Za-z0-9_]{3,30}" aria-describedby="username-help" disabled={busy || confirmation} /><small id="username-help">3–30 letters, numbers, or underscores. Usernames are public and unique, ignoring case.</small></label>}
-      <label htmlFor="auth-email">Email<input id="auth-email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={254} disabled={busy} /></label>
+      <label htmlFor="auth-email">Email<input id="auth-email" name="email" type="email" autoComplete={mode === 'login' ? 'username' : 'email'} autoCapitalize="none" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={254} disabled={busy} /></label>
       {mode !== 'forgot' && !confirmation && <label htmlFor="auth-password">Password<input id="auth-password" name="password" type="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} value={password}
         onChange={(e) => setPassword(e.target.value)} required minLength={mode === 'signup' ? MIN_PASSWORD_LENGTH : 1} maxLength={128} disabled={busy} />{mode === 'signup' && <small>At least 8 characters.</small>}</label>}
       {error && <p className="auth-error" role="alert">{error}</p>}

@@ -35,27 +35,3 @@ test('signup constraint errors are helpful without exposing private database mes
   assert.doesNotMatch(message, /private@example|Database error/);
   assert.match(signupErrorMessage({ code: 'weak_password' }), /stronger password/);
 });
-
-const resetSource = await readFile(new URL('../../src/auth/loginReset.ts', import.meta.url), 'utf8');
-const resetJs = ts.transpileModule(resetSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText;
-const { isNewSignIn, clearSavedBrodleProgress } = await import(`data:text/javascript;base64,${Buffer.from(resetJs).toString('base64')}`);
-
-test('fresh sign-ins reset rounds, while restoration, focus and token refresh preserve them', () => {
-  assert.equal(isNewSignIn('SIGNED_IN', null, 'alice'), true);
-  assert.equal(isNewSignIn('SIGNED_IN', 'alice', 'bob'), true);
-  assert.equal(isNewSignIn('PASSWORD_RECOVERY', null, 'alice'), true);
-  assert.equal(isNewSignIn('SIGNED_IN', undefined, 'alice'), false);
-  assert.equal(isNewSignIn('INITIAL_SESSION', undefined, 'alice'), false);
-  assert.equal(isNewSignIn('SIGNED_IN', 'alice', 'alice'), false);
-  assert.equal(isNewSignIn('TOKEN_REFRESHED', 'alice', 'alice'), false);
-  assert.equal(isNewSignIn('SIGNED_OUT', 'alice', null), false);
-});
-test('login clears every stored game round without deleting the SDK session or authored data', () => {
-  const values = new Map([
-    ['brodle:progress:v1:today', 'round'], ['brodle:progress:v1:yesterday', 'round'],
-    ['sb-project-auth-token', 'sdk-session'], ['brodle:composer:v1', 'melody'],
-    ['redbull:draft:v1:alice', 'rating'], ['unrelated', 'value'],
-  ]);
-  clearSavedBrodleProgress({ get length() { return values.size; }, key: (index) => [...values.keys()][index] ?? null, removeItem: (key) => values.delete(key) });
-  assert.deepEqual([...values.keys()], ['sb-project-auth-token', 'brodle:composer:v1', 'redbull:draft:v1:alice', 'unrelated']);
-});

@@ -196,11 +196,13 @@ groups **Create a melody**, **My melodies**, the administrator’s **Manage Brod
 and **Play Brodle**.
 
 Rating drafts (scores/opinions only) use local storage scoped to Auth user ID.
-They cannot carry over when another user signs in. Signing in clears stored
-Brodle rounds, including guest attempts and unfinished guesses, and resets open
-game tabs. Refreshing an existing session or refreshing its token does not reset
-the round. The SDK session, melody-creator drafts, and account-owned rating drafts
-are retained. Brodle progress is not yet synced across devices.
+They cannot carry over when another user signs in. Brodle progress is also scoped
+to the account and puzzle: signing out or back in preserves attempts, unfinished
+guesses, and solved games. Migration `0013` adds private Supabase progress and
+sync across devices, with browser backups and retries when offline. Guest rounds
+remain separate and browser-only. Token refresh does not reset progress. The SDK
+session, melody-creator drafts, and account-owned rating drafts are retained.
+See [the Brodle guide](brodle-library.md) for migration and sync behavior.
 
 ## Verification before release
 

@@ -9,7 +9,7 @@ const admin='33333333-3333-4333-8333-333333333333';
 const melodyId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const notes=JSON.stringify([{midi:60,beats:1},{midi:null,beats:.5},{midi:64,beats:1.5}]);
 
-test('private drafts, review permissions, immutable scheduling and server-dated publication', async () => {
+test('private drafts, review and return permissions, immutable scheduling and server-dated publication', async () => {
   const db=new PGlite();
   const role=async(id)=>{await db.exec('reset role'); await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(id?{sub:id,role:'authenticated'}:{role:'anon'})]); await db.exec('set role '+(id?'authenticated':'anon'));};
   const scalar=async(sql,args=[])=>Object.values((await db.query(sql,args)).rows[0])[0];
@@ -25,6 +25,8 @@ test('private drafts, review permissions, immutable scheduling and server-dated 
     await db.exec(await readFile(new URL('../../database/migrations/202610310005_delete_approved_melodies.sql',import.meta.url),'utf8'));
     await db.exec(await readFile(new URL('../../database/migrations/202611010008_brodle_archive.sql',import.meta.url),'utf8'));
     await db.exec(await readFile(new URL('../../database/migrations/202611010011_brodle_demisemiquavers.sql',import.meta.url),'utf8'));
+    await db.exec(await readFile(new URL('../../database/migrations/202611010012_brodle_victory_settings.sql',import.meta.url),'utf8'));
+    await db.exec(await readFile(new URL('../../database/migrations/202611010014_brodle_return_approved_melodies.sql',import.meta.url),'utf8'));
     await db.query('insert into public.brodle_admins values($1)',[admin]);
     assert.equal(await scalar("select extract(epoch from ('2026-03-30'::timestamp at time zone 'Europe/Lisbon') - ('2026-03-29'::timestamp at time zone 'Europe/Lisbon'))::float8 / 3600"),23);
     assert.equal(await scalar("select extract(epoch from ('2026-10-26'::timestamp at time zone 'Europe/Lisbon') - ('2026-10-25'::timestamp at time zone 'Europe/Lisbon'))::float8 / 3600"),25);
@@ -32,6 +34,10 @@ test('private drafts, review permissions, immutable scheduling and server-dated 
     await role(alice);
     await db.query(`insert into public.brodle_melodies(id,created_by,title,source,hint,bpm,key_signature,time_signature,notes,final_notes) values($1,$2,'First melody','Source','Clue',96,'F','3/4',$3,$3)`,[melodyId,alice,notes]);
     assert.equal(await scalar('select author_username from public.brodle_melodies'),'Alice');
+    assert.equal(await scalar('select final_bpm from public.brodle_melodies'), null, 'legacy records inherit the challenge tempo');
+    await db.query('update public.brodle_melodies set final_bpm=144,final_key_signature=$1 where id=$2',['Am',melodyId]);
+    for (const invalid of [19,401]) await assert.rejects(db.query('update public.brodle_melodies set final_bpm=$1 where id=$2',[invalid,melodyId]),{code:'23514'});
+    await assert.rejects(db.query("update public.brodle_melodies set final_key_signature='H' where id=$1",[melodyId]),{code:'23514'});
     await assert.rejects(db.query(`insert into public.brodle_melodies(created_by,bpm,key_signature,time_signature) values($1,120,'C','4/4')`,[bob]),{code:'42501'});
     await assert.rejects(db.query(`update public.brodle_melodies set status='approved' where id=$1`,[melodyId]),{code:'42501'});
     await assert.rejects(db.query(`update public.brodle_melodies set notes=$1 where id=$2`,[JSON.stringify([{midi:104,beats:1}]),melodyId]),{code:'23514'});
@@ -61,6 +67,7 @@ test('private drafts, review permissions, immutable scheduling and server-dated 
     await role(bob);
     assert.equal(await scalar('select count(*)::int from public.brodle_melodies'),0);
     assert.equal((await db.query('update public.brodle_melodies set title=$1 where id=$2 returning id',['stolen',melodyId])).rows.length,0);
+    assert.equal((await db.query('update public.brodle_melodies set final_bpm=200 where id=$1 returning id',[melodyId])).rows.length,0);
     await assert.rejects(db.query('select public.submit_brodle_melody($1)',[melodyId]),/brodle_not_editable/);
     await assert.rejects(db.query("select public.review_brodle_melody($1,'approved','')",[melodyId]),/brodle_admin_required/);
     await assert.rejects(db.query('insert into public.brodle_admins values($1)',[bob]),{code:'42501'});
@@ -117,6 +124,45 @@ test('private drafts, review permissions, immutable scheduling and server-dated 
     assert.deepEqual(daily.challenge.snapshot.finalMelody,JSON.parse(chord));
     assert.deepEqual(daily.challenge.snapshot.finalBass,JSON.parse(bass));
     assert.equal(daily.challenge.snapshot.finalBassClef,'bass');
+    assert.equal(daily.challenge.snapshot.bpm,96);
+    assert.equal(daily.challenge.snapshot.key,'F');
+    assert.equal(daily.challenge.snapshot.finalBpm,144);
+    assert.equal(daily.challenge.snapshot.finalKey,'Am');
+    // Revoke approval without touching published or already scheduled versions.
+    const originalSnapshot=daily.challenge.snapshot;
+    await role(admin);
+    const futureCopy=await scalar('select public.schedule_brodle_melody($1,$2)',[melodyId,dates.tomorrow]);
+    await role(alice);
+    assert.equal((await db.query('update public.brodle_melodies set title=$1 where id=$2 returning id',['Locked edit',melodyId])).rows.length,0);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,'rejected','')",[melodyId]),/brodle_admin_required/);
+    await role(bob);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,'rejected','')",[melodyId]),/brodle_admin_required/);
+    await role(null);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,'rejected','')",[melodyId]),{code:'42501'});
+    await role(admin);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,'approved','')",[melodyId]),/brodle_not_reviewable/);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,'draft','')",[melodyId]),/brodle_invalid_review/);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,null,'')",[melodyId]),/brodle_invalid_review/);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,'rejected',null)",[melodyId]),/brodle_invalid_review/);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,'rejected',$2)",[melodyId,'x'.repeat(1001)]),/brodle_invalid_review/);
+    await db.query("select public.review_brodle_melody($1,'rejected','Please adjust the ending')",[melodyId]);
+    await assert.rejects(db.query("select public.review_brodle_melody($1,'rejected','')",[melodyId]),/brodle_not_reviewable/);
+    await assert.rejects(db.query('select public.schedule_brodle_melody($1,$2)',[melodyId,dates.later]),/brodle_not_approved/);
+    assert.deepEqual(await scalar('select snapshot from public.brodle_daily_challenges where id=$1',[futureCopy]),originalSnapshot);
+    await role(alice);
+    assert.equal(await scalar('select status from public.brodle_melodies where id=$1',[melodyId]),'rejected');
+    assert.equal(await scalar('select review_note from public.brodle_melodies where id=$1',[melodyId]),'Please adjust the ending');
+    await db.query('update public.brodle_melodies set title=$1,bpm=100 where id=$2',['Edited after return',melodyId]);
+    assert.equal(await scalar('select status from public.brodle_melodies where id=$1',[melodyId]),'draft');
+    assert.equal(await scalar('select bpm from public.brodle_melodies where id=$1',[melodyId]),100);
+    await db.query('select public.submit_brodle_melody($1)',[melodyId]);
+    await role(admin);
+    await db.query("select public.review_brodle_melody($1,'approved','Ready again')",[melodyId]);
+    assert.deepEqual(await scalar('select snapshot from public.brodle_daily_challenges where id=$1',[futureCopy]),originalSnapshot);
+    await db.query('select public.cancel_brodle_challenge($1)',[futureCopy]);
+    await role(null);
+    daily=await scalar('select public.get_daily_brodle()');
+    assert.deepEqual(daily.challenge.snapshot,originalSnapshot,'published content survives returning, editing and reapproving its source');
     assert.equal(daily.previousDate, null);
     assert.equal(daily.nextDate, null, 'scheduled future dates are excluded from navigation');
     // Archive dates have gaps; arrows must use published neighbours, not date +/- 1.
@@ -137,9 +183,11 @@ test('private drafts, review permissions, immutable scheduling and server-dated 
     assert.equal((await scalar('select public.get_brodle_day($1)',[middle])).challenge.id,middleDay.challenge.id,'archive is also playable when signed in');
     assert.equal(await scalar('select count(*)::int from public.brodle_daily_challenges'),0,'archive RPC does not grant schedule-table access');
     await db.exec('reset role');
-    await db.query("update public.brodle_melodies set title='Source edited by database owner' where id=$1",[melodyId]);
+    await db.query("update public.brodle_melodies set title='Source edited by database owner',final_bpm=200,final_key_signature='G' where id=$1",[melodyId]);
     await role(null);
     assert.equal((await scalar('select public.get_daily_brodle()')).challenge.snapshot.title,'Revised melody','scheduled copies are immutable snapshots');
+    assert.equal((await scalar('select public.get_daily_brodle()')).challenge.snapshot.finalBpm,144);
+    assert.equal((await scalar('select public.get_daily_brodle()')).challenge.snapshot.finalKey,'Am');
     // Model an empty next day by moving the fixture into yesterday as the DB owner.
     await db.exec('reset role');
     await db.query('update public.brodle_daily_challenges set play_date=$1 where id=$2',[dates.yesterday,todayId]);
@@ -150,6 +198,9 @@ test('private drafts, review permissions, immutable scheduling and server-dated 
     await role(admin);
     const own=await scalar(`insert into public.brodle_melodies(title,bpm,key_signature,time_signature,notes) values('Owner melody',120,'C','4/4',$1) returning id`,[notes]);
     await db.query('select public.schedule_brodle_melody($1,$2)',[own,dates.tomorrow]);
+    const inherited=await scalar('select snapshot from public.brodle_daily_challenges where melody_id=$1',[own]);
+    assert.equal(inherited.finalBpm,120);
+    assert.equal(inherited.finalKey,'C');
     assert.equal(await scalar('select status from public.brodle_melodies where id=$1',[own]),'approved','admins can schedule their own drafts directly');
     // Owners can delete approved sources; published/future snapshots survive.
     await role(alice);

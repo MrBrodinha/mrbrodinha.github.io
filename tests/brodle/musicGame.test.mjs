@@ -19,7 +19,7 @@ const composerSource = await readFile(new URL('../../src/components/brodle/creat
 const composerJs = ts.transpileModule(composerSource, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
 }).outputText.replace(/from ['"]\.\.\/lib\/musicGame['"]/g, `from '${musicModuleUrl}'`).replace(/from ['"]\.\.\/lib\/victoryMusic['"]/g, `from '${victoryUrl}'`);
-const { DURATIONS, makeStep, durationForStep, exportMelodyCode, parseComposerDraft, emptyComposerDraft, makeVictoryStep } = await import(`data:text/javascript;base64,${Buffer.from(composerJs).toString('base64')}`);
+const { DURATIONS, makeStep, durationForStep, exportMelodyCode, parseComposerDraft, emptyComposerDraft, makeVictoryStep, victorySettings } = await import(`data:text/javascript;base64,${Buffer.from(composerJs).toString('base64')}`);
 const codeSource = await readFile(new URL('../../src/components/brodle/creator/melodyCode.ts', import.meta.url), 'utf8');
 const codeJs = ts.transpileModule(codeSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText
   .replace(/from ['"]\.\.\/lib\/musicGame['"]/g, `from '${musicModuleUrl}'`).replace(/from ['"]\.\.\/lib\/victoryMusic['"]/g, `from '${victoryUrl}'`);
@@ -216,6 +216,24 @@ test('tied notes and split rests map to their original editable steps and scored
   assert.deepEqual(soundingPitches(abcjs.parseOnly(guess.abc)[0]), [61, 63]);
 });
 
+test('guess selection skips rests and maps every tied fragment to the same guessed note', () => {
+  const melody = [makeStep(null, 'quarter', false), makeStep(60, 'whole', false), makeStep(null, 'whole', false), makeStep(62, 'half', false), makeStep(null, 'quarter', false)];
+  for (const meter of TIME_SIGNATURES) {
+    for (const notes of [[], [61], [61, 63]]) {
+      const notation = notationForGuess(notes, 'letters', melody, 'C', meter);
+      const entries = abcjs.parseOnly(notation.abc)[0].lines.flatMap((line) => line.staff ?? [])
+        .flatMap((staff) => staff.voices.flat()).filter((entry) => entry.el_type === 'note');
+      // Empty notation contains a placeholder rest, which stays unselectable.
+      if (!notes.length) { assert.deepEqual(notation.guessIndices, []); continue; }
+      assert.equal(entries.length, notation.guessIndices.length, meter);
+      assert.deepEqual([...new Set(notation.guessIndices.filter((index) => index !== null))], notes.map((_, index) => index), meter);
+      assert.deepEqual(notation.guessIndices.filter((index) => index !== null), notation.noteIndices, meter);
+      entries.forEach((entry, index) => assert.equal(notation.guessIndices[index] === null, Boolean(entry.rest), meter));
+      assert.deepEqual(soundingPitches(abcjs.parseOnly(notation.abc)[0]), notes, meter);
+    }
+  }
+});
+
 test('legacy composer drafts keep their melody and default to 4/4', () => {
   const legacy = { bpm: 120, key: 'C', melody: [makeStep(60, 'quarter', false)] };
   assert.deepEqual(parseComposerDraft(JSON.stringify(legacy)), { ...legacy, timeSignature: '4/4' });
@@ -227,9 +245,9 @@ const libraryJs = ts.transpileModule(librarySource, { compilerOptions: { module:
   .replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`)
   .replace(/from ['"]\.\/victoryMusic['"]/g, `from '${victoryUrl}'`)
   .replace(/from ['"]\.\.\/creator\/melodyComposer['"]/g, `from '${composerUrl}'`);
-const { restoreNotes, melodyPayload, publishedChallenge, lisbonDate } = await import(`data:text/javascript;base64,${Buffer.from(libraryJs).toString('base64')}`);
+const { restoreNotes, melodyPayload, recordDraft, publishedChallenge, lisbonDate } = await import(`data:text/javascript;base64,${Buffer.from(libraryJs).toString('base64')}`);
 const progressSource = await readFile(new URL('../../src/components/brodle/lib/gameProgress.ts', import.meta.url), 'utf8');
-const progressJs = ts.transpileModule(progressSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText.replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`);
+const progressJs = ts.transpileModule(progressSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText.replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`);
 const { parseProgress, progressStorageKey } = await import(`data:text/javascript;base64,${Buffer.from(progressJs).toString('base64')}`);
 
 test('32nd notes, rests and victory chords survive code, draft and daily-library round trips', () => {
@@ -273,6 +291,8 @@ test('published challenges use their own target, meter, key and tempo', () => {
   const snapshot={title:'Daily tune',source:'Artist',hint:'Hint',author:'Composer',bpm:96,key:'F',timeSignature:'3/4',melody:[{midi:70,beats:1.5},{midi:null,beats:.5},{midi:71,beats:1}],finalMelody:[]};
   const challenge=publishedChallenge('daily-id','2026-11-01',snapshot);
   assert.deepEqual(challenge.finalMelody,challenge.melody);
+  assert.equal(challenge.finalBpm,96);
+  assert.equal(challenge.finalKey,'F');
   const notation=notationForGuess([70,71],'letters',challenge.melody,challenge.key,challenge.timeSignature,challenge.bpm);
   const tune=abcjs.parseOnly(notation.abc)[0];
   assert.equal(tune.metaText.tempo.bpm,96);
@@ -281,6 +301,52 @@ test('published challenges use their own target, meter, key and tempo', () => {
   const progress=parseProgress(JSON.stringify({guess:[],attempts:[[58,59],[70,71]],selectedAttempt:1}),[70,71]);
   assert.deepEqual(progress.attempts.map(a=>a.feedback),[['octave','octave'],['correct','correct']]);
   assert.notEqual(progressStorageKey('day-a',[70,71]),progressStorageKey('day-b',[70,71]));
+});
+
+test('independent challenge and victory settings survive browser, code, cloud and publication', () => {
+  const draft = { ...emptyComposerDraft(), title: 'Two tempos', source: '', hint: '', bpm: 96, key: 'F', finalBpm: 144, finalKey: 'Am',
+    melody: [makeStep(70, 'quarter', false)], finalMelody: [makeVictoryStep([69,72,76], 'half', false)],
+    finalBass: [makeStep(45, 'whole', false)], finalClef: 'treble', finalBassClef: 'bass' };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)), draft);
+  const imported = parseMelodyCode(exportMelodyCode(draft));
+  assert.equal(imported.bpm, 96);
+  assert.equal(imported.key, 'F');
+  assert.equal(imported.finalBpm, 144);
+  assert.equal(imported.finalKey, 'Am');
+  const stored = melodyPayload(draft);
+  assert.equal(stored.final_bpm, 144);
+  assert.equal(stored.final_key_signature, 'Am');
+  const restored = recordDraft(stored);
+  assert.deepEqual(restored, draft);
+  const challenge = publishedChallenge('two-tempos', '2026-11-01', { ...restored, author: 'Composer' });
+  const final = victorySettings(challenge);
+  const mainScore = abcjs.parseOnly(melodyToAbc(challenge.melody, 'letters', challenge.key, challenge.bpm, challenge.timeSignature))[0];
+  const finalScore = abcjs.parseOnly(victoryNotation(challenge.finalMelody, challenge.finalBass, 'letters', final.key, final.bpm, challenge.timeSignature))[0];
+  assert.equal(mainScore.metaText.tempo.bpm, 96);
+  assert.equal(finalScore.metaText.tempo.bpm, 144);
+  assert.deepEqual(soundingPitches(mainScore), [70]);
+  assert.deepEqual(soundingPitches(finalScore).sort((a,b)=>a-b), [45,69,72,76]);
+  assert.match(victoryNotation(challenge.finalMelody, challenge.finalBass, 'letters', final.key, final.bpm, challenge.timeSignature), /K:Am/);
+  assert.equal(arrangementTimeline([challenge.finalMelody, challenge.finalBass], final.bpm).totalDuration, 4 * 60 / 144);
+  const inheritedNotes = publishedChallenge('reused-notes', '2026-11-01', { ...restored, finalMelody: [], finalBass: [], author: 'Composer' });
+  assert.deepEqual(inheritedNotes.finalMelody, inheritedNotes.melody);
+  assert.deepEqual(victorySettings(inheritedNotes), { bpm: 144, key: 'Am' });
+});
+
+test('older code and cloud records inherit their challenge settings; invalid victory settings are rejected', () => {
+  const legacy = { melody: [makeStep(70, 'quarter', false)], bpm: 96, key: 'F', timeSignature: '3/4' };
+  assert.deepEqual(victorySettings(parseComposerDraft(JSON.stringify(legacy))), { bpm: 96, key: 'F' });
+  assert.deepEqual(victorySettings(parseMelodyCode(exportMelodyCode(legacy))), { bpm: 96, key: 'F' });
+  const stored = { ...melodyPayload(legacy), final_bpm: null, final_key_signature: null };
+  assert.deepEqual(victorySettings(recordDraft(stored)), { bpm: 96, key: 'F' });
+  for (const bad of [{ finalBpm: 19 }, { finalBpm: 401 }, { finalBpm: 120.5 }, { finalKey: 'H' }]) {
+    const invalid = { ...legacy, ...bad };
+    assert.deepEqual(parseComposerDraft(JSON.stringify(invalid)), emptyComposerDraft());
+    assert.throws(() => parseMelodyCode(exportMelodyCode(invalid)));
+    assert.throws(() => melodyPayload(invalid));
+    const snapshot = { ...invalid, title: 'Invalid', source: '', hint: '', author: 'Composer', finalMelody: [] };
+    assert.throws(() => publishedChallenge('invalid', '2026-11-01', snapshot));
+  }
 });
 test('Lisbon dates respect winter and summer clock offsets', () => {
   assert.equal(lisbonDate(new Date('2026-07-01T23:30:00Z')),'2026-07-02');

@@ -1,6 +1,7 @@
 import { useAuth } from '../../../auth/authContext';
 import { useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import BrodleIcon from '../components/BrodleIcon';
 import PianoKeyboard from '../components/PianoKeyboard';
 import PianoControls from '../components/PianoControls';
@@ -9,7 +10,7 @@ import RhythmSymbol from '../components/RhythmSymbol';
 import { usePianoAudio } from '../hooks/usePianoAudio';
 import { keyName, melodyNotation, MUSICAL_KEYS, TIME_SIGNATURES, noteName } from '../lib/musicGame';
 import type { MusicalKey, NoteNaming, TimeSignature } from '../lib/musicGame';
-import { COMPOSER_STORAGE_KEY, DURATIONS, durationForStep, emptyComposerDraft, exportMelodyCode, makeStep, makeVictoryStep, parseComposerDraft } from './melodyComposer';
+import { COMPOSER_STORAGE_KEY, DURATIONS, durationForStep, emptyComposerDraft, exportMelodyCode, makeStep, makeVictoryStep, parseComposerDraft, victorySettings } from './melodyComposer';
 import { parseMelodyCode } from './melodyCode';
 import type { ComposerDraft, DurationId } from './melodyComposer';
 import '../Brodle.css';
@@ -26,6 +27,30 @@ function loadDraft(): ComposerDraft {
   catch { return emptyComposerDraft(); }
 }
 
+function MelodySettings({ id, title, musicalKey, bpm, bpmText, naming, disabled, onKey, onBpm }: {
+  id: string; title: string; musicalKey: MusicalKey; bpm: number; bpmText: string; naming: NoteNaming;
+  disabled: boolean; onKey: (key: MusicalKey) => void; onBpm: (value: string) => void;
+}) {
+  const valid = Number.isInteger(Number(bpmText)) && Number(bpmText) >= 20 && Number(bpmText) <= 400;
+  return <fieldset className="composer-settings-part" disabled={disabled}>
+    <legend>{title}</legend>
+    <div className="composer-part-settings-grid">
+      <div className="composer-field"><label htmlFor={`${id}-key`}>Key signature</label>
+        <select id={`${id}-key`} value={musicalKey} onChange={(event) => onKey(event.target.value as MusicalKey)}>
+          <optgroup label="Major">{MUSICAL_KEYS.filter((key) => !key.endsWith('m')).map((key) => <option key={key} value={key}>{keyName(key, naming)}</option>)}</optgroup>
+          <optgroup label="Minor">{MUSICAL_KEYS.filter((key) => key.endsWith('m')).map((key) => <option key={key} value={key}>{keyName(key, naming)}</option>)}</optgroup>
+        </select>
+      </div>
+      <div className="composer-field composer-tempo"><label htmlFor={`${id}-bpm`}>Tempo <span>BPM</span></label>
+        <input id={`${id}-bpm`} type="number" min="20" max="400" step="1" value={bpmText} aria-invalid={!valid}
+          aria-describedby={`${id}-tempo-help`} onChange={(event) => onBpm(event.target.value)}
+          onBlur={() => onBpm(String(Math.min(400, Math.max(20, Math.round(Number(bpmText) || bpm)))))} />
+        <span id={`${id}-tempo-help`}>20–400 BPM</span>
+      </div>
+    </div>
+  </fieldset>;
+}
+
 function MelodyCreator({ fresh }: { fresh: boolean }) {
   const [draft, setDraft] = useState(() => fresh ? emptyComposerDraft() : loadDraft());
   const [duration, setDuration] = useState<DurationId>('quarter');
@@ -36,40 +61,49 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
   const [chordMode, setChordMode] = useState(false);
   const [naming, setNaming] = useState<NoteNaming>('letters');
   const [bpmText, setBpmText] = useState(() => String(draft.bpm));
+  const [finalBpmText, setFinalBpmText] = useState(() => String(victorySettings(draft).bpm));
   const [storageError, setStorageError] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
   const [codeText, setCodeText] = useState<string | null>(null);
   const [codeError, setCodeError] = useState('');
   const [codeMessage, setCodeMessage] = useState('');
   const codeField = useRef<HTMLTextAreaElement>(null);
+  const codeLineNumbers = useRef<HTMLPreElement>(null);
   const copyRequest = useRef(0);
   const audio = usePianoAudio();
   const cloud = useStudioCloud(draft, setDraft, audio.stopAudio);
   const editable = !cloud.locked && !cloud.loading && !cloud.busy;
   const sequence = useMemo<VictoryStep[]>(() => draft[track] ?? [], [draft, track]);
-  const chordNotes = selectedIndex !== null && sequence[selectedIndex] ? stepPitches(sequence[selectedIndex]) : [];
+  const chordNotes = useMemo(() => selectedIndex !== null && sequence[selectedIndex] ? stepPitches(sequence[selectedIndex]) : [], [sequence, selectedIndex]);
   const inVictory = track !== 'melody';
+  const { bpm: finalBpm, key: finalKey } = victorySettings(draft);
+  const scoreKey = inVictory ? finalKey : draft.key;
+  const scoreBpm = inVictory ? finalBpm : draft.bpm;
   const mainVictory = draft.finalMelody?.length ? draft.finalMelody : draft.melody;
   const bass = draft.finalBass ?? [];
   const clefField = track === 'finalBass' ? 'finalBassClef' : 'finalClef';
   const clef: Clef = draft[clefField] ?? (track === 'finalBass' ? 'bass' : 'treble');
   function changeTrack(next: typeof track) { audio.stopAudio(); setTrack(next); setSelectedIndex(null); setChordMode(false); }
   useEffect(() => setBpmText(String(draft.bpm)), [draft.bpm]);
-  const validBpm = Number.isInteger(Number(bpmText)) && Number(bpmText) >= 20 && Number(bpmText) <= 400;
+  useEffect(() => setFinalBpmText(String(finalBpm)), [finalBpm]);
+  const validBpm = [bpmText, finalBpmText].every((value) => Number.isInteger(Number(value)) && Number(value) >= 20 && Number(value) <= 400);
   const chordCount = sequence.filter((step) => step.pitches?.length).length;
   const noteCount = sequence.filter((step) => step.midi !== null && !step.pitches?.length).length;
   const restCount = sequence.filter((step) => step.midi === null).length;
   const beats = sequence.reduce((total, step) => total + step.beats, 0);
   const code = exportMelodyCode(draft);
   const displayedCode = codeText ?? code;
+  const codeLineCount = displayedCode.split('\n').length;
+  const lineNumbers = useMemo(() => Array.from({ length: codeLineCount }, (_, index) => index + 1).join('\n'), [codeLineCount]);
+  const lineNumberDigits = String(codeLineCount).length;
   const codeDirty = displayedCode !== code;
   const notation = useMemo(() => {
-    if (inVictory) return victoryScore(draft.finalMelody?.length ? draft.finalMelody : draft.melody, draft.finalBass ?? [], naming, draft.key, draft.bpm, draft.timeSignature, draft.finalClef, draft.finalBassClef, track === 'finalBass' || Boolean(draft.finalBass?.length));
+    if (inVictory) return victoryScore(draft.finalMelody?.length ? draft.finalMelody : draft.melody, draft.finalBass ?? [], naming, scoreKey, scoreBpm, draft.timeSignature, draft.finalClef, draft.finalBassClef, track === 'finalBass' || Boolean(draft.finalBass?.length));
     const score = melodyNotation(draft.melody, naming, draft.key, draft.bpm, draft.timeSignature, false);
     return { abc: score.abc, stepIndices: [score.stepIndices] };
-  }, [draft, naming, inVictory, track]);
-  const stepLabels = useMemo(() => sequence.map((step, index) => `Step ${index + 1}: ${step.midi === null ? step.rhythm : `${stepPitches(step).map((pitch) => noteName(pitch, naming, draft.key)).join(' + ')}, ${step.rhythm}`}`), [sequence, naming, draft.key]);
-  const scoreLabels = (inVictory ? [mainVictory, bass] : [draft.melody]).map((part, voice) => part.map((step, index) => `${inVictory ? voice ? 'Bass / second part' : 'Main part' : 'Challenge'}, step ${index + 1}: ${step.midi === null ? 'rest' : stepPitches(step).map((pitch) => noteName(pitch, naming, draft.key)).join(' + ')}, ${step.beats} beats. Select to edit.`));
+  }, [draft, naming, inVictory, track, scoreKey, scoreBpm]);
+  const stepLabels = useMemo(() => sequence.map((step, index) => `Step ${index + 1}: ${step.midi === null ? step.rhythm : `${stepPitches(step).map((pitch) => noteName(pitch, naming, scoreKey)).join(' + ')}, ${step.rhythm}`}`), [sequence, naming, scoreKey]);
+  const scoreLabels = (inVictory ? [mainVictory, bass] : [draft.melody]).map((part, voice) => part.map((step, index) => `${inVictory ? voice ? 'Bass / second part' : 'Main part' : 'Challenge'}, step ${index + 1}: ${step.midi === null ? 'rest' : stepPitches(step).map((pitch) => noteName(pitch, naming, scoreKey)).join(' + ')}, ${step.beats} beats. Select to edit.`));
 
   useEffect(() => {
     setSelectedIndex(null); setChordMode(false); setRestMode(false); setCodeText(null); setCodeError(''); setCodeMessage('');
@@ -89,6 +123,12 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
     setCopyStatus('');
   }, [draft]);
   useEffect(() => () => { copyRequest.current++; }, []);
+
+  useEffect(syncCodeScroll, [displayedCode]);
+
+  function syncCodeScroll() {
+    if (codeLineNumbers.current && codeField.current) codeLineNumbers.current.style.transform = `translateY(-${codeField.current.scrollTop}px)`;
+  }
 
   function commitMelody(melody: VictoryStep[]) {
     if (!editable) return;
@@ -180,11 +220,14 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
     } catch (error) { setCodeError(error instanceof Error ? error.message : 'Unable to read the melody code.'); setCodeMessage(''); }
   }
 
-  function changeBpm(value: string) {
-    setBpmText(value);
+  function changeBpm(value: string, final = false) {
+    if (final) setFinalBpmText(value);
+    else setBpmText(value);
     audio.stopAudio();
     const bpm = Number(value);
-    if (Number.isInteger(bpm) && bpm >= 20 && bpm <= 400) setDraft((previous) => ({ ...previous, bpm }));
+    if (Number.isInteger(bpm) && bpm >= 20 && bpm <= 400) setDraft((previous) => final
+      ? { ...previous, finalBpm: bpm }
+      : { ...previous, finalBpm: previous.finalBpm ?? previous.bpm, bpm });
   }
 
   async function copyCode() {
@@ -219,24 +262,16 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
           </div>
         </section>
         <section className="brodle-panel composer-settings" aria-labelledby="settings-title">
-          <div className="composer-section-intro"><span className="composer-step">01</span><div><h2 id="settings-title">Set the feel</h2><p>Choose your key, tempo, and time signature.</p></div></div>
+          <div className="composer-section-intro"><span className="composer-step">01</span><div><h2 id="settings-title">Set the feel</h2><p>Choose a separate key and tempo for the challenge and victory melodies.</p></div></div>
           <div className="composer-settings-grid">
-            <div className="composer-field"><label htmlFor="composer-key">Key signature</label>
-              <select id="composer-key" disabled={!editable} value={draft.key} onChange={(event) => { audio.stopAudio(); setDraft((previous) => ({ ...previous, key: event.target.value as MusicalKey })); }}>
-                <optgroup label="Major">{MUSICAL_KEYS.filter((key) => !key.endsWith('m')).map((key) => <option key={key} value={key}>{keyName(key, naming)}</option>)}</optgroup>
-                <optgroup label="Minor">{MUSICAL_KEYS.filter((key) => key.endsWith('m')).map((key) => <option key={key} value={key}>{keyName(key, naming)}</option>)}</optgroup>
-              </select>
-            </div>
-            <div className="composer-field"><label htmlFor="composer-meter">Time signature</label>
+            <MelodySettings id="composer" title="Challenge melody" musicalKey={draft.key} bpm={draft.bpm} bpmText={bpmText} naming={naming} disabled={!editable}
+              onKey={(key) => { audio.stopAudio(); setDraft((previous) => ({ ...previous, finalKey: previous.finalKey ?? previous.key, key })); }} onBpm={(value) => changeBpm(value)} />
+            <MelodySettings id="composer-final" title="Victory melody" musicalKey={finalKey} bpm={finalBpm} bpmText={finalBpmText} naming={naming} disabled={!editable}
+              onKey={(finalKey) => { audio.stopAudio(); setDraft((previous) => ({ ...previous, finalKey })); }} onBpm={(value) => changeBpm(value, true)} />
+            <div className="composer-field composer-meter"><label htmlFor="composer-meter">Shared time signature</label>
               <select id="composer-meter" disabled={!editable} value={draft.timeSignature} onChange={(event) => { audio.stopAudio(); setDraft((previous) => ({ ...previous, timeSignature: event.target.value as TimeSignature })); }}>
                 {TIME_SIGNATURES.map((meter) => <option key={meter} value={meter}>{meter}</option>)}
               </select>
-            </div>
-            <div className="composer-field composer-tempo"><label htmlFor="composer-bpm">Tempo <span>BPM</span></label>
-              <input id="composer-bpm" disabled={!editable} type="number" min="20" max="400" step="1" value={bpmText} aria-invalid={!validBpm}
-                aria-describedby="tempo-help" onChange={(event) => changeBpm(event.target.value)}
-                onBlur={() => changeBpm(String(Math.min(400, Math.max(20, Math.round(Number(bpmText) || draft.bpm)))))} />
-              <span id="tempo-help">20–400 BPM</span>
             </div>
           </div>
         </section>
@@ -245,7 +280,7 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
           <div className="composer-score-heading"><div className="composer-section-intro"><span className="composer-step">02</span><div><h2 id="score-title">Write your melody</h2>
             <p>{noteCount} {noteCount === 1 ? 'note' : 'notes'}{chordCount > 0 && <> · {chordCount} {chordCount === 1 ? 'chord' : 'chords'}</>} · {restCount} {restCount === 1 ? 'rest' : 'rests'} · {beats} beats</p></div></div>
             <div className="game-controls"><button type="button" className="primary-button composer-play" disabled={!(inVictory ? mainVictory.length || bass.length : sequence.length) || !validBpm}
-              onClick={() => audio.playing === 'composer' ? audio.stopAudio() : void (inVictory ? audio.playArrangement([mainVictory, bass], 'composer', draft.bpm) : audio.playMelody(sequence, 'composer', draft.bpm))}>
+              onClick={() => audio.playing === 'composer' ? audio.stopAudio() : void (inVictory ? audio.playArrangement([mainVictory, bass], 'composer', finalBpm) : audio.playMelody(sequence, 'composer', draft.bpm))}>
               <BrodleIcon name={audio.playing === 'composer' ? 'stop' : 'play'} />{audio.playing === 'composer' ? 'Stop' : inVictory ? 'Play victory arrangement' : 'Play melody'}</button></div>
           </div>
           <div className="studio-track-switch" role="group" aria-label="Melody section">
@@ -276,13 +311,15 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
                 onClick={() => chooseDuration(option.id)}><RhythmSymbol duration={option.id} rest={restMode} dotted={dotted} /><span>{option.label}</span><small>{option.fraction}</small></button>)}
             </div>
           </div>
-          <SheetMusic abc={notation.abc} musicalKey={draft.key} naming={naming} bpm={draft.bpm} timeSignature={draft.timeSignature} wrap
+          <SheetMusic abc={notation.abc} musicalKey={scoreKey} naming={naming} bpm={scoreBpm} timeSignature={draft.timeSignature} wrap
             selection={editable ? { stepIndices: notation.stepIndices, labels: scoreLabels, selected: selectedIndex === null ? null : { voice: track === 'finalBass' ? 1 : 0, index: selectedIndex }, onSelect: selectStep, onDelete: deleteStep } : undefined}
             label={stepLabels.length ? stepLabels.join('. ') : 'Empty melody. Choose a duration, then play a piano key or choose a rest.'} />
           {!sequence.length && <p className="composer-empty">Choose a length, then play the piano. For rests, turn on Rests and click a duration.</p>}
           <div className="composer-edit-toolbar game-controls">
-            <button type="button" disabled={!editable || !sequence.length} onClick={undo} title="Remove the last entry in this part"><BrodleIcon name="undo" />Undo last note</button>
-            {selectedIndex !== null && <><button type="button" className="delete-selected" disabled={!editable} onClick={() => deleteStep(track === 'finalBass' ? 1 : 0, selectedIndex)}>Delete → rest</button><button type="button" className="finish-edit" onClick={() => { setSelectedIndex(null); }}>Done editing</button></>}
+            <div className="composer-edit-actions">
+              <button type="button" disabled={!editable || !sequence.length} onClick={undo} title="Remove the last entry in this part"><BrodleIcon name="undo" />Undo last note</button>
+              {selectedIndex !== null && <><button type="button" className="delete-selected" disabled={!editable} onClick={() => deleteStep(track === 'finalBass' ? 1 : 0, selectedIndex)}>Delete → rest</button><button type="button" className="finish-edit" onClick={() => { setSelectedIndex(null); }}>Done editing</button></>}
+            </div>
             <button type="button" className="clear-guess" disabled={!editable || !sequence.length} onClick={() => { commitMelody([]); setSelectedIndex(null); }}>{inVictory ? 'Clear part' : 'Clear melody'}</button>
             <span className="composer-edit-hint" role="status">{!editable ? 'Make a copy to edit this melody.' : selectedIndex !== null ? `Editing step ${selectedIndex + 1}. Choose a piano key, duration, or rest. Delete keeps its timing.` : 'Click a note or rest to edit it. Undo always removes the last entry in this part.'}</span>
           </div>
@@ -295,7 +332,7 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
             <button className="chord-mode-button" type="button" aria-pressed={chordMode} disabled={!editable} onClick={() => { audio.stopAudio(); setChordMode(!chordMode); setRestMode(false); if (chordMode) setSelectedIndex(null); }}>Chords</button>
             {chordMode && <button type="button" className="confirm-chord" aria-label="Confirm chord" title="Confirm chord" disabled={!editable || !chordNotes.length} onClick={() => { audio.stopAudio(); setChordMode(false); setSelectedIndex(null); setRestMode(false); }}><BrodleIcon name="check" size={19} /></button>}
           </div>}
-          <PianoKeyboard {...audio} chordNotes={inVictory && chordMode ? chordNotes : undefined} naming={naming} onNote={enterPianoNote} />
+          <PianoKeyboard {...audio} highlightedNotes={editable ? chordNotes : undefined} chordNotes={inVictory && chordMode ? chordNotes : undefined} naming={naming} onNote={enterPianoNote} />
           {!chordMode && <div className="piano-help"><p>{selectedIndex !== null ? `Tap a key to replace step ${selectedIndex + 1}. Hold to sustain.` : 'Tap to add a note. Hold to sustain.'}<span className="piano-scroll-hint"> Swipe for more keys.</span>{restMode && ' Piano keys switch back to notes.'}</p></div>}
         </section>
 
@@ -305,9 +342,14 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
           <div className="composer-export-heading"><div className="composer-section-intro"><span className="composer-step">03</span><div><h2 id="export-title">Make it a Brodle</h2></div></div>
             <div className="game-controls"><button type="button" className="primary-button" disabled={!draft.melody.some((step) => step.midi !== null) || !validBpm} onClick={() => void copyCode()}><BrodleIcon name={copyStatus === 'Copied!' ? 'check' : 'share'} />{copyStatus === 'Copied!' ? 'Copied!' : 'Copy code'}</button></div>
           </div>
-          <p className="composer-export-help">Edit notes, BPM, key, time signature, or victory parts, then press Apply code. Use MIDI numbers for pitches, <code>null</code> for rests, and <code>beats</code> for duration. Lengths and rhythm labels update automatically.</p>
+          <p className="composer-export-help">Edit notes, BPM, key, time signature, or victory parts, then press Apply code. Use <code>FINAL_BPM</code> and <code>FINAL_KEY</code> for separate victory settings, MIDI numbers for pitches, <code>null</code> for rests, and <code>beats</code> for duration. Lengths and rhythm labels update automatically.</p>
           <label className="sr-only" htmlFor="melody-code">Generated melody code</label>
-          <textarea ref={codeField} id="melody-code" readOnly={!editable} spellCheck={false} value={displayedCode} aria-invalid={Boolean(codeError)} aria-describedby="melody-code-help" onChange={(event) => { setCodeText(event.target.value); setCodeError(''); setCodeMessage(''); copyRequest.current++; setCopyStatus(''); }} rows={Math.min(16, Math.max(8, draft.melody.length + 7))} />
+          <div className="melody-code-editor" data-invalid={Boolean(codeError)} style={{ '--code-line-digits': lineNumberDigits } as CSSProperties}>
+            <div className="melody-code-gutter" aria-hidden="true"><pre ref={codeLineNumbers}>{lineNumbers}</pre></div>
+            <textarea ref={codeField} id="melody-code" readOnly={!editable} spellCheck={false} wrap="off" value={displayedCode} aria-invalid={Boolean(codeError)} aria-describedby="melody-code-help"
+              onScroll={syncCodeScroll}
+              onChange={(event) => { setCodeText(event.target.value); setCodeError(''); setCodeMessage(''); copyRequest.current++; setCopyStatus(''); }} rows={Math.min(16, Math.max(8, draft.melody.length + 7))} />
+          </div>
           <div className="game-controls code-edit-actions"><button type="button" className="primary-button apply-code" disabled={!editable || !codeDirty} onClick={applyCode}>Apply code</button><button type="button" disabled={!codeDirty} onClick={() => { setCodeText(null); setCodeError(''); setCodeMessage(''); }}>Reset code to score</button></div>
           <p id="melody-code-help" className="library-muted" role="status">{codeDirty ? 'Code edits are not applied yet. Apply them before saving, submitting, or scheduling. Reset code to use the current score.' : codeMessage || 'The code matches the current score.'}</p>
           {codeError && <p className="progress-error" role="alert">{codeError} Your score has not changed.</p>}

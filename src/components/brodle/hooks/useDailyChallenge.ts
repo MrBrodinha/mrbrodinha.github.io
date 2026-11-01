@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { CHALLENGE, BPM, KEY, TIME_SIGNATURE, MELODY, MELODY_FINAL, MELODY_FINAL_BASS, FINAL_CLEF, FINAL_BASS_CLEF } from '../lib/musicGame';
+import { CHALLENGE, BPM, KEY, FINAL_BPM, FINAL_KEY, TIME_SIGNATURE, MELODY, MELODY_FINAL, MELODY_FINAL_BASS, FINAL_CLEF, FINAL_BASS_CLEF } from '../lib/musicGame';
 import { publishedChallenge } from '../lib/melodyLibrary';
 import type { ChallengeSnapshot, GameChallenge } from '../lib/melodyLibrary';
 
-export const PRACTICE_CHALLENGE: GameChallenge = { ...CHALLENGE, bpm: BPM, key: KEY, timeSignature: TIME_SIGNATURE, melody: MELODY, finalMelody: MELODY_FINAL, finalBass: MELODY_FINAL_BASS, finalClef: FINAL_CLEF, finalBassClef: FINAL_BASS_CLEF, author: '' };
+export const PRACTICE_CHALLENGE: GameChallenge = { ...CHALLENGE, bpm: BPM, key: KEY, finalBpm: FINAL_BPM, finalKey: FINAL_KEY, timeSignature: TIME_SIGNATURE, melody: MELODY, finalMelody: MELODY_FINAL, finalBass: MELODY_FINAL_BASS, finalClef: FINAL_CLEF, finalBassClef: FINAL_BASS_CLEF, author: '' };
 type DailyState = {
   challenge: GameChallenge | null; loading: boolean; notice: string;
   previousDate: string | null; nextDate: string | null; today: string | null;

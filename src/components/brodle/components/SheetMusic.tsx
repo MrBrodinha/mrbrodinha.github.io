@@ -18,7 +18,7 @@ type SheetMusicProps = {
     labels: readonly (readonly string[])[];
     selected: { voice: number; index: number } | null;
     onSelect: (voice: number, index: number) => void;
-    onDelete: (voice: number, index: number) => void;
+    onDelete?: (voice: number, index: number) => void;
   };
 };
 
@@ -81,9 +81,9 @@ function SheetMusic({ abc, feedback, feedbackIndices, label = 'Musical notation'
         note.addEventListener('click', () => selectionRef.current?.onSelect(voice, index));
         note.addEventListener('keydown', (event) => {
           if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault(); selectionRef.current?.onSelect(voice, index);
-          } else if (event.key === 'Delete' || event.key === 'Backspace') {
-            event.preventDefault(); selectionRef.current?.onDelete(voice, index);
+            event.preventDefault(); event.stopPropagation(); selectionRef.current?.onSelect(voice, index);
+          } else if ((event.key === 'Delete' || event.key === 'Backspace') && selectionRef.current?.onDelete) {
+            event.preventDefault(); event.stopPropagation(); selectionRef.current.onDelete(voice, index);
           }
         });
       });

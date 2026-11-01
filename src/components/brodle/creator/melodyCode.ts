@@ -75,7 +75,7 @@ export function parseMelodyCode(code: string): Omit<ComposerDraft, 'title' | 'so
   if (code.length > 250_000) throw new Error('The code is too long. Use up to 256 challenge steps and 512 steps per victory part.');
   const reader = new LiteralReader(code);
   const constants: Record<string, unknown> = Object.create(null);
-  const allowed = ['BPM', 'KEY', 'TIME_SIGNATURE', 'MELODY', 'MELODY_FINAL', 'MELODY_FINAL_BASS', 'FINAL_CLEF', 'FINAL_BASS_CLEF'];
+  const allowed = ['BPM', 'KEY', 'FINAL_BPM', 'FINAL_KEY', 'TIME_SIGNATURE', 'MELODY', 'MELODY_FINAL', 'MELODY_FINAL_BASS', 'FINAL_CLEF', 'FINAL_BASS_CLEF'];
   reader.space();
   while (reader.position < code.length) {
     const declaration = code.slice(reader.position).match(/^(?:export\s+)?const\s+([A-Z_]+)\s*(?::[A-Za-z0-9_\s[\]{}()?;|&:'"-]*)?=/) ?? reader.fail('Expected one of the exported melody constants');
@@ -92,6 +92,8 @@ export function parseMelodyCode(code: string): Omit<ComposerDraft, 'title' | 'so
   }
   if (!Number.isInteger(constants.BPM) || Number(constants.BPM) < 20 || Number(constants.BPM) > 400) throw new Error('BPM must be an integer from 20 to 400.');
   if (!MUSICAL_KEYS.includes(constants.KEY as MusicalKey)) throw new Error('Choose a supported KEY, such as C, F, or Am.');
+  if (constants.FINAL_BPM !== undefined && (!Number.isInteger(constants.FINAL_BPM) || Number(constants.FINAL_BPM) < 20 || Number(constants.FINAL_BPM) > 400)) throw new Error('FINAL_BPM must be an integer from 20 to 400.');
+  if (constants.FINAL_KEY !== undefined && !MUSICAL_KEYS.includes(constants.FINAL_KEY as MusicalKey)) throw new Error('Choose a supported FINAL_KEY, such as C, F, or Am.');
   if (!TIME_SIGNATURES.includes(constants.TIME_SIGNATURE as TimeSignature)) throw new Error('Choose a supported TIME_SIGNATURE, such as 4/4 or 6/8.');
   const part = (name: string, limit: number, challenge = false) => {
     try {
@@ -105,6 +107,8 @@ export function parseMelodyCode(code: string): Omit<ComposerDraft, 'title' | 'so
   }
   return {
     bpm: Number(constants.BPM), key: constants.KEY as MusicalKey, timeSignature: constants.TIME_SIGNATURE as TimeSignature,
+    ...(constants.FINAL_BPM !== undefined ? { finalBpm: Number(constants.FINAL_BPM) } : {}),
+    ...(constants.FINAL_KEY !== undefined ? { finalKey: constants.FINAL_KEY as MusicalKey } : {}),
     melody: part('MELODY', 256, true), finalMelody: part('MELODY_FINAL', 512), finalBass: part('MELODY_FINAL_BASS', 512),
     finalClef: (constants.FINAL_CLEF ?? 'treble') as 'treble' | 'bass', finalBassClef: (constants.FINAL_BASS_CLEF ?? 'bass') as 'treble' | 'bass',
   };

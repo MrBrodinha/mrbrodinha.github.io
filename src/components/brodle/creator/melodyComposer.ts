@@ -12,7 +12,7 @@ export const DURATIONS = [
   { id: 'whole', label: 'Whole', beats: 4, fraction: '1' },
 ] as const;
 export type DurationId = typeof DURATIONS[number]['id'];
-export type ComposerDraft = { title?: string; source?: string; hint?: string; finalMelody?: VictoryStep[]; finalBass?: VictoryStep[]; finalClef?: Clef; finalBassClef?: Clef; melody: MelodyStep[]; bpm: number; key: MusicalKey; timeSignature: TimeSignature };
+export type ComposerDraft = { title?: string; source?: string; hint?: string; finalMelody?: VictoryStep[]; finalBass?: VictoryStep[]; finalClef?: Clef; finalBassClef?: Clef; finalBpm?: number; finalKey?: MusicalKey; melody: MelodyStep[]; bpm: number; key: MusicalKey; timeSignature: TimeSignature };
 export const COMPOSER_STORAGE_KEY = 'brodle:composer:v1';
 
 export function makeStep(midi: number | null, duration: DurationId, dotted: boolean): MelodyStep {
@@ -29,7 +29,12 @@ export function durationForStep(step: MelodyStep): { duration: DurationId; dotte
   return { duration: 'quarter', dotted: false };
 }
 
-export function emptyComposerDraft(): ComposerDraft { return { melody: [], bpm: 120, key: 'C', timeSignature: '4/4' }; }
+export function emptyComposerDraft(): ComposerDraft { return { melody: [], bpm: 120, key: 'C', finalBpm: 120, finalKey: 'C', timeSignature: '4/4' }; }
+
+// Older drafts and published snapshots inherit the challenge settings.
+export function victorySettings(draft: Pick<ComposerDraft, 'bpm' | 'key' | 'finalBpm' | 'finalKey'>) {
+  return { bpm: draft.finalBpm ?? draft.bpm, key: draft.finalKey ?? draft.key };
+}
 
 export function parseComposerDraft(serialized: string | null): ComposerDraft {
   try {
@@ -46,6 +51,14 @@ export function parseComposerDraft(serialized: string | null): ComposerDraft {
       melody.push(restored);
     }
     const extras: Partial<ComposerDraft> = {};
+    if (value.finalBpm !== undefined) {
+      if (!Number.isInteger(value.finalBpm) || value.finalBpm < 20 || value.finalBpm > 400) return emptyComposerDraft();
+      extras.finalBpm = value.finalBpm;
+    }
+    if (value.finalKey !== undefined) {
+      if (!MUSICAL_KEYS.includes(value.finalKey)) return emptyComposerDraft();
+      extras.finalKey = value.finalKey;
+    }
     for (const [field, limit] of [['title', 160], ['source', 200], ['hint', 300]] as const) {
       if (value[field] !== undefined) {
         if (typeof value[field] !== 'string' || value[field].length > limit) return emptyComposerDraft();
@@ -70,6 +83,8 @@ export function exportMelodyCode(draft: ComposerDraft): string {
     `export const BPM = ${draft.bpm};`,
     `export const TIME_SIGNATURE: TimeSignature = '${draft.timeSignature ?? '4/4'}';`,
     `export const KEY: MusicalKey = '${draft.key}';`, '',
+    ...(draft.finalBpm !== undefined ? [`export const FINAL_BPM = ${draft.finalBpm};`] : []),
+    ...(draft.finalKey !== undefined ? [`export const FINAL_KEY: MusicalKey = '${draft.finalKey}';`] : []),
     'export const MELODY: MelodyStep[] = [',
     ...draft.melody.map((step) => `  { midi: ${step.midi}, length: '${step.length}', beats: ${step.beats}, rhythm: '${step.rhythm}' },`),
     '];',

@@ -1,63 +1,67 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { progressStorageKey, emptyProgress, parseProgress, serializeProgress } from '../lib/gameProgress';
+import { useAuth } from '../../../auth/authContext';
+import { progressStorageKey } from '../lib/gameProgress';
 import type { GameProgress } from '../lib/gameProgress';
+import { ProgressSync, readProgressCache, serializeProgressCache, emptyProgressCache } from '../lib/progressSync';
+import type { ProgressSyncState } from '../lib/progressSync';
+import { progressTransport } from '../services/progressService';
 import { CHALLENGE, TARGET } from '../lib/musicGame';
-import { BRODLE_RESET_EVENT } from '../../../auth/loginReset';
 
-function readProgress(key: string, target: readonly number[], fallback = emptyProgress()) {
-  try {
-    const saved = window.localStorage.getItem(key);
-    const progress = saved === null ? fallback : parseProgress(saved, target);
-    // A stale tab must not discard attempts already made in this tab.
-    return { progress: progress.attempts.length >= fallback.attempts.length ? progress : fallback, storageError: false };
-  } catch {
-    return { progress: fallback, storageError: true };
-  }
+function loadCache(key: string, target: readonly number[]) {
+  try { return { ...readProgressCache(window.localStorage.getItem(key), target), storageError: false }; }
+  catch { return { ...emptyProgressCache(), storageError: true }; }
 }
 
 export function useBrodleProgress(challengeId = CHALLENGE.id, target: readonly number[] = TARGET) {
-  const key = progressStorageKey(challengeId, target);
-  const [state, setState] = useState(() => readProgress(key, target));
-  const current = useRef(state.progress);
-
-  const updateProgress = useCallback((update: (previous: GameProgress) => GameProgress) => {
-    // Read first so an already-open tab resumes the latest stored round too.
-    const { progress: previous } = readProgress(key, target, current.current);
-    const next = update(previous);
-    let storageError = false;
-    try {
-      // Save within the input event, before a refresh can discard the render.
-      window.localStorage.setItem(key, serializeProgress(next));
-    } catch {
-      storageError = true;
-    }
-    current.current = next;
-    setState({ progress: next, storageError });
-    return { previous, next };
-  }, [key, target]);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const key = progressStorageKey(challengeId, target, userId);
+  const session = useRef<ProgressSync>();
+  const [state, setState] = useState<ProgressSyncState & { storageError: boolean }>(() => ({
+    ...loadCache(key, target), loading: Boolean(userId), status: userId ? 'loading' : 'local',
+  }));
 
   useEffect(() => {
-    const reset = (event?: Event) => {
-      const progress = emptyProgress();
-      current.current = progress;
-      const storageError = event instanceof CustomEvent && event.detail?.storageError === true;
-      setState({ progress, storageError });
-    };
-    const receiveProgress = (event: StorageEvent) => {
-      if (event.key !== null && event.key !== key) return;
-      if (event.newValue === null) { reset(); return; }
-      const progress = parseProgress(event.newValue, target);
-      if (progress.attempts.length < current.current.attempts.length) return;
-      current.current = progress;
-      setState({ progress, storageError: false });
-    };
-    window.addEventListener('storage', receiveProgress);
-    window.addEventListener(BRODLE_RESET_EVENT, reset);
-    return () => {
-      window.removeEventListener('storage', receiveProgress);
-      window.removeEventListener(BRODLE_RESET_EVENT, reset);
-    };
-  }, [key, target]);
+    const initial = loadCache(key, target);
+    const sync = new ProgressSync(target, initial, userId ? progressTransport(userId, challengeId, target) : undefined, (next) => {
+      let storageError = false;
+      try { window.localStorage.setItem(key, serializeProgressCache(next.progress, next.pending)); }
+      catch { storageError = true; }
+      setState({ ...next, storageError });
+    });
+    session.current = sync;
+    setState({ ...sync.state, storageError: initial.storageError });
+    void sync.sync();
 
-  return { ...state, updateProgress };
+    const receiveProgress = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage || event.key !== key || event.newValue === null) return;
+      const cached = readProgressCache(event.newValue, target);
+      sync.receive(cached.progress, cached.pending);
+    };
+    const resume = () => { if (!document.hidden) void sync.sync(); };
+    window.addEventListener('storage', receiveProgress);
+    window.addEventListener('focus', resume);
+    window.addEventListener('online', resume);
+    document.addEventListener('visibilitychange', resume);
+    const retry = userId ? window.setInterval(() => { if (sync.state.status === 'error' || sync.state.pending) resume(); }, 30000) : undefined;
+    return () => {
+      sync.dispose();
+      if (session.current === sync) session.current = undefined;
+      window.clearInterval(retry);
+      window.removeEventListener('storage', receiveProgress);
+      window.removeEventListener('focus', resume);
+      window.removeEventListener('online', resume);
+      document.removeEventListener('visibilitychange', resume);
+    };
+  }, [key, challengeId, userId, target]);
+
+  const updateProgress = useCallback((update: (previous: GameProgress) => GameProgress) => {
+    const sync = session.current;
+    if (!sync) return { previous: state.progress, next: state.progress };
+    const cached = loadCache(key, target);
+    sync.receive(cached.progress, cached.pending);
+    return sync.update(update);
+  }, [key, target, state.progress]);
+
+  return { ...state, updateProgress, retrySync: () => void session.current?.sync(), accountProgress: Boolean(userId) };
 }
