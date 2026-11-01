@@ -1,0 +1,8 @@
+/* The original Unity runtime is embedded in the site's shared page layout. */
+html, body { width: 100%; min-height: 100%; background: #231f20; }
+#unity-container.unity-desktop, #unity-container.unity-mobile {
+  position: relative; left: auto; top: auto; transform: none;
+  width: 100%; max-width: 1920px; height: auto; margin: 0 auto;
+}
+#unity-canvas { display: block; width: 100% !important; height: auto !important; aspect-ratio: 16 / 9; }
+#unity-footer { min-height: 38px; color: #eee; }
