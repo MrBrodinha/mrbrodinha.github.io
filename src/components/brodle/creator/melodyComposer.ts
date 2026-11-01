@@ -4,6 +4,7 @@ import type { VictoryStep, Clef } from '../lib/victoryMusic';
 import type { MelodyStep, MusicalKey, TimeSignature } from '../lib/musicGame';
 
 export const DURATIONS = [
+  { id: 'thirty-second', label: 'Demisemiquaver', beats: .125, fraction: '1/32' },
   { id: 'sixteenth', label: 'Sixteenth', beats: .25, fraction: '1/16' },
   { id: 'eighth', label: 'Eighth', beats: .5, fraction: '1/8' },
   { id: 'quarter', label: 'Quarter', beats: 1, fraction: '1/4' },

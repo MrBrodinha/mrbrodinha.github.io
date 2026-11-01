@@ -237,7 +237,7 @@ export function melodyNotation(melody: readonly MelodyStep[], naming: NoteNaming
       const available = Math.min(remaining, barBeats - position);
       // Odd meters can leave durations such as 2.5 beats. Tie together
       // representable note values instead of asking the renderer to draw one.
-      const beats = [6, 4, 3, 2, 1.5, 1, .75, .5, .375, .25, .125].find((value) => value <= available) ?? available;
+      const beats = [6, 4, 3, 2, 1.5, 1, .75, .5, .375, .25, .1875, .125, .0625].find((value) => value <= available) ?? available;
       remaining -= beats;
       fragments.push({ ...step, beats, length: abcLength(beats), tie: step.midi !== null && remaining > 0, hideLabel: !showNoteNames || !first });
       stepIndices.push(stepIndex);
@@ -251,8 +251,8 @@ export function melodyNotation(melody: readonly MelodyStep[], naming: NoteNaming
 }
 
 export function abcLength(beats: number): string {
-  let numerator = Math.round(beats * 8);
-  let denominator = 8;
+  let numerator = Math.round(beats * 16);
+  let denominator = 16;
   while (denominator > 1 && numerator % 2 === 0) { numerator /= 2; denominator /= 2; }
   return denominator === 1 ? String(numerator) : numerator === 1 ? `/${denominator}` : `${numerator}/${denominator}`;
 }

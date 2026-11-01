@@ -10,11 +10,12 @@ Supabase project's SQL Editor:
 3. `database/migrations/202610310004_piano_range.sql`
 4. `database/migrations/202610310005_delete_approved_melodies.sql`
 5. `database/migrations/202611010008_brodle_archive.sql`
+6. `database/migrations/202611010011_brodle_demisemiquavers.sql`
 
-If migrations `0002`–`0005` are already applied, run **only the new `0008`
-migration** to enable past-day navigation. Otherwise, apply any remaining
-Brodle migrations in order. Existing rows and schedules are preserved. Migrations
-`0006` and `0007` concern Red Bull and are independent.
+If Brodle is already set up through `0008`, run **only `0011`** to allow
+demisemiquavers (32nd notes and rests), including dotted variants, in challenge
+and victory parts. Otherwise, apply any remaining Brodle migrations in order.
+Existing rows and schedules are preserved. Red Bull migrations are independent.
 
 It uses your existing `public.users(id, username)` and Supabase Auth setup. It
 creates only Brodle tables/functions and does not change Red Bull ratings or

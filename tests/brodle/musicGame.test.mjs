@@ -133,6 +133,35 @@ test('every composer duration and dotted variant produces valid notes and rests'
   }
 });
 
+test('demisemiquavers keep dotted timing and note selection across bar lines in every meter', () => {
+  assert.deepEqual(DURATIONS.find((duration) => duration.id === 'thirty-second'), {
+    id: 'thirty-second', label: 'Demisemiquaver', beats: .125, fraction: '1/32',
+  });
+  assert.equal(makeStep(60, 'thirty-second', false).length, '/8');
+  assert.equal(makeStep(null, 'thirty-second', true).length, '3/16');
+  const melody = [
+    makeStep(60, 'thirty-second', true), makeStep(null, 'thirty-second', false),
+    makeStep(62, 'whole', false), makeStep(null, 'thirty-second', true),
+    makeStep(64, 'thirty-second', false),
+  ];
+  for (const meter of TIME_SIGNATURES) {
+    const notation = melodyNotation(melody, 'letters', 'C', 120, meter);
+    const tune = abcjs.parseOnly(notation.abc)[0];
+    assert.equal(tune.warnings, undefined, meter);
+    assert.equal(tune.setUpAudio({}).totalDuration, 4.625 / 4, meter);
+    assert.deepEqual(soundingPitches(tune), [60, 62, 64], meter);
+    assert.deepEqual([...new Set(notation.stepIndices)], [0, 1, 2, 3, 4], meter);
+  }
+  assert.deepEqual(arrangementTimeline([melody], 120), {
+    events: [
+      { pitches: [60], time: 0, duration: .09375 },
+      { pitches: [62], time: .15625, duration: 2 },
+      { pitches: [64], time: 2.25, duration: .0625 },
+    ],
+    totalDuration: 2.3125,
+  });
+});
+
 test('authored notes and rests cross bar lines without changing their timing', () => {
   const melody = [makeStep(60, 'quarter', false), makeStep(62, 'whole', false), makeStep(null, 'whole', false), makeStep(70, 'sixteenth', true)];
   const abc = melodyToAbc(melody, 'letters', 'F', 144);
@@ -202,6 +231,30 @@ const { restoreNotes, melodyPayload, publishedChallenge, lisbonDate } = await im
 const progressSource = await readFile(new URL('../../src/components/brodle/lib/gameProgress.ts', import.meta.url), 'utf8');
 const progressJs = ts.transpileModule(progressSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText.replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`);
 const { parseProgress, progressStorageKey } = await import(`data:text/javascript;base64,${Buffer.from(progressJs).toString('base64')}`);
+
+test('32nd notes, rests and victory chords survive code, draft and daily-library round trips', () => {
+  const draft = {
+    ...emptyComposerDraft(),
+    melody: [makeStep(60, 'thirty-second', false), makeStep(null, 'thirty-second', true)],
+    finalMelody: [makeVictoryStep([60, 64, 67], 'thirty-second', true)],
+    finalBass: [makeStep(null, 'thirty-second', false), makeVictoryStep([36], 'thirty-second', true)],
+    finalClef: 'treble', finalBassClef: 'bass',
+  };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)), draft);
+  assert.deepEqual(parseMelodyCode(exportMelodyCode(draft)), draft);
+  const payload = melodyPayload(draft);
+  assert.deepEqual(restoreNotes(payload.notes), draft.melody);
+  assert.deepEqual(restoreVictoryNotes(payload.final_notes), draft.finalMelody);
+  assert.deepEqual(restoreVictoryNotes(payload.final_bass_notes), draft.finalBass);
+  const challenge = publishedChallenge('32nd-day', '2026-11-01', { ...draft, title: '32nd tune', source: '', hint: '', author: 'Composer' });
+  assert.deepEqual(challenge.melody, draft.melody);
+  assert.deepEqual(challenge.finalMelody, draft.finalMelody);
+  assert.deepEqual(challenge.finalBass, draft.finalBass);
+  const score = victoryNotation(draft.finalMelody, draft.finalBass, 'letters', 'C', 120, '4/4');
+  const tune = abcjs.parseOnly(score)[0];
+  assert.equal(tune.warnings, undefined);
+  assert.equal(tune.setUpAudio({}).totalDuration, .3125 / 4);
+});
 
 test('cloud melody data round-trips metadata, dotted rests and an optional victory melody', () => {
   const draft = { title:'My tune',source:'An artist',hint:'A clue',bpm:96,key:'F',timeSignature:'3/4',

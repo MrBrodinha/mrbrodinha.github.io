@@ -13,7 +13,7 @@
 .composer-tempo input { font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .composer-tempo > span { color: #8794ab; font-size: .6rem; }
 .composer-tempo input[aria-invalid="true"] { border-color: #fb7185; }
-.duration-picker { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 9px; }
+.duration-picker { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-top: 9px; }
 .duration-picker button { display: flex; min-width: 0; min-height: 94px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 8px 4px; border: 1px solid #34394c; border-radius: 9px; background: #222633; color: #b5c0d3; font: inherit; cursor: pointer; }
 .duration-picker button span { font-size: .67rem; }
 .duration-picker button small { color: #7e8ca3; font-size: .58rem; }
@@ -43,6 +43,9 @@
 @media (max-width: 850px) {
   .composer-settings-grid { gap: 20px; }
   .composer-edit-hint { flex-basis: 100%; margin-left: 0; }
+}
+@media (max-width: 680px) {
+  .duration-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) {
   .creator-header { flex-wrap: wrap; }

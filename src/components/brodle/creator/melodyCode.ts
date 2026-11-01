@@ -98,7 +98,7 @@ export function parseMelodyCode(code: string): Omit<ComposerDraft, 'title' | 'so
       const notes = restoreVictoryNotes(Object.prototype.hasOwnProperty.call(constants, name) ? constants[name] : [], limit);
       if (challenge && notes.some((step) => step.pitches)) throw new Error();
       return notes;
-    } catch { throw new Error(`${name}: use up to ${limit} entries with midi ${PIANO_MIN_MIDI}–${PIANO_MAX_MIDI} or null, and supported beats (.25, .375, .5, .75, 1, 1.5, 2, 3, 4, 6).${challenge ? ' Chords are only allowed in victory parts.' : ' Chord pitches must contain 2–8 ascending, unique notes; midi must equal the first pitch.'}`); }
+    } catch { throw new Error(`${name}: use up to ${limit} entries with midi ${PIANO_MIN_MIDI}–${PIANO_MAX_MIDI} or null, and supported beats (.125, .1875, .25, .375, .5, .75, 1, 1.5, 2, 3, 4, 6).${challenge ? ' Chords are only allowed in victory parts.' : ' Chord pitches must contain 2–8 ascending, unique notes; midi must equal the first pitch.'}`); }
   };
   for (const name of ['FINAL_CLEF', 'FINAL_BASS_CLEF']) {
     if (constants[name] !== undefined && constants[name] !== 'treble' && constants[name] !== 'bass') throw new Error(`${name} must be 'treble' or 'bass'.`);
