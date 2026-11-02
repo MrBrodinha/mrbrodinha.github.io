@@ -1,11 +1,21 @@
 export type Feedback = 'correct' | 'octave' | 'shifted' | 'low' | 'high';
 export type WinKind = 'exact' | 'octave' | 'shifted';
-export type Attempt = { id?: string; notes: number[]; feedback: Feedback[] };
+export type Attempt = { id?: string; notes: number[]; feedback: Feedback[]; hintsUsed?: number };
 export type NoteNaming = 'letters' | 'solfege';
 export type MelodyStep = { midi: number | null; length: string; beats: number; rhythm: string };
 
 export const PIANO_MIN_MIDI = 31; // G1
 export const PIANO_MAX_MIDI = 103; // G7
+
+export function challengePianoRange(target: readonly number[]) {
+  const lowest = target.length ? Math.min(...target) : PIANO_MIN_MIDI;
+  const highest = target.length ? Math.max(...target) : PIANO_MAX_MIDI;
+  // Frame the melody with the nearest C below it and the nearest B above it.
+  return {
+    minMidi: Math.floor((lowest - 1) / 12) * 12,
+    maxMidi: Math.floor((highest + 1) / 12) * 12 + 11,
+  };
+}
 // Quarter-note beats per minute for the challenge melody.
 export const BPM = 180;
 export const TIME_SIGNATURES = ['2/4', '3/4', '4/4', '5/4', '6/4', '7/4', '3/8', '5/8', '6/8', '7/8', '9/8', '12/8', '2/2', '3/2', '4/2', '5/16', '7/16'] as const;
@@ -166,7 +176,8 @@ export function scoreGuess(guess: readonly number[], target: readonly number[]):
   });
 }
 
-export function buildShareText(attempts: readonly Attempt[], target: readonly number[], url: string): string {
+export function buildShareText(attempts: readonly Attempt[], target: readonly number[], url: string,
+  hintsUsed = attempts.reduce((total, attempt) => Math.max(total, attempt.hintsUsed ?? 0), 0)): string {
   const symbols: Record<Feedback, string> = { correct: '✓', octave: '↕', shifted: '♪', low: '↑', high: '↓' };
   const recent = attempts.slice(-4);
   const start = attempts.length - recent.length;
@@ -186,7 +197,7 @@ export function buildShareText(attempts: readonly Attempt[], target: readonly nu
 
   return [
     `Brodle${exactWin !== -1 ? ' 🎉' : octaveWin !== -1 ? ' ↕' : melodyWin !== -1 ? ' ♪' : ''}`,
-    summary, `Latest ${recent.length} of ${count(attempts.length)}:`,
+    summary, `Hints used: ${hintsUsed}`, `Latest ${recent.length} of ${count(attempts.length)}:`,
     ...recent.map((attempt, index) =>
       `${start + index + 1}. ${attempt.feedback.map((value) => symbols[value]).join('')}`,
     ),

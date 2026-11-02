@@ -14,9 +14,12 @@ Supabase project's SQL Editor:
 7. `database/migrations/202611010012_brodle_victory_settings.sql`
 8. `database/migrations/202611010013_brodle_player_progress.sql`
 9. `database/migrations/202611010014_brodle_return_approved_melodies.sql`
+10. `database/migrations/202611020015_brodle_note_hints.sql`
 
-If Brodle is already set up through `0013`, run **only `0014`** before deploying
-this frontend. It allows administrators to return approved melodies for editing.
+If Brodle is already set up through `0014`, run **only `0015`** before deploying
+this frontend. It saves revealed notes and each attempt's hint count to the account,
+preserving hints when older tabs or other devices save progress. Migration `0014`
+allows administrators to return approved melodies for editing.
 Migration `0013` adds private, account-owned player progress and the load/save
 functions. Migration `0012` adds separate victory BPM/key fields to melodies and
 newly scheduled snapshots; `0011` enables demisemiquavers (32nd notes and rests),
@@ -164,6 +167,21 @@ An up/down arrow indicates whether the latest correctly shaped melody is too
 low or too high. Octave guesses suggest a higher/lower octave; shifted guesses
 suggest moving the whole melody higher/lower. Each past attempt keeps its own
 direction hint in the history, without revealing the exact interval.
+Players can also choose **Reveal next note**, up to half the challenge's sounding
+notes, rounded down (10 notes allow 5 hints). Each hint reveals the next note in
+order. Revealed notes appear green and stay correct in every subsequent attempt,
+including after Undo, Clear, copying a past attempt, reloading, or signing back in.
+The budget belongs to the whole round. Each submitted attempt records how many
+hints it used; later hints do not change earlier attempts. Existing rounds start
+with no hints used.
+Shared results include the total number of hints used, including zero.
+
+The game piano starts on the nearest C below the melody's lowest note and ends
+on the nearest B above its highest note. C5–C6 and G4–G6 both use C4–B6.
+Both ends are always white keys, including melodies at the edges of the playable G1–G7
+range. Framing keys outside that playable range are disabled.
+Studio keeps its full keyboard. Clear appears
+before Submit guess, with Submit guess at the end of the action row.
 The victory parts do not add notes to the guessing target. My melodies and admin
 review show the victory score and can play the full arrangement.
 

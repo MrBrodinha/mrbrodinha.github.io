@@ -15,6 +15,9 @@ type Props = Pick<ReturnType<typeof usePianoAudio>, 'playing' | 'pressedNotes' |
 
 export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIANO_MAX_MIDI, chordNotes, highlightedNotes, naming, onNote, playing, pressedNotes, startNote, releaseNote, playNotes }: Props) {
   const { whiteKeys, blackKeys } = keyboardKeys(minMidi, maxMidi);
+  const startsBlack = blackKeys[0]?.midi === minMidi;
+  const endsBlack = blackKeys[blackKeys.length - 1]?.midi === maxMidi;
+  const keySlots = whiteKeys.length + Number(startsBlack) / 2 + Number(endsBlack) / 2;
   const scroll = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const midi = playing && pressedNotes.size ? pressedNotes.values().next().value : highlightedNotes?.[0];
@@ -65,14 +68,16 @@ export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIAN
 
   return (
     <div ref={scroll} className="piano-scroll" tabIndex={0} role="region" aria-label="Scrollable piano keyboard">
-      <div className="piano-keyboard" style={{ minWidth: Math.max(968, whiteKeys.length * 44) }}>
+      <div className="piano-keyboard" style={{ minWidth: keySlots * 44 }}>
+        {startsBlack && <span className="piano-edge-space" aria-hidden="true" />}
         {whiteKeys.map(({ midi }) => (
-          <button key={midi} type="button" data-midi={midi} className={'piano-key piano-white' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
+          <button key={midi} type="button" data-midi={midi} disabled={midi < PIANO_MIN_MIDI || midi > PIANO_MAX_MIDI} className={'piano-key piano-white' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
             aria-pressed={chordNotes ? chordNotes.includes(midi) : highlightedNotes?.includes(midi)} aria-label={(chordNotes ? 'Select ' : 'Play ') + noteName(midi, naming)} {...handlers(midi)}><span className="key-label">{noteName(midi, naming)}</span></button>
         ))}
+        {endsBlack && <span className="piano-edge-space" aria-hidden="true" />}
         {blackKeys.map(({ midi, position }) => (
-          <button key={midi} type="button" data-midi={midi} className={'piano-key piano-black' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
-            style={{ left: position / whiteKeys.length * 100 + '%', width: 60 / whiteKeys.length + '%' }}
+          <button key={midi} type="button" data-midi={midi} disabled={midi < PIANO_MIN_MIDI || midi > PIANO_MAX_MIDI} className={'piano-key piano-black' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
+            style={{ left: (position + Number(startsBlack) / 2) / keySlots * 100 + '%', width: 60 / keySlots + '%' }}
             aria-pressed={chordNotes ? chordNotes.includes(midi) : highlightedNotes?.includes(midi)} aria-label={(chordNotes ? 'Select ' : 'Play ') + noteName(midi, naming)} {...handlers(midi)}><span className="key-label">{noteName(midi, naming)}</span></button>
         ))}
       </div>

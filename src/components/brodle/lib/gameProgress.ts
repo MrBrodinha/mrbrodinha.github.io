@@ -5,6 +5,7 @@ export type GameProgress = {
   guess: number[];
   attempts: Attempt[];
   selectedAttempt: number;
+  hintsUsed: number;
 };
 
 // A changed challenge or target gets a fresh round, independent of deployments.
@@ -14,7 +15,25 @@ export function progressStorageKey(id = CHALLENGE.id, target: readonly number[] 
 export const PROGRESS_STORAGE_KEY = progressStorageKey();
 
 export function emptyProgress(): GameProgress {
-  return { guess: [], attempts: [], selectedAttempt: 0 };
+  return { guess: [], attempts: [], selectedAttempt: 0, hintsUsed: 0 };
+}
+
+export function hintLimit(target: readonly number[]): number {
+  return Math.floor(target.length / 2);
+}
+
+function validHintCount(value: unknown, target: readonly number[]): number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= hintLimit(target) ? value : 0;
+}
+
+export function editProgressGuess(progress: GameProgress, notes: readonly number[], target: readonly number[]): GameProgress {
+  if (isFinished(progress)) return progress;
+  return { ...progress, guess: [...target.slice(0, progress.hintsUsed), ...notes.slice(progress.hintsUsed)] };
+}
+
+export function revealNextHint(progress: GameProgress, target: readonly number[]): GameProgress {
+  if (isFinished(progress) || progress.hintsUsed >= hintLimit(target)) return progress;
+  return editProgressGuess({ ...progress, hintsUsed: progress.hintsUsed + 1 }, progress.guess, target);
 }
 
 export function isFinished(progress: GameProgress): boolean {
@@ -34,6 +53,8 @@ export function parseProgress(serialized: string | null, target: readonly number
     }
     const attempts: Attempt[] = [];
     const ids = 'attemptIds' in saved && Array.isArray(saved.attemptIds) ? saved.attemptIds : [];
+    const attemptHints = 'attemptHints' in saved && Array.isArray(saved.attemptHints) ? saved.attemptHints : [];
+    let revealedHints = validHintCount('hintsUsed' in saved ? saved.hintsUsed : 0, target);
     const seen = new Set<string>();
     for (const [index, notes] of saved.attempts.entries()) {
       // Keep valid history if a later entry is damaged. Recompute all feedback.
@@ -42,13 +63,17 @@ export function parseProgress(serialized: string | null, target: readonly number
       const id = typeof ids[index] === 'string' && /^[A-Za-z0-9:-]{1,1500}$/.test(ids[index]) ? ids[index] : legacyAttemptId(notes, index);
       if (seen.has(id)) continue;
       seen.add(id);
-      attempts.push({ id, notes, feedback });
+      const hintsUsed = validHintCount(attemptHints[index], target);
+      const verifiedHints = notes.slice(0, hintsUsed).every((note, position) => note === target[position]) ? hintsUsed : 0;
+      attempts.push({ id, notes, feedback, ...(verifiedHints ? { hintsUsed: verifiedHints } : {}) });
+      revealedHints = Math.max(revealedHints, verifiedHints);
       if (feedback.every((value) => value === 'correct')) break;
     }
-    const progress = { ...emptyProgress(), attempts };
+    const progress = { ...emptyProgress(), attempts, hintsUsed: revealedHints };
     if (!isFinished(progress) && 'guess' in saved && validNotes(saved.guess) && saved.guess.length <= target.length) {
       progress.guess = saved.guess;
     }
+    if (!isFinished(progress)) progress.guess = editProgressGuess(progress, progress.guess, target).guess;
     const selected = 'selectedAttempt' in saved ? saved.selectedAttempt : undefined;
     progress.selectedAttempt = typeof selected === 'number' && Number.isInteger(selected) && selected >= 0 && selected < attempts.length
       ? selected : Math.max(0, attempts.length - 1);
@@ -64,6 +89,8 @@ export function serializeProgress(progress: GameProgress): string {
     attempts: progress.attempts.map((attempt) => attempt.notes),
     attemptIds: progress.attempts.map((attempt, index) => attempt.id ?? legacyAttemptId(attempt.notes, index)),
     selectedAttempt: progress.selectedAttempt,
+    hintsUsed: progress.hintsUsed,
+    attemptHints: progress.attempts.map((attempt) => attempt.hintsUsed ?? 0),
   });
 }
 
@@ -90,5 +117,7 @@ export function mergeProgress(saved: GameProgress, incoming: GameProgress, targe
   const selected = draft.attempts[draft.selectedAttempt];
   const selectedId = selected && (selected.id ?? legacyAttemptId(selected.notes, draft.selectedAttempt));
   const selectedIndex = attempts.findIndex((attempt) => attempt.id === selectedId);
-  return parseProgress(serializeProgress({ guess: draft.guess, attempts, selectedAttempt: selectedIndex >= 0 ? selectedIndex : Math.max(0, attempts.length - 1) }), target);
+  return parseProgress(serializeProgress({ guess: draft.guess, attempts, selectedAttempt: selectedIndex >= 0 ? selectedIndex : Math.max(0, attempts.length - 1),
+    hintsUsed: Math.max(saved.hintsUsed, incoming.hintsUsed),
+  }), target);
 }

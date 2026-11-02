@@ -112,9 +112,16 @@ test('octave results have their own share, and exact wins upgrade them', () => {
   assert.match(share, /^Brodle ↕\nMelody found in 2 attempts — different octave!/);
   assert.match(share, /1\. ♪♪♪\n2\. ↕↕↕/);
   assert.match(share, /↕ correct melody, different octave/);
+  assert.match(share, /\nHints used: 0\n/);
   const exact = buildShareText([shifted, octave, attempt(target)], target, url);
   assert.match(exact, /^Brodle 🎉\nExact pitch found in 3 attempts!/);
   assert.match(exact, /3\. ✓✓✓/);
+  const hinted = buildShareText([
+    { ...attempt([60, 63, 66]), hintsUsed: 1 },
+    { ...attempt(target), hintsUsed: 1 },
+  ], target, url);
+  assert.match(hinted, /\nHints used: 1\n/, 'a persistent hint is counted once across attempts');
+  assert.match(buildShareText([shifted], target, url, 1), /\nHints used: 1\n/, 'include hints revealed after the latest attempt');
 });
 
 test('every composer duration and dotted variant produces valid notes and rests', () => {
@@ -452,4 +459,34 @@ test('G1–G7 boundaries survive keyboard, code, draft, cloud and game-progress 
     assert.throws(()=>restoreVictoryNotes([{midi:invalid,beats:1}]));
     assert.deepEqual(parseProgress(JSON.stringify({guess:[invalid],attempts:[]}),[60]).guess,[]);
   }
+});
+
+test('game keyboards start on the lower C and end on the higher B outside the melody', async () => {
+  const { challengePianoRange, keyboardKeys } = await import(musicModuleUrl);
+  for (const [target, expected] of [
+    [[72, 84], { minMidi: 60, maxMidi: 95 }], // C5–C6 → C4–B6
+    [[67, 91], { minMidi: 60, maxMidi: 95 }], // G4–G6 → C4–B6
+    [[67, 84], { minMidi: 60, maxMidi: 95 }],
+    [[72, 91], { minMidi: 60, maxMidi: 95 }],
+    [[60, 67, 64], { minMidi: 48, maxMidi: 71 }],
+    [[60, 60], { minMidi: 48, maxMidi: 71 }],
+    [[31, 36], { minMidi: 24, maxMidi: 47 }],
+    [[100, 103], { minMidi: 96, maxMidi: 107 }],
+    [[66, 70], { minMidi: 60, maxMidi: 71 }],
+    [[71, 83], { minMidi: 60, maxMidi: 95 }], // B4–B5 → C4–B6
+    [[], { minMidi: 24, maxMidi: 107 }],
+  ]) {
+    const range = challengePianoRange(target);
+    assert.deepEqual(range, expected);
+    const keys = keyboardKeys(range.minMidi, range.maxMidi);
+    const pitches = [...keys.whiteKeys, ...keys.blackKeys].map(key => key.midi).sort((a,b) => a-b);
+    assert.deepEqual(pitches, Array.from({ length: range.maxMidi - range.minMidi + 1 }, (_,index) => range.minMidi + index));
+  }
+  for (let midi = 31; midi <= 103; midi++) {
+    const { minMidi, maxMidi } = challengePianoRange([midi]);
+    assert.ok(minMidi < midi && maxMidi > midi, 'the target always stays inside the keyboard');
+    assert.equal(minMidi % 12, 0, 'the first key is C');
+    assert.equal(maxMidi % 12, 11, 'the last key is B');
+  }
+  assert.equal(keyboardKeys().whiteKeys.length + keyboardKeys().blackKeys.length, 73, 'Studio retains the full piano');
 });
