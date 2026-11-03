@@ -365,13 +365,30 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
 
   useEffect(() => {
     const loadedInstruments = instruments.current;
+    // Advancing the edited note can disable the held key before its local
+    // release handler runs. Capture releases outside the piano buttons too.
+    const handlePointerRelease = (event: PointerEvent) => {
+      releaseNote(`pointer-${event.pointerId}`, event.type === 'pointercancel');
+    };
+    const handleKeyRelease = (event: KeyboardEvent) => {
+      if (event.key !== ' ' && event.key !== 'Enter') return;
+      for (const source of heldNotes.current.keys()) {
+        if (source.startsWith('keyboard-') && source.endsWith(`-${event.key}`)) releaseNote(source);
+      }
+    };
     const handleVisibility = () => {
       if (document.hidden) stopAudio();
     };
     window.addEventListener('blur', stopAudio);
+    window.addEventListener('pointerup', handlePointerRelease, true);
+    window.addEventListener('pointercancel', handlePointerRelease, true);
+    window.addEventListener('keyup', handleKeyRelease, true);
     document.addEventListener('visibilitychange', handleVisibility);
     return () => {
       window.removeEventListener('blur', stopAudio);
+      window.removeEventListener('pointerup', handlePointerRelease, true);
+      window.removeEventListener('pointercancel', handlePointerRelease, true);
+      window.removeEventListener('keyup', handleKeyRelease, true);
       document.removeEventListener('visibilitychange', handleVisibility);
       stopAudio();
       loadedInstruments.forEach(({ instance }) => instance?.dispose());
@@ -381,7 +398,7 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       masterGain.current = null;
       if (context && context.state !== 'closed') void context.close();
     };
-  }, [stopAudio]);
+  }, [stopAudio, releaseNote]);
 
   return { sound, setSound, soundStatus, soundProgress, retrySound, volume, setVolume,
     playing, audioError, setAudioError, pressedNotes, playNotes, playMelody, playArrangement, startNote, releaseNote, stopAudio };

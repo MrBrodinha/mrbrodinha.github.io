@@ -10,28 +10,42 @@ type Props = Pick<ReturnType<typeof usePianoAudio>, 'playing' | 'pressedNotes' |
   maxMidi?: number;
   chordNotes?: readonly number[];
   highlightedNotes?: readonly number[];
+  availableRange?: { minMidi: number; maxMidi: number };
+  fitToWidth?: boolean;
   onNote: (midi: number) => void;
 };
 
-export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIANO_MAX_MIDI, chordNotes, highlightedNotes, naming, onNote, playing, pressedNotes, startNote, releaseNote, playNotes }: Props) {
+export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIANO_MAX_MIDI, chordNotes, highlightedNotes, availableRange, fitToWidth = false, naming, onNote, playing, pressedNotes, startNote, releaseNote, playNotes }: Props) {
   const { whiteKeys, blackKeys } = keyboardKeys(minMidi, maxMidi);
   const startsBlack = blackKeys[0]?.midi === minMidi;
   const endsBlack = blackKeys[blackKeys.length - 1]?.midi === maxMidi;
   const keySlots = whiteKeys.length + Number(startsBlack) / 2 + Number(endsBlack) / 2;
   const scroll = useRef<HTMLDivElement>(null);
+  const unavailable = (midi: number) => midi < PIANO_MIN_MIDI || midi > PIANO_MAX_MIDI
+    || Boolean(availableRange && (midi < availableRange.minMidi || midi > availableRange.maxMidi));
   useEffect(() => {
-    const midi = playing && pressedNotes.size ? pressedNotes.values().next().value : highlightedNotes?.[0];
+    const centerRange = !playing && highlightedNotes?.length && availableRange
+      && availableRange.minMidi <= availableRange.maxMidi
+      && (availableRange.minMidi > PIANO_MIN_MIDI || availableRange.maxMidi < PIANO_MAX_MIDI);
+    const midi = playing && pressedNotes.size ? pressedNotes.values().next().value
+      : centerRange ? Math.round((Math.max(minMidi, availableRange.minMidi) + Math.min(maxMidi, availableRange.maxMidi)) / 2)
+      : highlightedNotes?.[0];
     if (midi === undefined) return;
     const area = scroll.current;
     const key = area?.querySelector<HTMLButtonElement>('[data-midi="' + midi + '"]');
     if (!area || !key) return;
     const bounds = area.getBoundingClientRect();
     const note = key.getBoundingClientRect();
+    if (centerRange) {
+      area.scrollLeft += (note.left + note.right - bounds.left - bounds.right) / 2;
+      return;
+    }
     if (note.left < bounds.left + 8) area.scrollLeft += note.left - bounds.left - 8;
     else if (note.right > bounds.right - 8) area.scrollLeft += note.right - bounds.right + 8;
-  }, [playing, pressedNotes, highlightedNotes]);
+  }, [playing, pressedNotes, highlightedNotes, availableRange, minMidi, maxMidi]);
 
   function handlers(midi: number): ButtonHTMLAttributes<HTMLButtonElement> {
+    if (unavailable(midi)) return {};
     return {
       onPointerDown: (event) => {
         if (event.button !== 0) return;
@@ -68,15 +82,16 @@ export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIAN
 
   return (
     <div ref={scroll} className="piano-scroll" tabIndex={0} role="region" aria-label="Scrollable piano keyboard">
-      <div className="piano-keyboard" style={{ minWidth: keySlots * 44 }}>
+      <div className={'piano-keyboard' + (fitToWidth ? ' is-playback' : '')} data-dense={fitToWidth && keySlots > 14}
+        style={{ minWidth: fitToWidth ? 0 : keySlots * 44, maxWidth: fitToWidth ? keySlots * 60 : undefined }}>
         {startsBlack && <span className="piano-edge-space" aria-hidden="true" />}
         {whiteKeys.map(({ midi }) => (
-          <button key={midi} type="button" data-midi={midi} disabled={midi < PIANO_MIN_MIDI || midi > PIANO_MAX_MIDI} className={'piano-key piano-white' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
+          <button key={midi} type="button" data-midi={midi} disabled={unavailable(midi)} className={'piano-key piano-white' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
             aria-pressed={chordNotes ? chordNotes.includes(midi) : highlightedNotes?.includes(midi)} aria-label={(chordNotes ? 'Select ' : 'Play ') + noteName(midi, naming)} {...handlers(midi)}><span className="key-label">{noteName(midi, naming)}</span></button>
         ))}
         {endsBlack && <span className="piano-edge-space" aria-hidden="true" />}
         {blackKeys.map(({ midi, position }) => (
-          <button key={midi} type="button" data-midi={midi} disabled={midi < PIANO_MIN_MIDI || midi > PIANO_MAX_MIDI} className={'piano-key piano-black' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
+          <button key={midi} type="button" data-midi={midi} disabled={unavailable(midi)} className={'piano-key piano-black' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
             style={{ left: (position + Number(startsBlack) / 2) / keySlots * 100 + '%', width: 60 / keySlots + '%' }}
             aria-pressed={chordNotes ? chordNotes.includes(midi) : highlightedNotes?.includes(midi)} aria-label={(chordNotes ? 'Select ' : 'Play ') + noteName(midi, naming)} {...handlers(midi)}><span className="key-label">{noteName(midi, naming)}</span></button>
         ))}

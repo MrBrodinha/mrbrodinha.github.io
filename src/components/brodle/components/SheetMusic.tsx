@@ -5,7 +5,7 @@ import type { Feedback, MusicalKey, NoteNaming, TimeSignature } from '../lib/mus
 
 type SheetMusicProps = {
   abc: string;
-  feedback?: readonly Feedback[];
+  feedback?: readonly (Feedback | undefined)[];
   feedbackIndices?: readonly number[];
   label?: string;
   musicalKey?: MusicalKey;

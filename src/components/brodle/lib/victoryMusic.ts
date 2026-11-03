@@ -7,6 +7,19 @@ export type PlayableStep = Pick<VictoryStep, 'midi' | 'beats' | 'pitches'>;
 export const VICTORY_MIN_MIDI = PIANO_MIN_MIDI;
 export const VICTORY_MAX_MIDI = PIANO_MAX_MIDI;
 export const stepPitches = (step: PlayableStep): readonly number[] => step.pitches ?? (step.midi === null ? [] : [step.midi]);
+
+export function victoryPianoRange(parts: readonly (readonly PlayableStep[])[]) {
+  const pitches = parts.flatMap((part) => part.flatMap(stepPitches));
+  if (!pitches.length) return null;
+  const lowest = Math.min(...pitches);
+  const highest = Math.max(...pitches);
+  const black = [1, 3, 6, 8, 10];
+  return {
+    minMidi: lowest - (black.includes(lowest % 12) ? 1 : 0),
+    maxMidi: highest + (black.includes(highest % 12) ? 1 : 0),
+  };
+}
+
 const rhythms: Record<number, string> = { .125:'Demisemiquaver', .1875:'Dotted demisemiquaver', .25:'Sixteenth', .375:'Dotted sixteenth', .5:'Eighth', .75:'Dotted eighth', 1:'Quarter', 1.5:'Dotted quarter', 2:'Half', 3:'Dotted half', 4:'Whole', 6:'Dotted whole' };
 export function restoreVictoryNotes(raw: unknown, limit = 512): VictoryStep[] {
   if (!Array.isArray(raw) || raw.length > limit) throw new Error('Invalid victory part');

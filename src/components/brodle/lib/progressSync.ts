@@ -1,5 +1,5 @@
 import { emptyProgress, mergeProgress, parseProgress, serializeProgress } from './gameProgress';
-import type { GameProgress } from './gameProgress';
+import type { GameMode, GameProgress } from './gameProgress';
 
 export type ProgressTransport = {
   load: (signal: AbortSignal) => Promise<GameProgress>;
@@ -12,10 +12,10 @@ export type ProgressSyncState = {
   status: 'local' | 'loading' | 'saving' | 'saved' | 'error';
 };
 
-export function readProgressCache(raw: string | null, target: readonly number[]) {
+export function readProgressCache(raw: string | null, target: readonly number[], mode: GameMode = 'guided') {
   let pending = false;
   try { pending = JSON.parse(raw ?? 'null')?.pending === true; } catch { /* Restore any valid history below. */ }
-  return { progress: parseProgress(raw, target), pending };
+  return { progress: parseProgress(raw, target, mode), pending };
 }
 
 export function serializeProgressCache(progress: GameProgress, pending: boolean) {
@@ -37,6 +37,7 @@ export class ProgressSync {
     initial: { progress: GameProgress; pending: boolean },
     private transport: ProgressTransport | undefined,
     private changed: (state: ProgressSyncState) => void,
+    private mode: GameMode = 'guided',
   ) {
     this.state = { ...initial, loading: Boolean(transport), status: transport ? 'loading' : 'local' };
   }
@@ -47,14 +48,14 @@ export class ProgressSync {
     const next = update(previous);
     if (next === previous) return { previous, next };
     this.revision++;
-    this.emit({ progress: parseProgress(serializeProgress(next), this.target), pending: Boolean(this.transport), status: this.transport ? 'saving' : 'local' });
+    this.emit({ progress: parseProgress(serializeProgress(next), this.target, this.mode), pending: Boolean(this.transport), status: this.transport ? 'saving' : 'local' });
     void this.sync();
     return { previous, next: this.state.progress };
   }
 
   receive(progress: GameProgress, pending: boolean) {
     if (this.disposed) return;
-    const merged = mergeProgress(progress, this.state.progress, this.target, this.state.pending);
+    const merged = mergeProgress(progress, this.state.progress, this.target, this.state.pending, this.mode);
     if (serializeProgress(merged) === serializeProgress(this.state.progress)) return;
     this.revision++;
     this.emit({ progress: merged, pending: Boolean(this.transport) && (pending || this.state.pending) });
@@ -70,7 +71,7 @@ export class ProgressSync {
       const remote = await this.transport.load(this.abort.signal);
       if (this.disposed) return;
       const remoteEmpty = remote.attempts.length === 0 && remote.guess.length === 0;
-      const merged = mergeProgress(remote, this.state.progress, this.target, this.state.pending || remoteEmpty);
+      const merged = mergeProgress(remote, this.state.progress, this.target, this.state.pending || remoteEmpty, this.mode);
       const needsSave = serializeProgress(merged) !== serializeProgress(remote);
       this.emit({ progress: merged, pending: needsSave, status: needsSave ? 'saving' : 'saved' });
       if (needsSave) {
@@ -78,7 +79,7 @@ export class ProgressSync {
         const saved = await this.transport.save(merged, this.abort.signal);
         if (this.disposed) return;
         const edited = revision !== this.revision;
-        this.emit({ progress: mergeProgress(saved, this.state.progress, this.target, edited), pending: edited, loading: false, status: edited ? 'saving' : 'saved' });
+        this.emit({ progress: mergeProgress(saved, this.state.progress, this.target, edited, this.mode), pending: edited, loading: false, status: edited ? 'saving' : 'saved' });
         this.requested ||= edited;
       } else this.emit({ loading: false });
     } catch {

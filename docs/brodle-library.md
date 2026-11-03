@@ -157,20 +157,73 @@ and `final_bass_clef` accompany `final_notes` in cloud records. `final_bpm` and
 snapshots include both parts/clefs and `finalBpm`/`finalKey`; existing snapshots continue to play exactly
 as before. The migration does not rewrite them.
 
-The victory arrangement is a surprise unlocked only by an exact-pitch win,
+The victory arrangement plays only after an exact-pitch win,
 including the correct octave. It plays automatically on that win, and the player
-can then replay it. Every winning guess, including shifted and different-octave
+can then replay it. While it plays, the keyboard fits all pitches from both
+parts, including every chord member, between the lowest and highest sounding
+notes. A black-key lower endpoint extends down to the adjacent white key; a
+black-key upper endpoint extends up to the adjacent white key. White endpoints
+stay exact. The entire keyboard fits within the available width during playback,
+with dense note labels hidden on small screens. Stopping or finishing playback
+restores the normal challenge keyboard.
+Every winning guess, including shifted and different-octave
 guesses, scrolls to the top to show the result (without animation for
 reduced-motion preferences). Shifted and different-octave guesses play back only the guess
-and show a prominent prompt to find the right pitch and unlock the surprise.
-An up/down arrow indicates whether the latest correctly shaped melody is too
-low or too high. Octave guesses suggest a higher/lower octave; shifted guesses
-suggest moving the whole melody higher/lower. Each past attempt keeps its own
-direction hint in the history, without revealing the exact interval.
+and show their special feedback colors. The legend explains Correct, Too low,
+Too high, Correct · shifted, and Correct · octave without direction arrows or
+extra feedback icons.
+
+The **Guided / Classic** switch chooses how guesses are entered. Guided is the
+default. Both styles start a fresh draft after every submission, retaining only
+revealed hint notes. One box shows **Your attempt**, the feedback legend, and
+the latest submitted sheet, followed by **Your guess**, hint controls, and the
+new draft. Older attempts remain saved without adding more sheets.
+**Copy last attempt** fills the draft without spending an attempt or hint and
+preserves newer hints and, in Guided, previously confirmed correct pitches.
+Undo, the red-tinted Clear button, and Backspace remain available after submissions.
+
+Both styles share the same round, attempts, hint budget, and solved state.
+Switching styles keeps the notes already entered, including partial drafts.
+The browser remembers the chosen style for later visits; account progress
+restores according to the style selected on that browser.
+Classic keeps every playable pitch available. Previously correct notes are
+not locked in Classic unless they were revealed by a hint.
+
+Guided retains learned pitch limits independently for every note position.
+For the selected position, a too-high pitch and everything above it become
+unavailable on the piano; a too-low pitch and everything below it do too.
+The same limits apply when entering the next note in a fresh draft, selecting
+a draft note, or editing a copied attempt. Clearing, undoing, and reloading do
+not reset these limits. Confirmed green notes stay correct when their positions
+are filled or copied. Other draft notes are neutral until submission; the last
+submitted sheet retains its feedback colors.
+After choosing a replacement, selection advances to the next editable existing
+note, skipping locked notes, and clears after the last one. Copied incorrect
+notes must be changed into their remaining ranges before submitting again.
+Octave and shifted-melody wins keep their special feedback and result,
+and also restrict each note toward the correct pitch: too-high versions exclude
+that pitch and everything above it, while too-low versions exclude that pitch
+and everything below it. Disabled keys use a pale blue tint
+so they remain distinct from playable black keys.
+
+**Free play**, to the left of **A–G / Dó–Si**, lets players try any playable key
+in the displayed piano range
+without adding or replacing notes, spending hints, or submitting attempts.
+Turning it off restores the selected note and its accumulated pitch limits.
+The switch stops any active sound when changing modes. Backspace cannot erase
+the draft while free play is on.
+
+Attempts and hint counts are retained for sharing, account sync, and restoring
+pitch limits after a reload. Saved partial drafts remain partial and do not
+fill missing positions from their latest attempt.
 Players can also choose **Reveal next note**, up to half the challenge's sounding
 notes, rounded down (10 notes allow 5 hints). Each hint reveals the next note in
-order. Revealed notes appear green and stay correct in every subsequent attempt,
-including after Undo, Clear, copying a past attempt, reloading, or signing back in.
+order. The final hint also plays the challenge melody with its authored rhythm
+and tempo, without highlighting its notes on the piano or scrolling to them.
+After using it, **Replay melody** and **Stop melody** let the player
+listen again without spending another hint. Playback stays unlocked after
+reloading or restoring account progress. Revealed notes appear green and stay
+correct in every subsequent attempt, including after reloading or signing back in.
 The budget belongs to the whole round. Each submitted attempt records how many
 hints it used; later hints do not change earlier attempts. Existing rounds start
 with no hints used.
@@ -180,8 +233,7 @@ The game piano starts on the nearest C below the melody's lowest note and ends
 on the nearest B above its highest note. C5–C6 and G4–G6 both use C4–B6.
 Both ends are always white keys, including melodies at the edges of the playable G1–G7
 range. Framing keys outside that playable range are disabled.
-Studio keeps its full keyboard. Clear appears
-before Submit guess, with Submit guess at the end of the action row.
+Studio keeps its full keyboard. Clear appears before Submit guess in every draft.
 The victory parts do not add notes to the guessing target. My melodies and admin
 review show the victory score and can play the full arrangement.
 
@@ -233,7 +285,7 @@ loaded keeps that current daily and its progress instead of replacing it.
 
 Progress is stored by **account, challenge ID, and target pitches**. Different days
 have independent rounds. Signing out no longer deletes attempts; signing back
-into the same account restores its attempts, unfinished guess, selected attempt,
+into the same account restores its attempts, current sheet, pitch limits,
 and solved state. A changed target starts a separate round. Authentication is
 restored before showing a round, and changing accounts mounts that user's round.
 

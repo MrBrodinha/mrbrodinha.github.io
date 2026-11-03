@@ -4,15 +4,28 @@ import type { PianoSound } from '../lib/pianoSounds';
 import type { NoteNaming } from '../lib/musicGame';
 import type { usePianoAudio } from '../hooks/usePianoAudio';
 
-type Props = { audio: ReturnType<typeof usePianoAudio>; naming: NoteNaming; onNaming: (value: NoteNaming) => void };
+type Props = {
+  audio: ReturnType<typeof usePianoAudio>;
+  naming: NoteNaming;
+  onNaming: (value: NoteNaming) => void;
+  freePlay?: { enabled: boolean; onToggle: () => void };
+};
 
-export default function PianoControls({ audio, naming, onNaming }: Props) {
+export default function PianoControls({ audio, naming, onNaming, freePlay }: Props) {
+  const namingControl = <div className="note-naming-control" role="group" aria-label="Note names">
+    <button type="button" aria-label="Use A–G note names" aria-pressed={naming === 'letters'} onClick={() => onNaming('letters')}>A–G</button>
+    <button type="button" aria-label="Use Dó–Si note names" aria-pressed={naming === 'solfege'} onClick={() => onNaming('solfege')}>Dó–Si</button>
+  </div>;
   return <>
-    <div className="piano-toolbar">
-      <div className="note-naming-control" role="group" aria-label="Note names">
-        <button type="button" aria-label="Use A–G note names" aria-pressed={naming === 'letters'} onClick={() => onNaming('letters')}>A–G</button>
-        <button type="button" aria-label="Use Dó–Si note names" aria-pressed={naming === 'solfege'} onClick={() => onNaming('solfege')}>Dó–Si</button>
-      </div>
+    <div className={'piano-toolbar' + (freePlay ? ' has-free-play' : '')}>
+      {freePlay ? <div className="piano-note-controls">
+        <button type="button" className="brodle-button piano-free-play" aria-pressed={freePlay.enabled}
+          aria-describedby="piano-mode-status" onClick={freePlay.onToggle}
+          title="Try piano notes without changing your guess.">
+          <BrodleIcon name={freePlay.enabled ? 'check' : 'music'} />Free play{freePlay.enabled && <span>On</span>}
+        </button>
+        {namingControl}
+      </div> : namingControl}
       <div className="piano-sound">
         <label htmlFor="piano-sound">Instrument</label>
         <select id="piano-sound" value={audio.sound} onChange={(event) => audio.setSound(event.currentTarget.value as PianoSound)}>

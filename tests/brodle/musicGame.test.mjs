@@ -14,7 +14,7 @@ const { toAbc, noteName, notationKey, getWinKind, melodyPitchHint, scoreGuess, b
 const victorySource = await readFile(new URL('../../src/components/brodle/lib/victoryMusic.ts', import.meta.url), 'utf8');
 const victoryJs = ts.transpileModule(victorySource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText.replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`);
 const victoryUrl = `data:text/javascript;base64,${Buffer.from(victoryJs).toString('base64')}`;
-const { restoreVictoryNotes, transposeVictory, arrangementTimeline, victoryNotation, victoryScore } = await import(victoryUrl);
+const { restoreVictoryNotes, transposeVictory, arrangementTimeline, victoryNotation, victoryScore, victoryPianoRange } = await import(victoryUrl);
 const composerSource = await readFile(new URL('../../src/components/brodle/creator/melodyComposer.ts', import.meta.url), 'utf8');
 const composerJs = ts.transpileModule(composerSource, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
@@ -489,4 +489,15 @@ test('game keyboards start on the lower C and end on the higher B outside the me
     assert.equal(maxMidi % 12, 11, 'the last key is B');
   }
   assert.equal(keyboardKeys().whiteKeys.length + keyboardKeys().blackKeys.length, 73, 'Studio retains the full piano');
+});
+
+test('victory playback fits both parts and every chord pitch, rounding only black-key edges outward', () => {
+  const main = [{ midi: 64, pitches: [64,68,85], beats: 1 }, { midi: null, beats: 1 }];
+  const bass = [{ midi: 37, pitches: [37,49], beats: 2 }];
+  assert.deepEqual(victoryPianoRange([main,bass]), { minMidi: 36, maxMidi: 86 }, 'include low bass and high chord members beyond the challenge range');
+  assert.deepEqual(victoryPianoRange([[{midi:48,beats:1},{midi:84,beats:1}]]), { minMidi:48,maxMidi:84 }, 'white-key endpoints need no extra padding');
+  assert.deepEqual(victoryPianoRange([[{midi:60,beats:1}]]), { minMidi:60,maxMidi:60 });
+  assert.deepEqual(victoryPianoRange([[{midi:61,beats:1}]]), { minMidi:60,maxMidi:62 });
+  assert.deepEqual(victoryPianoRange([[{midi:31,beats:1},{midi:103,beats:1}]]), { minMidi:31,maxMidi:103 });
+  assert.equal(victoryPianoRange([[],[{midi:null,beats:4}]]), null, 'all-rest arrangements have no pitch range');
 });

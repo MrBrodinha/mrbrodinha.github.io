@@ -1,9 +1,9 @@
 import { supabase } from '../../../lib/supabase';
 import { parseProgress, serializeProgress } from '../lib/gameProgress';
-import type { GameProgress } from '../lib/gameProgress';
+import type { GameMode, GameProgress } from '../lib/gameProgress';
 import type { ProgressTransport } from '../lib/progressSync';
 
-export function progressTransport(userId: string, challengeId: string, target: readonly number[]): ProgressTransport | undefined {
+export function progressTransport(userId: string, challengeId: string, target: readonly number[], mode: GameMode = 'guided'): ProgressTransport | undefined {
   const client = supabase;
   if (!client) return undefined;
   // An owner check prevents a delayed request from writing the previous user's
@@ -14,12 +14,12 @@ export function progressTransport(userId: string, challengeId: string, target: r
     async load(signal) {
       const { data, error } = await client.rpc('get_brodle_progress', scope).abortSignal(signalFor(signal));
       if (error) throw error;
-      return parseProgress(data === null ? null : JSON.stringify(data), target);
+      return parseProgress(data === null ? null : JSON.stringify(data), target, mode);
     },
     async save(progress: GameProgress, signal) {
       const { data, error } = await client.rpc('save_brodle_progress', { ...scope, p_progress: JSON.parse(serializeProgress(progress)) }).abortSignal(signalFor(signal));
       if (error) throw error;
-      return parseProgress(JSON.stringify(data), target);
+      return parseProgress(JSON.stringify(data), target, mode);
     },
   };
 }
