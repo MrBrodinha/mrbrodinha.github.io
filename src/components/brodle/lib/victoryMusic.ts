@@ -15,8 +15,8 @@ export function victoryPianoRange(parts: readonly (readonly PlayableStep[])[]) {
   const highest = Math.max(...pitches);
   const black = [1, 3, 6, 8, 10];
   return {
-    minMidi: lowest - (black.includes(lowest % 12) ? 1 : 0),
-    maxMidi: highest + (black.includes(highest % 12) ? 1 : 0),
+    minMidi: lowest - (black.includes((lowest % 12 + 12) % 12) ? 1 : 0),
+    maxMidi: highest + (black.includes((highest % 12 + 12) % 12) ? 1 : 0),
   };
 }
 

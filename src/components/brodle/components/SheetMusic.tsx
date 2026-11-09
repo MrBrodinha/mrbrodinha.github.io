@@ -2,11 +2,15 @@ import { useEffect, useRef } from 'react';
 import abcjs from 'abcjs';
 import { BPM, KEY, TIME_SIGNATURE, keyName } from '../lib/musicGame';
 import type { Feedback, MusicalKey, NoteNaming, TimeSignature } from '../lib/musicGame';
+import { feedbackMarkers } from '../lib/feedback';
 
 type SheetMusicProps = {
   abc: string;
   feedback?: readonly (Feedback | undefined)[];
   feedbackIndices?: readonly number[];
+  invalidNotes?: readonly number[];
+  minWidth?: number;
+  compact?: boolean;
   label?: string;
   musicalKey?: MusicalKey;
   naming?: NoteNaming;
@@ -22,7 +26,7 @@ type SheetMusicProps = {
   };
 };
 
-function SheetMusic({ abc, feedback, feedbackIndices, label = 'Musical notation', musicalKey = KEY, naming = 'letters', bpm = BPM, wrap = false,
+function SheetMusic({ abc, feedback, feedbackIndices, invalidNotes, minWidth, compact = false, label = 'Musical notation', musicalKey = KEY, naming = 'letters', bpm = BPM, wrap = false,
   timeSignature = TIME_SIGNATURE, selection }: SheetMusicProps) {
   const container = useRef<HTMLDivElement>(null);
   const selectionRef = useRef(selection);
@@ -47,7 +51,8 @@ function SheetMusic({ abc, feedback, feedbackIndices, label = 'Musical notation'
       if (!width || width === renderedWidth) return;
       renderedWidth = width;
       element.replaceChildren();
-      abcjs.renderAbc(element, abc, {
+      element.style.height = '';
+      abcjs.renderAbc(element, compact ? abc.replace(/^Q:/m, '%%printtempo 0\nQ:') : abc, {
         responsive: 'resize',
         add_classes: true,
         selectTypes: [],
@@ -56,14 +61,39 @@ function SheetMusic({ abc, feedback, feedbackIndices, label = 'Musical notation'
         minPadding: 20,
         paddingleft: 16,
         paddingright: 16,
-        paddingtop: 20,
-        paddingbottom: 16,
+        paddingtop: compact ? 10 : 20,
+        paddingbottom: compact ? 10 : 16,
         ...(wrap ? { wrap: { preferredMeasuresPerLine: 2, minSpacing: 1.8, maxSpacing: 2.7 } } : {}),
         format: { stretchlast: 1, annotationfont: 'Helvetica 11', tempofont: 'Helvetica 11' },
       });
-      element.querySelectorAll<SVGElement>('.abcjs-note').forEach((note, index) => {
-        const status = feedback?.[feedbackIndices?.[index] ?? index];
+      // ABC's percentage padding uses the outer width, which clips a wider,
+      // horizontally scrollable score. Size that wrapper from its own viewBox.
+      const svg = element.querySelector('svg');
+      if (minWidth && svg?.viewBox.baseVal.width) {
+        element.style.paddingBottom = '0';
+        element.style.height = `${svg.viewBox.baseVal.height * width / svg.viewBox.baseVal.width}px`;
+      }
+      const marked = new Set<number>();
+      element.querySelectorAll<SVGGraphicsElement>('g.abcjs-note').forEach((note, index) => {
+        const position = feedbackIndices?.[index] ?? index;
+        const status = feedback?.[position];
         if (status) note.classList.add(`feedback-${status}`);
+        const invalid = invalidNotes?.includes(position);
+        if (invalid) {
+          note.classList.add('guess-outside-range');
+          note.dataset.invalid = 'true';
+        }
+        if ((!status && !invalid) || marked.has(position)) return;
+        marked.add(position);
+        const bounds = note.getBBox();
+        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        marker.setAttribute('x', String(bounds.x + bounds.width / 2));
+        marker.setAttribute('y', String(Math.max(12, bounds.y - 7)));
+        marker.setAttribute('text-anchor', 'middle');
+        marker.setAttribute('class', `sheet-feedback-marker${invalid ? ' is-invalid' : ''}`);
+        marker.setAttribute('aria-hidden', 'true');
+        marker.textContent = invalid ? '!' : feedbackMarkers[status!];
+        note.append(marker);
       });
       // Selection only: no dragging, pitch-position guessing, or insertion on blank staff.
       const positions: number[] = [];
@@ -90,18 +120,24 @@ function SheetMusic({ abc, feedback, feedbackIndices, label = 'Musical notation'
       highlightSelection();
     };
     render();
-    const observer = new ResizeObserver(render);
+    // Let the existing SVG scale during layout transitions, then reflow the
+    // notation once resizing settles instead of rebuilding it every frame.
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const observer = new ResizeObserver(() => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(render, 80);
+    });
     observer.observe(element);
-    return () => { observer.disconnect(); element.replaceChildren(); };
-  }, [abc, feedback, feedbackIndices, wrap, selectable, stepIndices]);
+    return () => { observer.disconnect(); clearTimeout(resizeTimer); element.replaceChildren(); };
+  }, [abc, feedback, feedbackIndices, invalidNotes, minWidth, compact, wrap, selectable, stepIndices]);
 
   useEffect(highlightSelection, [selection?.selected?.voice, selection?.selected?.index]);
 
   const keyLabel = keyName(musicalKey, naming);
   return (
-    <div className="piano-sheet" role={selection ? 'group' : 'img'} aria-label={`${keyLabel}. ${timeSignature} time. ${bpm} beats per minute. ${label}`}>
-      <span className="sheet-key" aria-hidden="true">Key: <strong>{keyLabel}</strong></span>
-      <div ref={container} />
+    <div className={'piano-sheet' + (minWidth ? ' scrollable-sheet' : '') + (compact ? ' compact-sheet' : '')} role={selection ? 'group' : 'img'} aria-label={`${keyLabel}. ${timeSignature} time. ${bpm} beats per minute. ${label}`}>
+      <span className="sheet-key" aria-hidden="true">Key: <strong>{keyLabel}</strong>{compact && ` · ${bpm} BPM`}</span>
+      <div ref={container} style={minWidth ? { minWidth } : undefined} />
     </div>
   );
 }

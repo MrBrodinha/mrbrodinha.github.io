@@ -157,39 +157,69 @@ and `final_bass_clef` accompany `final_notes` in cloud records. `final_bpm` and
 snapshots include both parts/clefs and `finalBpm`/`finalKey`; existing snapshots continue to play exactly
 as before. The migration does not rewrite them.
 
-The victory arrangement plays only after an exact-pitch win,
-including the correct octave. It plays automatically on that win, and the player
-can then replay it. While it plays, the keyboard fits all pitches from both
+In **Casual**, an exact melody or a consistent shift of the whole melody to a
+different pitch or octave finishes the round. The full victory arrangement
+plays automatically at the winning pitch: the same semitone offset applies to
+the main part, every chord member, and the bass, with rests and timing preserved.
+The player can replay it in that pitch after a reload too. **Hard** requires
+every note at the exact pitch and octave; shifted melodies receive normal
+higher/lower feedback and do not win. Its victory arrangement uses the original
+authored pitches. While victory music plays, the keyboard fits all pitches from both
 parts, including every chord member, between the lowest and highest sounding
 notes. A black-key lower endpoint extends down to the adjacent white key; a
 black-key upper endpoint extends up to the adjacent white key. White endpoints
 stay exact. The entire keyboard fits within the available width during playback,
 with dense note labels hidden on small screens. Stopping or finishing playback
 restores the normal challenge keyboard.
-Every winning guess, including shifted and different-octave
-guesses, scrolls to the top to show the result (without animation for
-reduced-motion preferences). Shifted and different-octave guesses play back only the guess
-and show their special feedback colors. The legend explains Correct, Too low,
-Too high, Correct · shifted, and Correct · octave without direction arrows or
-extra feedback icons.
+During victory playback, all visible keys have their normal
+black/white appearance, including transposed notes below or above the guessing
+range. Guessing limits apply again after playback ends.
+Every winning guess scrolls to the top to show the result (without animation
+for reduced-motion preferences). Casual retains its shifted/octave feedback
+colors. Hard shows only exact, higher, and lower feedback; its legend, tutorial,
+and shared results never label a shifted/octave submission as a win.
+Extreme victory transpositions keep their actual pitches, including outside the
+normal keyboard range; pitches outside a sampled instrument's MIDI map use Synth.
 
-The **Guided / Classic** switch chooses how guesses are entered. Guided is the
-default. Both styles start a fresh draft after every submission, retaining only
-revealed hint notes. One box shows **Your attempt**, the feedback legend, and
+Brodle's top bar centers its note icon, name, and melody tagline, with **Menu** on
+the left and login, signup, profile, and logout controls at the top right.
+The opened sidebar places **← MrBrodinha** immediately below the **Brodle menu**
+heading, followed by Create a melody, My melodies, Manage Brodle (for admins), and
+Brodle. The sidebar starts closed and smoothly makes room by
+narrowing the page beside it, keeping the game interactive. The Menu toggle,
+Close button, or Escape closes it. Reduced-motion preferences disable the
+animation. Mode, help, sound, and note-label controls stay on the main page.
+
+Choose **Casual** or **Hard** before submitting the first guess. After that
+submission the switch is replaced with the selected mode and **Mode locked**,
+including after a reload or account restore. Mode selection is scoped to the
+player, puzzle, and target so playing another day does not change an ongoing
+round's mode. Account restore checks for an already-started round in either mode
+before exposing a new choice. Casual is the default for new rounds.
+Unsuccessful submissions start a fresh draft, retaining only revealed hint
+notes. A win ends guessing and leaves playback and free play available.
+One box shows **Your attempt**, the feedback legend, and
 the latest submitted sheet, followed by **Your guess**, hint controls, and the
-new draft. Older attempts remain saved without adding more sheets.
+new draft. Older attempts remain saved without adding more sheets. Use
+**Previous** and **Next** to view them; each score wraps to the available width
+and grows with its content, without a scrollable attempts area.
 **Copy last attempt** fills the draft without spending an attempt or hint and
-preserves newer hints and, in Guided, previously confirmed correct pitches.
+preserves newer hints and, in Casual, previously confirmed correct pitches.
 Undo, the red-tinted Clear button, and Backspace remain available after submissions.
 
-Both styles share the same round, attempts, hint budget, and solved state.
-Switching styles keeps the notes already entered, including partial drafts.
-The browser remembers the chosen style for later visits; account progress
-restores according to the style selected on that browser.
-Classic keeps every playable pitch available. Previously correct notes are
-not locked in Classic unless they were revealed by a hint.
+The existing separate mode records retain their own attempts, partial drafts,
+hint budgets, and solved states. Older players with history in both modes keep
+the mode they most recently selected for that puzzle. The browser remembers the
+preferred mode for new puzzles, and signed-in players restore an already-started
+mode on another device. Existing shared history stays in Casual.
+Hard keeps every playable pitch available. Previously correct notes are
+not locked in Hard unless they were revealed by a hint. It hides the song clue
+and whole-melody pitch guidance, and disables challenge-melody hint playback.
+Normal submission feedback and playback of the player's guesses remain available.
+Saved mode preference values remain `guided` (Casual) and `classic` (Hard) so
+existing browser preferences and Casual rounds continue to work.
 
-Guided retains learned pitch limits independently for every note position.
+Casual retains learned pitch limits independently for every note position.
 For the selected position, a too-high pitch and everything above it become
 unavailable on the piano; a too-low pitch and everything below it do too.
 The same limits apply when entering the next note in a fresh draft, selecting
@@ -200,10 +230,9 @@ submitted sheet retains its feedback colors.
 After choosing a replacement, selection advances to the next editable existing
 note, skipping locked notes, and clears after the last one. Copied incorrect
 notes must be changed into their remaining ranges before submitting again.
-Octave and shifted-melody wins keep their special feedback and result,
-and also restrict each note toward the correct pitch: too-high versions exclude
-that pitch and everything above it, while too-low versions exclude that pitch
-and everything below it. Disabled keys use a pale blue tint
+Octave and shifted-melody wins keep their special feedback and result and end
+the Casual round immediately. Hints, copying attempts into a draft, and further
+submissions are unavailable after any win. Disabled keys use a pale blue tint
 so they remain distinct from playable black keys.
 
 **Free play**, to the left of **A–G / Dó–Si**, lets players try any playable key
@@ -218,16 +247,29 @@ pitch limits after a reload. Saved partial drafts remain partial and do not
 fill missing positions from their latest attempt.
 Players can also choose **Reveal next note**, up to half the challenge's sounding
 notes, rounded down (10 notes allow 5 hints). Each hint reveals the next note in
-order. The final hint also plays the challenge melody with its authored rhythm
+order. In Casual mode, the final hint also plays the challenge melody with its authored rhythm
 and tempo, without highlighting its notes on the piano or scrolling to them.
 After using it, **Replay melody** and **Stop melody** let the player
 listen again without spending another hint. Playback stays unlocked after
-reloading or restoring account progress. Revealed notes appear green and stay
+reloading or restoring account progress in Casual. Hard's last hint only reveals
+a note; its hint button becomes disabled when the budget is used. Changing
+modes before the first submission stops any active playback, including a Casual melody hint.
+Revealed notes appear green and stay
 correct in every subsequent attempt, including after reloading or signing back in.
-The budget belongs to the whole round. Each submitted attempt records how many
+The budget belongs to the current mode's round. Each submitted attempt records how many
 hints it used; later hints do not change earlier attempts. Existing rounds start
 with no hints used.
-Shared results include the total number of hints used, including zero.
+Shared results identify the mode and include its total hints used, including zero.
+
+**How to play**, beside the mode switch, opens a four-step tutorial covering
+the goal and feedback colors, Casual mode, Hard mode, and piano/editing controls.
+It shows the current puzzle's note-hint budget. The tutorial can be revisited
+at any time, supports Back/Next and Escape, and does not change the round or mode.
+Game editing shortcuts are ignored while focus is inside the tutorial.
+
+The **Today's puzzle** link is shown only when viewing another date. It stays
+hidden on today's puzzle even when opened using an explicit `?date=` URL.
+The server's Lisbon date determines whether the selected puzzle is today.
 
 The game piano starts on the nearest C below the melody's lowest note and ends
 on the nearest B above its highest note. C5–C6 and G4–G6 both use C4–B6.
@@ -237,10 +279,33 @@ Studio keeps its full keyboard. Clear appears before Submit guess in every draft
 The victory parts do not add notes to the guessing target. My melodies and admin
 review show the victory score and can play the full arrangement.
 
+Sampled instruments retry a failed load once, reusing samples already downloaded.
+If an instrument still cannot load, piano keys and melody playback use Synth
+automatically. A notice identifies the selected instrument and the fallback.
+**Retry sound** restores the selected instrument when it becomes available;
+**Use Synth** selects Synth and clears the notice. Game progress is unaffected.
+
+Phones and tablets start with **Synth**, ready immediately without sample
+downloads. Desktop browsers start with **Grand piano**. All devices can still
+select another instrument from the sound controls.
+
+Switching tabs, moving focus to another window, or opening another app no longer
+stops a melody or victory arrangement. Held piano keys are released on focus loss
+to avoid stuck notes. Stop controls still stop playback. Navigating away from the
+Brodle screen or closing/reloading its tab ends playback. A mobile browser or the
+operating system may still interrupt background audio, especially on screen lock.
+On returning to Brodle, interrupted playback attempts to resume in place. Its
+controls and key highlights follow the audio clock even if that clock was paused.
+
 ## Review and schedule
 
 Administrators can see submitted, approved, and returned melodies, with author,
-source, hint, music settings, sheet preview, and playback. They cannot browse
+source, hint, music settings, sheet preview, playback, and **View melody code**.
+The code preview uses the same export as Studio, including music settings,
+challenge notes, and any victory melody/bass parts. Line numbers and **Copy code**
+help reviewers describe exact changes in the review note; returning the melody
+lets its creator apply those changes to the original. Review notes preserve line
+breaks so snippets remain readable. Administrators cannot browse
 other users' unsubmitted private drafts. Approve a submission or return it with
 a review note. In **Approved**, **Return for editing** changes the original to
 **Returned** and includes the optional review note. Its author can open
@@ -283,8 +348,8 @@ service is unavailable on initial load), the original built-in tune remains a
 clearly labelled practice game. A temporary fetch failure after a daily has
 loaded keeps that current daily and its progress instead of replacing it.
 
-Progress is stored by **account, challenge ID, and target pitches**. Different days
-have independent rounds. Signing out no longer deletes attempts; signing back
+Progress is stored by **account, challenge ID, mode, and target pitches**. Different
+days and modes have independent rounds. Signing out no longer deletes attempts; signing back
 into the same account restores its attempts, current sheet, pitch limits,
 and solved state. A changed target starts a separate round. Authentication is
 restored before showing a round, and changing accounts mounts that user's round.
@@ -303,8 +368,11 @@ rounds cannot be reset by an older save. Requests include the owner ID and are
 cancelled when leaving a puzzle/account, protecting against late responses.
 
 Guests retain browser-only progress. Existing unowned `brodle:progress:v1:` rounds
-remain guest rounds; they are not silently assigned to a signed-in account.
-Account caches use `brodle:progress:v2:user:<user ID>:`. No email/password fields
+remain guest Casual rounds; they are not silently assigned to a signed-in account.
+Account caches use `brodle:progress:v2:user:<user ID>:`. Hard uses a `hard:` prefix
+on the challenge ID in both browser keys and account load/save requests, keeping
+the two rounds separate with the existing database schema and RPCs. No additional
+migration is required for mode separation. No email/password fields
 are stored in player progress; feedback is recomputed from the target on restore.
 
 ## Past days

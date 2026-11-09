@@ -4,7 +4,7 @@ import { BPM, MELODY, melodyForGuess } from '../lib/musicGame';
 import type { MelodyStep } from '../lib/musicGame';
 import { arrangementTimeline } from '../lib/victoryMusic';
 import type { PlayableStep } from '../lib/victoryMusic';
-import { createSampledPiano, PIANO_SOUNDS } from '../lib/pianoSounds';
+import { createSampledPiano, defaultPianoSound, PIANO_SOUNDS } from '../lib/pianoSounds';
 import type { PianoSound, SampledPianoSound } from '../lib/pianoSounds';
 
 const HOLD_THRESHOLD_MS = 180;
@@ -40,17 +40,18 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
   const voices = useRef(new Set<Voice>());
   const sequenceVoices = useRef(new Set<Voice>());
   const heldNotes = useRef(new Map<string, HeldNote>());
-  const playbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const visualTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const playbackTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const sequenceNotes = useRef(new Map<number, number>());
   const playbackRequest = useRef(0);
   const audioGeneration = useRef(0);
   const nextVoiceId = useRef(0);
   const instruments = useRef(new Map<SampledPianoSound, InstrumentEntry>());
-  const selectedSound = useRef<PianoSound>('grand');
-  const [sound, setSoundState] = useState<PianoSound>('grand');
-  const [soundStatus, setSoundStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const unavailableSounds = useRef(new Set<SampledPianoSound>());
+  const [sound, setSoundState] = useState<PianoSound>(() => defaultPianoSound());
+  const selectedSound = useRef<PianoSound>(sound);
+  const [soundStatus, setSoundStatus] = useState<'loading' | 'ready' | 'error'>(() => sound === 'synth' ? 'ready' : 'loading');
   const [soundProgress, setSoundProgress] = useState(0);
+  const [usingSynthFallback, setUsingSynthFallback] = useState(false);
   const [volume, setVolumeState] = useState(60);
   const [playing, setPlaying] = useState<string | null>(null);
   const [audioError, setAudioError] = useState('');
@@ -64,10 +65,8 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
 
   const stopSequence = useCallback(() => {
     playbackRequest.current += 1;
-    if (playbackTimer.current) clearTimeout(playbackTimer.current);
-    playbackTimer.current = null;
-    visualTimers.current.forEach(clearTimeout);
-    visualTimers.current.clear();
+    playbackTimers.current.forEach(clearTimeout);
+    playbackTimers.current.clear();
     sequenceNotes.current.clear();
     updatePressedNotes();
     sequenceVoices.current.forEach((voice) => voice.stop());
@@ -126,7 +125,9 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       }
       entry.ready = true;
       entry.progress = 100;
-      if (selectedSound.current === choice) {
+      if (selectedSound.current === choice && instruments.current.get(choice) === entry) {
+        unavailableSounds.current.delete(choice);
+        setUsingSynthFallback(false);
         setSoundStatus('ready');
         setSoundProgress(100);
         setAudioError('');
@@ -134,11 +135,15 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       return instrument;
     })().catch(() => {
       entry.instance?.dispose();
-      if (instruments.current.get(choice) === entry) instruments.current.delete(choice);
       const error = new PianoSoundError(`${PIANO_SOUNDS[choice]} could not load. Try again or choose Synth.`);
-      if (audioContext.current === context && selectedSound.current === choice) {
-        setSoundStatus('error');
-        setAudioError(error.message);
+      if (instruments.current.get(choice) === entry) {
+        instruments.current.delete(choice);
+        unavailableSounds.current.add(choice);
+        if (audioContext.current === context && selectedSound.current === choice) {
+          setUsingSynthFallback(true);
+          setSoundStatus('error');
+          setAudioError(error.message);
+        }
       }
       throw error;
     });
@@ -148,10 +153,17 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
   const getAudio = useCallback(async () => {
     const choice = selectedSound.current;
     const { context, output } = ensureAudio();
-    if (context.state === 'suspended') await context.resume();
-    const instrument = choice === 'synth' || context.state === 'closed'
-      ? null
-      : await getInstrument(context, output, choice);
+    if (context.state !== 'running' && context.state !== 'closed') await context.resume();
+    let instrument: Smplr | null = null;
+    if (choice !== 'synth' && context.state !== 'closed' && !unavailableSounds.current.has(choice)) {
+      try {
+        instrument = await getInstrument(context, output, choice);
+      } catch (error) {
+        if (!(error instanceof PianoSoundError)) throw error;
+        // Play this very note or melody with the built-in synth. Later notes
+        // keep working without repeating failed downloads until Retry is used.
+      }
+    }
     return { context, output, instrument };
   }, [ensureAudio, getInstrument]);
 
@@ -160,7 +172,9 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       voices.current.delete(voice);
       sequenceVoices.current.delete(voice);
     };
-    if (instrument) {
+    // Extreme Casual transpositions can exceed a sampler's MIDI map. Keep
+    // those pitches exact with the synth instead of dropping or folding notes.
+    if (instrument && midi >= 0 && midi <= 127) {
       let stopNote: (time?: number) => void = () => {};
       const voice: Voice = {
         stop: (at) => { stopNote(at); voices.current.delete(voice); sequenceVoices.current.delete(voice); },
@@ -232,17 +246,29 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       if (!Number.isFinite(bpm) || bpm <= 0) throw new Error('Invalid tempo.');
       const { context, output, instrument } = await getAudio();
       if (request !== playbackRequest.current || context.state === 'closed') return;
-      const highlight = (pitches: readonly number[], at: number, adding: boolean) => {
-        const timer = setTimeout(() => {
-          visualTimers.current.delete(timer);
+      const schedule = (at: number, callback: () => void) => {
+        // Background timers may be delayed, or the OS may pause the audio
+        // clock. Keep the controls and highlights tied to actual playback.
+        const checkTime = () => {
+          playbackTimers.current.delete(timer);
           if (request !== playbackRequest.current || context.state === 'closed') return;
+          const remaining = (at - context.currentTime) * 1000;
+          if (remaining > 5) {
+            timer = setTimeout(checkTime, Math.max(50, remaining));
+            playbackTimers.current.add(timer);
+          } else callback();
+        };
+        let timer = setTimeout(checkTime, Math.max(0, (at - context.currentTime) * 1000));
+        playbackTimers.current.add(timer);
+      };
+      const highlight = (pitches: readonly number[], at: number, adding: boolean) => {
+        schedule(at, () => {
           for (const pitch of pitches) {
             const count = (sequenceNotes.current.get(pitch) ?? 0) + (adding ? 1 : -1);
             if (count > 0) sequenceNotes.current.set(pitch, count); else sequenceNotes.current.delete(pitch);
           }
           updatePressedNotes();
-        }, Math.max(0, (at - context.currentTime) * 1000));
-        visualTimers.current.add(timer);
+        });
       };
       const start = context.currentTime + .03;
       const { events, totalDuration } = arrangementTimeline(parts, bpm);
@@ -252,13 +278,11 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
         highlight(pitches, start + time + duration * .9, false);
       });
       const time = start + totalDuration;
-      playbackTimer.current = setTimeout(() => {
-        if (request !== playbackRequest.current) return;
-        playbackTimer.current = null;
+      schedule(time, () => {
         sequenceNotes.current.clear();
         updatePressedNotes();
         setPlaying(null);
-      }, (time - context.currentTime) * 1000);
+      });
     } catch (error) {
       if (request !== playbackRequest.current) return;
       stopAudio();
@@ -324,6 +348,12 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
     held.voice.release();
   }, [updatePressedNotes]);
 
+  const releaseHeldNotes = useCallback(() => {
+    // Losing focus can swallow key/pointer releases. Cancel just those notes;
+    // scheduled melodies should keep playing when another tab or app opens.
+    for (const source of heldNotes.current.keys()) releaseNote(source, true);
+  }, [releaseNote]);
+
   const setVolume = useCallback((value: number) => {
     const next = Math.min(100, Math.max(0, value));
     volumeLevel.current = next / 100;
@@ -339,6 +369,8 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
     stopAudio();
     selectedSound.current = choice;
     setSoundState(choice);
+    if (choice !== 'synth') unavailableSounds.current.delete(choice);
+    setUsingSynthFallback(false);
     setAudioError('');
     setSoundStatus(choice === 'synth' || instruments.current.get(choice)?.ready ? 'ready' : 'loading');
   }, [stopAudio]);
@@ -346,6 +378,8 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
   const retrySound = useCallback(() => {
     const choice = selectedSound.current;
     if (choice === 'synth') return;
+    unavailableSounds.current.delete(choice);
+    setUsingSynthFallback(false);
     setAudioError('');
     try {
       const { context, output } = ensureAudio();
@@ -376,16 +410,28 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
         if (source.startsWith('keyboard-') && source.endsWith(`-${event.key}`)) releaseNote(source);
       }
     };
-    const handleVisibility = () => {
-      if (document.hidden) stopAudio();
+    const resumePlayback = () => {
+      const context = audioContext.current;
+      if (document.hidden || !sequenceVoices.current.size || !context || context.state === 'running' || context.state === 'closed') return;
+      void context.resume().catch(() => {
+        if (audioContext.current === context && sequenceVoices.current.size) {
+          setAudioError('Your browser paused audio. Stop and play again to resume.');
+        }
+      });
     };
-    window.addEventListener('blur', stopAudio);
+    const handleVisibility = () => {
+      if (document.hidden) releaseHeldNotes();
+      else resumePlayback();
+    };
+    window.addEventListener('blur', releaseHeldNotes);
+    window.addEventListener('focus', resumePlayback);
     window.addEventListener('pointerup', handlePointerRelease, true);
     window.addEventListener('pointercancel', handlePointerRelease, true);
     window.addEventListener('keyup', handleKeyRelease, true);
     document.addEventListener('visibilitychange', handleVisibility);
     return () => {
-      window.removeEventListener('blur', stopAudio);
+      window.removeEventListener('blur', releaseHeldNotes);
+      window.removeEventListener('focus', resumePlayback);
       window.removeEventListener('pointerup', handlePointerRelease, true);
       window.removeEventListener('pointercancel', handlePointerRelease, true);
       window.removeEventListener('keyup', handleKeyRelease, true);
@@ -398,8 +444,8 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       masterGain.current = null;
       if (context && context.state !== 'closed') void context.close();
     };
-  }, [stopAudio, releaseNote]);
+  }, [stopAudio, releaseNote, releaseHeldNotes]);
 
-  return { sound, setSound, soundStatus, soundProgress, retrySound, volume, setVolume,
+  return { sound, setSound, soundStatus, soundProgress, usingSynthFallback, retrySound, volume, setVolume,
     playing, audioError, setAudioError, pressedNotes, playNotes, playMelody, playArrangement, startNote, releaseNote, stopAudio };
 }

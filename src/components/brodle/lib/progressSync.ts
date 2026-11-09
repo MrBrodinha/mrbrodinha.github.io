@@ -22,7 +22,7 @@ export function serializeProgressCache(progress: GameProgress, pending: boolean)
   return JSON.stringify({ ...JSON.parse(serializeProgress(progress)), pending });
 }
 
-// Each session belongs to one account and puzzle; late responses are ignored
+// Each session belongs to one account, puzzle and mode; late responses are ignored
 // after disposal. Save requests are serialized and merge append-only history.
 export class ProgressSync {
   state: ProgressSyncState;

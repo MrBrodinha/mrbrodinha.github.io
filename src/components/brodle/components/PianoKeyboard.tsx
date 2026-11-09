@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes } from 'react';
 import { keyboardKeys, noteName, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from '../lib/musicGame';
 import type { NoteNaming } from '../lib/musicGame';
@@ -12,17 +12,51 @@ type Props = Pick<ReturnType<typeof usePianoAudio>, 'playing' | 'pressedNotes' |
   highlightedNotes?: readonly number[];
   availableRange?: { minMidi: number; maxMidi: number };
   fitToWidth?: boolean;
+  octaveNavigation?: boolean;
+  playbackMode?: boolean;
   onNote: (midi: number) => void;
 };
 
-export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIANO_MAX_MIDI, chordNotes, highlightedNotes, availableRange, fitToWidth = false, naming, onNote, playing, pressedNotes, startNote, releaseNote, playNotes }: Props) {
-  const { whiteKeys, blackKeys } = keyboardKeys(minMidi, maxMidi);
-  const startsBlack = blackKeys[0]?.midi === minMidi;
-  const endsBlack = blackKeys[blackKeys.length - 1]?.midi === maxMidi;
+export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIANO_MAX_MIDI, chordNotes, highlightedNotes, availableRange, fitToWidth = false, octaveNavigation = false, playbackMode = false, naming, onNote, playing, pressedNotes, startNote, releaseNote, playNotes }: Props) {
+  const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 700px)').matches);
+  const firstOctave = Math.floor(minMidi / 12) * 12;
+  const lastOctave = Math.floor(maxMidi / 12) * 12;
+  const [octave, setOctave] = useState(() => Math.floor((minMidi + maxMidi) / 24) * 12);
+  const oneOctave = octaveNavigation && narrow;
+  const activeOctave = Math.max(firstOctave, Math.min(lastOctave, octave));
+  const visibleMin = oneOctave ? activeOctave : minMidi;
+  const visibleMax = oneOctave ? activeOctave + 11 : maxMidi;
+  const { whiteKeys, blackKeys } = keyboardKeys(visibleMin, visibleMax);
+  const startsBlack = blackKeys[0]?.midi === visibleMin;
+  const endsBlack = blackKeys[blackKeys.length - 1]?.midi === visibleMax;
   const keySlots = whiteKeys.length + Number(startsBlack) / 2 + Number(endsBlack) / 2;
   const scroll = useRef<HTMLDivElement>(null);
-  const unavailable = (midi: number) => midi < PIANO_MIN_MIDI || midi > PIANO_MAX_MIDI
-    || Boolean(availableRange && (midi < availableRange.minMidi || midi > availableRange.maxMidi));
+  const unavailable = (midi: number) => !playbackMode && (midi < Math.max(PIANO_MIN_MIDI, minMidi)
+    || midi > Math.min(PIANO_MAX_MIDI, maxMidi)
+    || Boolean(availableRange && (midi < availableRange.minMidi || midi > availableRange.maxMidi)));
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 700px)');
+    const update = () => setNarrow(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  const highlightedMidi = highlightedNotes?.[0];
+  useEffect(() => {
+    if (!oneOctave) return;
+    let midi = playing && pressedNotes.size ? pressedNotes.values().next().value : highlightedMidi;
+    if (!playing && midi !== undefined && availableRange && availableRange.minMidi <= availableRange.maxMidi) {
+      midi = Math.max(availableRange.minMidi, Math.min(availableRange.maxMidi, midi));
+    }
+    if (midi !== undefined) {
+      setOctave(Math.floor(midi / 12) * 12);
+    } else if (availableRange && availableRange.minMidi <= availableRange.maxMidi) {
+      setOctave((current) => {
+        const start = Math.max(firstOctave, Math.min(lastOctave, current));
+        if (start + 11 >= availableRange.minMidi && start <= availableRange.maxMidi) return current;
+        return Math.floor(Math.max(minMidi, Math.min(maxMidi, availableRange.minMidi)) / 12) * 12;
+      });
+    }
+  }, [oneOctave, playing, pressedNotes, highlightedMidi, availableRange, minMidi, maxMidi, firstOctave, lastOctave]);
   useEffect(() => {
     const centerRange = !playing && highlightedNotes?.length && availableRange
       && availableRange.minMidi <= availableRange.maxMidi
@@ -80,10 +114,19 @@ export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIAN
     };
   }
 
-  return (
-    <div ref={scroll} className="piano-scroll" tabIndex={0} role="region" aria-label="Scrollable piano keyboard">
+  return <>
+    {oneOctave && <div className="piano-octaves" role="group" aria-label="Piano octave">
+      <button type="button" className="brodle-button" disabled={activeOctave <= firstOctave}
+        aria-label={`Previous octave${activeOctave > firstOctave ? ': ' + noteName(activeOctave - 12, naming) + ' to ' + noteName(activeOctave - 1, naming) : ''}`}
+        onClick={() => setOctave(activeOctave - 12)}>‹ Lower octave</button>
+      <span role="status">{noteName(activeOctave, naming)}–{noteName(activeOctave + 11, naming)}</span>
+      <button type="button" className="brodle-button" disabled={activeOctave >= lastOctave}
+        aria-label={`Next octave${activeOctave < lastOctave ? ': ' + noteName(activeOctave + 12, naming) + ' to ' + noteName(activeOctave + 23, naming) : ''}`}
+        onClick={() => setOctave(activeOctave + 12)}>Higher octave ›</button>
+    </div>}
+    <div ref={scroll} className="piano-scroll" tabIndex={oneOctave ? undefined : 0} role="region" aria-label={oneOctave ? 'One-octave piano keyboard' : 'Scrollable piano keyboard'}>
       <div className={'piano-keyboard' + (fitToWidth ? ' is-playback' : '')} data-dense={fitToWidth && keySlots > 14}
-        style={{ minWidth: fitToWidth ? 0 : keySlots * 44, maxWidth: fitToWidth ? keySlots * 60 : undefined }}>
+        style={{ minWidth: fitToWidth || oneOctave ? 0 : keySlots * 44, maxWidth: fitToWidth && !oneOctave ? keySlots * 60 : undefined }}>
         {startsBlack && <span className="piano-edge-space" aria-hidden="true" />}
         {whiteKeys.map(({ midi }) => (
           <button key={midi} type="button" data-midi={midi} disabled={unavailable(midi)} className={'piano-key piano-white' + (pressedNotes.has(midi) ? ' is-held' : '') + (chordNotes?.includes(midi) ? ' is-chord-note' : '') + (highlightedNotes?.includes(midi) ? ' is-selected-note' : '')}
@@ -97,5 +140,5 @@ export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIAN
         ))}
       </div>
     </div>
-  );
+  </>;
 }

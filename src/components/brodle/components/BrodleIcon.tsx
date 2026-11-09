@@ -1,4 +1,5 @@
 const paths = {
+  menu: 'M3 6h18M3 12h18M3 18h18',
   music: 'M9 18V5l12-2v13M9 9l12-2M9 18c0 1.7-1.8 3-4 3s-3-1-3-2.5S3.8 16 6 16s3 1 3 2Zm12-2c0 1.7-1.8 3-4 3s-3-1-3-2.5S15.8 14 18 14s3 1 3 2Z',
   play: 'm9 5 11 7-11 7V5Z',
   stop: 'M6 6h12v12H6Z',
@@ -18,6 +19,7 @@ const paths = {
   home: 'm10 5-7 7 7 7M3 12h18',
   volume: 'm11 4-6 4H2v8h3l6 4V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14',
   sparkle: 'm12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z',
+  help: 'M12 17h.01M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',
 } as const;
 
 type BrodleIconProps = { name: keyof typeof paths; size?: number };

@@ -102,6 +102,32 @@ test('mixed octave offsets, wrong intervals, and incomplete guesses do not win',
   }
 });
 
+test('Hard scores a consistent pitch or octave shift as higher/lower notes instead of a win', () => {
+  const target = [60, 64, 67];
+  for (const offset of [-24, -12, -5, -1, 1, 5, 12, 24]) {
+    const notes = target.map((midi) => midi + offset);
+    assert.equal(getWinKind(notes, target, true), null);
+    assert.deepEqual(scoreGuess(notes, target, true), target.map(() => offset < 0 ? 'low' : 'high'));
+  }
+  assert.equal(getWinKind(target, target, true), 'exact');
+  assert.deepEqual(scoreGuess(target, target, true), ['correct', 'correct', 'correct']);
+  assert.deepEqual(scoreGuess([60, 76, 66], target, true), ['correct', 'high', 'low']);
+});
+
+test('Hard share results cannot report shifted or octave wins from legacy feedback', () => {
+  const target = [60, 64, 67];
+  const attempts = [2, -12].map((offset) => {
+    const notes = target.map((midi) => midi + offset);
+    return { notes, feedback: scoreGuess(notes, target) };
+  });
+  const share = buildShareText(attempts, target, 'https://example.com/brodle', 0, true);
+  assert.match(share, /2 attempts so far/);
+  assert.match(share, /1\. ↓↓↓\n2\. ↑↑↑/);
+  assert.doesNotMatch(share, /shifted|octave|♪|↕|Melody found/);
+  const won = buildShareText([...attempts, { notes: target, feedback: scoreGuess(target, target) }], target, 'https://example.com/brodle', 0, true);
+  assert.match(won, /Exact pitch found in 3 attempts!/);
+});
+
 test('octave results have their own share, and exact wins upgrade them', () => {
   const target = [60, 64, 67];
   const attempt = (notes) => ({ notes, feedback: scoreGuess(notes, target) });
@@ -305,8 +331,8 @@ test('published challenges use their own target, meter, key and tempo', () => {
   assert.equal(tune.metaText.tempo.bpm,96);
   assert.equal(tune.getBarLength(),.75);
   assert.deepEqual(soundingPitches(tune),[70,71]);
-  const progress=parseProgress(JSON.stringify({guess:[],attempts:[[58,59],[70,71]],selectedAttempt:1}),[70,71]);
-  assert.deepEqual(progress.attempts.map(a=>a.feedback),[['octave','octave'],['correct','correct']]);
+  const progress=parseProgress(JSON.stringify({guess:[],attempts:[[58,59],[70,71]],selectedAttempt:1}),[70,71],'classic');
+  assert.deepEqual(progress.attempts.map(a=>a.feedback),[['low','low'],['correct','correct']]);
   assert.notEqual(progressStorageKey('day-a',[70,71]),progressStorageKey('day-b',[70,71]));
 });
 
@@ -500,4 +526,30 @@ test('victory playback fits both parts and every chord pitch, rounding only blac
   assert.deepEqual(victoryPianoRange([[{midi:61,beats:1}]]), { minMidi:60,maxMidi:62 });
   assert.deepEqual(victoryPianoRange([[{midi:31,beats:1},{midi:103,beats:1}]]), { minMidi:31,maxMidi:103 });
   assert.equal(victoryPianoRange([[],[{midi:null,beats:4}]]), null, 'all-rest arrangements have no pitch range');
+});
+
+test('Casual victory transposition keeps both parts, chords, rests and timing at the winning pitch', async () => {
+  const { keyboardKeys } = await import(musicModuleUrl);
+  const target = [90, 94, 97];
+  const main = [makeVictoryStep([60,64,67], 'quarter', true), makeStep(null, 'eighth', false), makeStep(72, 'half', false)];
+  const bass = [makeVictoryStep([31,43], 'whole', false)];
+  const parts = [main, bass];
+  const original = structuredClone(parts);
+  const authored = arrangementTimeline(parts, 144);
+  for (const offset of [-48, -24, -12, -2, 0, 2, 6]) {
+    const guess = target.map((midi) => midi + offset);
+    assert.ok(getWinKind(guess, target));
+    const victory = parts.map((part) => transposeVictory(part, guess[0] - target[0]));
+    const played = arrangementTimeline(victory, 144);
+    assert.equal(played.totalDuration, authored.totalDuration);
+    assert.deepEqual(played.events.map(({ time, duration }) => ({ time, duration })), authored.events.map(({ time, duration }) => ({ time, duration })));
+    assert.deepEqual(played.events.map(({ pitches }) => pitches), authored.events.map(({ pitches }) => pitches.map((pitch) => pitch + offset)));
+    assert.deepEqual(victory[0][1], main[1], 'rests keep their timing and never become pitches');
+    const range = victoryPianoRange(victory);
+    const keys = keyboardKeys(range.minMidi, range.maxMidi);
+    const pitches = new Set([...keys.whiteKeys, ...keys.blackKeys].map(({ midi }) => midi));
+    assert.ok(played.events.every((event) => event.pitches.every((pitch) => pitches.has(pitch))));
+    assert.ok([...keys.whiteKeys, ...keys.blackKeys].every(({ name }) => !name.includes('undefined')));
+  }
+  assert.deepEqual(parts, original, 'victory playback never rewrites the published arrangement');
 });

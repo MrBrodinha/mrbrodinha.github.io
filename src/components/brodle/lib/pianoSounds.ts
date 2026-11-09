@@ -11,6 +11,19 @@ export const PIANO_SOUNDS = {
 export type PianoSound = keyof typeof PIANO_SOUNDS;
 export type SampledPianoSound = Exclude<PianoSound, 'synth'>;
 
+type PianoDevice = Pick<Navigator, 'userAgent' | 'platform' | 'maxTouchPoints'> & {
+  userAgentData?: { mobile: boolean };
+};
+
+export function defaultPianoSound(device: PianoDevice | undefined = typeof navigator === 'undefined' ? undefined : navigator): PianoSound {
+  if (!device) return 'grand';
+  // iPadOS can identify itself as a Mac. Touch support distinguishes it from
+  // desktop Macs without making a narrow desktop window count as a phone.
+  const mobile = device.userAgentData?.mobile || /Android|iPhone|iPad|iPod|Mobile/i.test(device.userAgent)
+    || (device.platform === 'MacIntel' && device.maxTouchPoints > 1);
+  return mobile ? 'synth' : 'grand';
+}
+
 export async function createSampledPiano(
   context: AudioContext,
   output: GainNode,
@@ -23,13 +36,20 @@ export async function createSampledPiano(
   const baseLoader = SampleLoader(context);
   const loader: Smplr['loader'] = {
     async load(preset, options) {
-      const buffers = typeof options === 'function'
-        ? await baseLoader.load(preset, options)
-        : await baseLoader.load(preset, options);
       const expected = new Set(preset.groups.flatMap((group) => group.regions.map((region) => region.sample)));
-      // smplr otherwise silently skips samples that failed to download/decode.
-      if (!buffers.size || buffers.size !== expected.size) throw new Error('Some piano samples could not load.');
-      return buffers;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const buffers = typeof options === 'function'
+            ? await baseLoader.load(preset, options)
+            : await baseLoader.load(preset, options);
+          // smplr silently skips failed downloads/decodes. Retry once; its
+          // loader keeps successful samples so only missing ones are fetched.
+          if (buffers.size && [...expected].every((sample) => buffers.has(sample))) return buffers;
+        } catch {
+          // Network errors reject instead of returning an incomplete map.
+        }
+      }
+      throw new Error('Some piano samples could not load.');
     },
   };
   const options = {

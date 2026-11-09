@@ -1,8 +1,18 @@
-import { CHALLENGE, TARGET, scoreGuess, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from './musicGame';
+import { CHALLENGE, TARGET, getWinKind, scoreGuess, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from './musicGame';
 import type { Attempt, Feedback } from './musicGame';
 
+// Keep the saved preference values compatible: guided = Casual, classic = Hard.
 export type GameMode = 'guided' | 'classic';
 export const GAME_MODE_STORAGE_KEY = 'brodle:game-mode:v1';
+
+export function gameModeStorageKey(challengeId: string, target: readonly number[], userId: string | null) {
+  return `brodle:mode:v1:${userId ? 'user:' + userId : 'guest'}:${challengeId}:${target.join('-')}`;
+}
+
+export function modeWithAttempts(preferred: GameMode, rounds: Record<GameMode, GameProgress>): GameMode {
+  const other = preferred === 'guided' ? 'classic' : 'guided';
+  return rounds[preferred].attempts.length || !rounds[other].attempts.length ? preferred : other;
+}
 
 export type GameProgress = {
   guess: number[];
@@ -11,9 +21,15 @@ export type GameProgress = {
   hintsUsed: number;
 };
 
-// A changed challenge or target gets a fresh round, independent of deployments.
-export function progressStorageKey(id = CHALLENGE.id, target: readonly number[] = TARGET, userId: string | null = null) {
-  return userId ? `brodle:progress:v2:user:${userId}:${id}:${target.join('-')}` : `brodle:progress:v1:${id}:${target.join('-')}`;
+// Existing shared rounds stay in Casual. Hard has its own browser/account ID.
+export function progressRoundId(challengeId: string, mode: GameMode = 'guided') {
+  return mode === 'classic' ? `hard:${challengeId}` : challengeId;
+}
+
+// A changed challenge, target, or mode gets an independent round.
+export function progressStorageKey(id = CHALLENGE.id, target: readonly number[] = TARGET, userId: string | null = null, mode: GameMode = 'guided') {
+  const roundId = progressRoundId(id, mode);
+  return userId ? `brodle:progress:v2:user:${userId}:${roundId}:${target.join('-')}` : `brodle:progress:v1:${roundId}:${target.join('-')}`;
 }
 export const PROGRESS_STORAGE_KEY = progressStorageKey();
 
@@ -56,7 +72,7 @@ function restoreGuess(progress: GameProgress, target: readonly number[], mode: G
 }
 
 export function editProgressGuess(progress: GameProgress, notes: readonly number[], target: readonly number[], mode: GameMode = 'guided'): GameProgress {
-  if (isFinished(progress) || !validNotes(notes) || notes.length > target.length) return progress;
+  if (isFinished(progress, mode) || !validNotes(notes) || notes.length > target.length) return progress;
   const current = restoreGuess(progress, target, mode);
   const constraints = noteConstraints(progress, target, mode);
   const guess = Array.from({ length: Math.max(notes.length, progress.hintsUsed) }, (_, index) => constraints[index].lockedMidi ?? notes[index]);
@@ -66,30 +82,41 @@ export function editProgressGuess(progress: GameProgress, notes: readonly number
 }
 
 export function copyLastAttempt(progress: GameProgress, target: readonly number[], mode: GameMode = 'guided'): GameProgress {
-  const last = progress.attempts[progress.attempts.length - 1];
-  if (!last || isFinished(progress)) return progress;
-  const next = { ...progress, guess: [...last.notes] };
+  return copyAttemptToDraft(progress, progress.attempts.length - 1, target, mode);
+}
+
+export function copyAttemptToDraft(progress: GameProgress, index: number, target: readonly number[], mode: GameMode = 'guided'): GameProgress {
+  const attempt = Number.isInteger(index) ? progress.attempts[index] : undefined;
+  if (!attempt || isFinished(progress, mode)) return progress;
+  const next = { ...progress, guess: [...attempt.notes] };
   return { ...next, guess: restoreGuess(next, target, mode) };
 }
 
+export function guessRangeIssues(progress: GameProgress, target: readonly number[], mode: GameMode = 'guided'): number[] {
+  const constraints = noteConstraints(progress, target, mode);
+  return progress.guess.flatMap((midi, index) => {
+    const constraint = constraints[index];
+    return constraint && (midi < constraint.minMidi || midi > constraint.maxMidi) ? [index] : [];
+  });
+}
+
 export function replaceGuessNote(progress: GameProgress, index: number, midi: number, target: readonly number[], mode: GameMode = 'guided'): GameProgress {
-  if (isFinished(progress) || !Number.isInteger(index) || index < 0 || index >= progress.guess.length) return progress;
+  if (isFinished(progress, mode) || !Number.isInteger(index) || index < 0 || index >= progress.guess.length) return progress;
   const constraint = noteConstraints(progress, target, mode)[index];
   if (constraint.lockedMidi !== null || midi < constraint.minMidi || midi > constraint.maxMidi) return progress;
   return editProgressGuess(progress, progress.guess.map((note, position) => position === index ? midi : note), target, mode);
 }
 
 export function canSubmitGuess(progress: GameProgress, target: readonly number[], mode: GameMode = 'guided'): boolean {
-  if (isFinished(progress) || !validNotes(progress.guess) || progress.guess.length !== target.length) return false;
+  if (isFinished(progress, mode) || !validNotes(progress.guess) || progress.guess.length !== target.length) return false;
   const last = progress.attempts[progress.attempts.length - 1];
   if (mode === 'guided' && last && progress.guess.every((midi, index) => midi === last.notes[index])) return false;
-  return noteConstraints(progress, target, mode).every(({ minMidi, maxMidi }, index) =>
-    progress.guess[index] >= minMidi && progress.guess[index] <= maxMidi);
+  return guessRangeIssues(progress, target, mode).length === 0;
 }
 
 export function guessFeedback(progress: GameProgress, target: readonly number[], mode: GameMode = 'guided'): (Feedback | undefined)[] {
   const last = progress.attempts[progress.attempts.length - 1];
-  const finished = isFinished(progress);
+  const finished = isFinished(progress, mode);
   const notes = finished && last ? last.notes : progress.guess;
   const constraints = noteConstraints(progress, target, mode);
   return notes.map((midi, index) => {
@@ -99,13 +126,27 @@ export function guessFeedback(progress: GameProgress, target: readonly number[],
 }
 
 export function revealNextHint(progress: GameProgress, target: readonly number[], mode: GameMode = 'guided'): GameProgress {
-  if (isFinished(progress) || progress.hintsUsed >= hintLimit(target)) return progress;
+  if (isFinished(progress, mode) || progress.hintsUsed >= hintLimit(target)) return progress;
   const next = { ...progress, hintsUsed: progress.hintsUsed + 1 };
   return { ...next, guess: restoreGuess(next, target, mode) };
 }
 
-export function isFinished(progress: GameProgress): boolean {
-  return progress.attempts.some((attempt) => attempt.feedback.every((value) => value === 'correct'));
+function winningFeedback(feedback: readonly Feedback[], mode: GameMode): boolean {
+  const first = feedback[0];
+  return (first === 'correct' || (mode === 'guided' && (first === 'octave' || first === 'shifted')))
+    && feedback.every((value) => value === first);
+}
+
+export function isFinished(progress: GameProgress, mode: GameMode = 'guided'): boolean {
+  return progress.attempts.some((attempt) => winningFeedback(attempt.feedback, mode));
+}
+
+export function winningAttempt(progress: GameProgress, target: readonly number[], mode: GameMode = 'guided') {
+  for (const [index, attempt] of progress.attempts.entries()) {
+    const kind = getWinKind(attempt.notes, target, mode === 'classic');
+    if (kind) return { index, kind, offset: attempt.notes[0] - target[0] };
+  }
+  return null;
 }
 
 function validNotes(value: unknown): value is number[] {
@@ -127,7 +168,7 @@ export function parseProgress(serialized: string | null, target: readonly number
     for (const [index, notes] of saved.attempts.entries()) {
       // Keep valid history if a later entry is damaged. Recompute all feedback.
       if (!validNotes(notes) || notes.length !== target.length) break;
-      const feedback = scoreGuess(notes, target);
+      const feedback = scoreGuess(notes, target, mode === 'classic');
       const id = typeof ids[index] === 'string' && /^[A-Za-z0-9:-]{1,1500}$/.test(ids[index]) ? ids[index] : legacyAttemptId(notes, index);
       if (seen.has(id)) continue;
       seen.add(id);
@@ -135,13 +176,13 @@ export function parseProgress(serialized: string | null, target: readonly number
       const verifiedHints = notes.slice(0, hintsUsed).every((note, position) => note === target[position]) ? hintsUsed : 0;
       attempts.push({ id, notes, feedback, ...(verifiedHints ? { hintsUsed: verifiedHints } : {}) });
       revealedHints = Math.max(revealedHints, verifiedHints);
-      if (feedback.every((value) => value === 'correct')) break;
+      if (winningFeedback(feedback, mode)) break;
     }
     const progress = { ...emptyProgress(), attempts, hintsUsed: revealedHints };
-    if (!isFinished(progress) && 'guess' in saved && validNotes(saved.guess) && saved.guess.length <= target.length) {
+    if (!isFinished(progress, mode) && 'guess' in saved && validNotes(saved.guess) && saved.guess.length <= target.length) {
       progress.guess = saved.guess;
     }
-    if (!isFinished(progress)) progress.guess = restoreGuess(progress, target, mode);
+    if (!isFinished(progress, mode)) progress.guess = restoreGuess(progress, target, mode);
     const selected = 'selectedAttempt' in saved ? saved.selectedAttempt : undefined;
     progress.selectedAttempt = typeof selected === 'number' && Number.isInteger(selected) && selected >= 0 && selected < attempts.length
       ? selected : Math.max(0, attempts.length - 1);
@@ -177,8 +218,9 @@ export function mergeProgress(saved: GameProgress, incoming: GameProgress, targe
       const id = attempt.id ?? legacyAttemptId(attempt.notes, index);
       if (seen.has(id)) continue;
       seen.add(id);
-      attempts.push({ ...attempt, id });
-      finished = attempt.feedback.every((value) => value === 'correct');
+      const feedback = scoreGuess(attempt.notes, target, mode === 'classic');
+      attempts.push({ ...attempt, id, feedback });
+      finished = winningFeedback(feedback, mode);
     }
   }
   const draft = preferIncomingDraft ? incoming : saved;

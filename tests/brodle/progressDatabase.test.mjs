@@ -65,8 +65,18 @@ test('Brodle progress is private to its account, resumes after login, and merges
     assert.deepEqual(won.attemptIds,['first','other-device','win']);
     assert.deepEqual((await save(alice,first)).attempts,won.attempts,'stale tabs never erase a win');
     assert.deepEqual((await load(alice)).guess,[]);
+    const casualSaved=await load(alice);
+    assert.equal(await load(alice,'hard:day-a'),null,'a Casual win does not solve Hard');
+    const hardFirst=progress([[61,63]],[62],['hard-first']);
+    assert.deepEqual(await save(alice,hardFirst,'hard:day-a'),hardFirst);
+    assert.deepEqual(await load(alice),casualSaved,'Hard attempts do not enter the Casual round');
+    assert.deepEqual(await load(alice,'hard:day-a'),hardFirst,'Hard reloads its own attempts and partial draft');
+    const hardHinted={...hardFirst,guess:[60],hintsUsed:1};
+    assert.deepEqual(await save(alice,hardHinted,'hard:day-a'),hardHinted);
+    assert.deepEqual(await load(alice),casualSaved,'Hard hints do not enter the Casual round');
     await role(bob);
     assert.deepEqual(await load(bob),bobs,'another user’s progress remains untouched');
+    assert.equal(await load(bob,'hard:day-a'),null,'Hard progress stays private to its account');
     for (const invalid of [
       {...progress(),guess:[30]}, {...progress(),guess:[104]}, {...progress(),guess:[60,64,67]},
       {...progress(),guess:[60.5]}, {...progress(),selectedAttempt:1}, {...progress(),selectedAttempt:null},

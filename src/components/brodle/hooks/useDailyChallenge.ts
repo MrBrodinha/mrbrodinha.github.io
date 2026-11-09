@@ -28,7 +28,7 @@ export function useDailyChallenge(date: string | null = null) {
       const daily = data as { today: string; serverNow: string; nextChangeAt: string; previousDate?: string | null; nextDate?: string | null; challenge: { id: string; playDate: string; snapshot: ChallengeSnapshot } | null };
       const challenge = daily.challenge ? publishedChallenge(daily.challenge.id, daily.challenge.playDate, daily.challenge.snapshot) : date ? null : PRACTICE_CHALLENGE;
       setState({ challenge, loading: false, today: daily.today, previousDate: daily.previousDate ?? null, nextDate: daily.nextDate ?? null,
-        notice: date ? (daily.challenge ? 'Archive challenge' : 'No published puzzle is available for this day.') : daily.challenge ? (daily.challenge.playDate < daily.today ? 'Latest published challenge' : '') : 'Practice melody · the daily calendar is coming soon.' });
+        notice: date ? (daily.challenge ? daily.challenge.playDate === daily.today ? '' : 'Archive challenge' : 'No published puzzle is available for this day.') : daily.challenge ? (daily.challenge.playDate < daily.today ? 'Latest published challenge' : '') : 'Practice melody · the daily calendar is coming soon.' });
       clearTimeout(timer.current);
       const wait = Date.parse(daily.nextChangeAt) - Date.parse(daily.serverNow);
       timer.current = setTimeout(() => void refresh(), Number.isFinite(wait) ? Math.max(1000, Math.min(wait + 500, 86401000)) : 60000);
