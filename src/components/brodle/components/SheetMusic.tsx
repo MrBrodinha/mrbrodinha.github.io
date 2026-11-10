@@ -52,7 +52,7 @@ function SheetMusic({ abc, feedback, feedbackIndices, invalidNotes, minWidth, co
       renderedWidth = width;
       element.replaceChildren();
       element.style.height = '';
-      abcjs.renderAbc(element, compact ? abc.replace(/^Q:/m, '%%printtempo 0\nQ:') : abc, {
+      abcjs.renderAbc(element, abc, {
         responsive: 'resize',
         add_classes: true,
         selectTypes: [],
@@ -136,7 +136,6 @@ function SheetMusic({ abc, feedback, feedbackIndices, invalidNotes, minWidth, co
   const keyLabel = keyName(musicalKey, naming);
   return (
     <div className={'piano-sheet' + (minWidth ? ' scrollable-sheet' : '') + (compact ? ' compact-sheet' : '')} role={selection ? 'group' : 'img'} aria-label={`${keyLabel}. ${timeSignature} time. ${bpm} beats per minute. ${label}`}>
-      <span className="sheet-key" aria-hidden="true">Key: <strong>{keyLabel}</strong>{compact && ` · ${bpm} BPM`}</span>
       <div ref={container} style={minWidth ? { minWidth } : undefined} />
     </div>
   );

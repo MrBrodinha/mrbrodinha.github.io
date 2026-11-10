@@ -205,7 +205,7 @@ new draft. Older attempts remain saved without adding more sheets. Use
 and grows with its content, without a scrollable attempts area.
 **Copy last attempt** fills the draft without spending an attempt or hint and
 preserves newer hints and, in Casual, previously confirmed correct pitches.
-Undo, the red-tinted Clear button, and Backspace remain available after submissions.
+The draft heading is centered, with the clue on the left and Listen on the right. Remove last note, Clear, and Submit sit below the sheet, with Clear immediately before Submit. Backspace also removes the last note. The sheet shows its key signature and tempo directly; the song clue sits inside the sheet panel.
 
 The existing separate mode records retain their own attempts, partial drafts,
 hint budgets, and solved states. Older players with history in both modes keep
@@ -213,8 +213,9 @@ the mode they most recently selected for that puzzle. The browser remembers the
 preferred mode for new puzzles, and signed-in players restore an already-started
 mode on another device. Existing shared history stays in Casual.
 Hard keeps every playable pitch available. Previously correct notes are
-not locked in Hard unless they were revealed by a hint. It hides the song clue
-and whole-melody pitch guidance, and disables challenge-melody hint playback.
+not locked in Hard. Both modes show the song clue when available. Hard hides
+whole-melody pitch guidance and offers no note hints or challenge-melody hint playback.
+Previously revealed Hard notes and their hint counts are preserved in existing rounds.
 Normal submission feedback and playback of the player's guesses remain available.
 Saved mode preference values remain `guided` (Casual) and `classic` (Hard) so
 existing browser preferences and Casual rounds continue to work.
@@ -245,14 +246,13 @@ the draft while free play is on.
 Attempts and hint counts are retained for sharing, account sync, and restoring
 pitch limits after a reload. Saved partial drafts remain partial and do not
 fill missing positions from their latest attempt.
-Players can also choose **Reveal next note**, up to half the challenge's sounding
+In Casual mode, players can also choose **Reveal next note**, up to half the challenge's sounding
 notes, rounded down (10 notes allow 5 hints). Each hint reveals the next note in
 order. In Casual mode, the final hint also plays the challenge melody with its authored rhythm
 and tempo, without highlighting its notes on the piano or scrolling to them.
 After using it, **Replay melody** and **Stop melody** let the player
 listen again without spending another hint. Playback stays unlocked after
-reloading or restoring account progress in Casual. Hard's last hint only reveals
-a note; its hint button becomes disabled when the budget is used. Changing
+reloading or restoring account progress in Casual. Hard has no note-hint button. Changing
 modes before the first submission stops any active playback, including a Casual melody hint.
 Revealed notes appear green and stay
 correct in every subsequent attempt, including after reloading or signing back in.
@@ -377,7 +377,7 @@ are stored in player progress; feedback is recomputed from the target on restore
 
 ## Past days
 
-Below the piano, **Want to play other days?** has Earlier/Later arrows. They
+Below the game, **Play other days** has Earlier/Later arrows. They
 move between published puzzles, skipping gaps in the calendar. The oldest and
 newest published days disable the unavailable direction. **Today’s puzzle**
 returns to the automatically updating daily selection.

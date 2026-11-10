@@ -209,11 +209,11 @@ test('classic mode accepts complete new melodies without guided locks or pitch e
   assert.deepEqual(round.guess,[59,66,70,63]);
   const repeated = editProgressGuess(round,previous,tune,'classic');
   assert.equal(canSubmitGuess(repeated,tune,'classic'),true,'classic still counts repeated complete submissions');
-  round = revealNextHint(round,tune,'classic');
-  assert.deepEqual(round.guess,[60,66,70,63]);
-  assert.deepEqual(editProgressGuess(round,[],tune,'classic').guess,[60],'revealed hints survive Clear');
-  assert.equal(replaceGuessNote(round,0,59,tune,'classic'),round,'hinted notes stay locked in classic too');
-  assert.deepEqual(guessFeedback(round,tune,'classic'),['correct',undefined,undefined,undefined]);
+  assert.equal(revealNextHint(round,tune,'classic'),round,'Hard cannot reveal note hints');
+  assert.deepEqual(round.guess,[59,66,70,63]);
+  assert.deepEqual(editProgressGuess(round,[],tune,'classic').guess,[]);
+  assert.deepEqual(replaceGuessNote(round,0,60,tune,'classic').guess,[60,66,70,63]);
+  assert.deepEqual(guessFeedback(round,tune,'classic'),[undefined,undefined,undefined,undefined]);
   assert.deepEqual(parseProgress(serializeProgress(round),tune,'classic'),round);
   const winning = {id:'classic-win',notes:tune,feedback:scoreGuess(tune,tune),hintsUsed:round.hintsUsed};
   const solved = parseProgress(serializeProgress({...round,attempts:[...round.attempts,winning]}),tune,'classic');
@@ -221,7 +221,7 @@ test('classic mode accepts complete new melodies without guided locks or pitch e
   assert.deepEqual(guessFeedback(solved,tune,'classic'),['correct','correct','correct','correct']);
 });
 
-test('classic partial drafts and hints survive account sync and reloads', async () => {
+test('legacy Hard partial drafts and revealed notes survive account sync and reloads', async () => {
   const tune = [60,64,67,65];
   let remote = parseProgress(JSON.stringify({attempts:[[60,63,69,64]],guess:[],hintsUsed:1}),tune,'classic');
   let cached = serializeProgressCache(remote,false);

@@ -54,7 +54,7 @@ export default function BrodleTutorial({ maxHints, onOpen, exactOnly = false }: 
         <span className="tutorial-eyebrow">Step {step + 1} of {titles.length}</span>
         <h3 id="tutorial-step-title" ref={heading} tabIndex={-1}>{titles[step]}</h3>
         {step === 0 && <>
-          <p>Use the piano to guess the hidden melody, one note at a time. Rhythm and rests are filled in for you. Fill the note counter, then choose <strong>Submit guess</strong>. You have unlimited attempts.</p>
+          <p>Use the piano to guess the hidden melody, one note at a time. Rhythm and rests are filled in for you. Enter every note, then choose <strong>Submit</strong>.</p>
           <ul className="tutorial-feedback">
             <li><span className="feedback-pill feedback-correct">✓ Correct</span> The right pitch in the right position.</li>
             <li><span className="feedback-pill feedback-low">↑ Raise</span> Try a higher note at this position.</li>
@@ -78,9 +78,9 @@ export default function BrodleTutorial({ maxHints, onOpen, exactOnly = false }: 
           <p>Find the exact melody, including its pitch and octave. Every note must match to win.</p>
           <ul>
             <li>Every playable pitch stays available. Previous feedback does not narrow the piano or lock correct guesses.</li>
-            <li>The song clue and challenge-melody playback hint are off.</li>
+            <li>The song clue is available when one has been provided.</li>
             <li>A shifted pitch or different octave gets normal higher/lower feedback and does not count as a win.</li>
-            <li>Optional <strong>Reveal next note</strong> hints still work. Only revealed notes stay locked, and the last hint reveals a note without playing the melody.</li>
+            <li>Note hints and challenge-melody playback are off.</li>
           </ul>
           <p>You can still listen to your own guesses. Choose Casual or Hard before your first submission; the mode locks once you submit a guess.</p>
         </>}
@@ -89,9 +89,9 @@ export default function BrodleTutorial({ maxHints, onOpen, exactOnly = false }: 
             <li>Select a note on your guess to replace it, then choose a piano key. <strong>Listen</strong> plays your current guess.</li>
             <li><strong>Remove last note</strong> or <strong>Backspace</strong> removes the last entered note. <strong>Clear</strong> starts the draft again. Revealed notes stay in place.</li>
             <li><strong>Free play</strong> lets you try keys without changing your guess. Turn it off to continue entering notes.</li>
-            <li>Open <strong>Sound &amp; labels</strong> to choose A–G or Dó–Si note names, the instrument, and volume. On phones, use the labeled octave buttons to reach lower or higher notes.</li>
+            <li>The controls above the piano let you choose A–G or Dó–Si note names, the instrument, and volume. On phones, use the labeled octave buttons to reach lower or higher notes.</li>
           </ul>
-          <p>{maxHints > 0 ? <>This puzzle has <strong>{maxHints} optional note {maxHints === 1 ? 'hint' : 'hints'}</strong> in each mode. Each reveals the next note permanently, up to half the melody rounded down.</> : 'This short puzzle has no note hints. Longer puzzles allow up to half their notes to be revealed, rounded down.'} Hints used are included in shared results.</p>
+          <p>{maxHints > 0 ? <>In Casual mode, this puzzle has <strong>{maxHints} optional note {maxHints === 1 ? 'hint' : 'hints'}</strong>. Each reveals the next note permanently, up to half the melody rounded down.</> : 'This short puzzle has no note hints. Longer puzzles allow up to half their notes to be revealed in Casual mode, rounded down.'} Hard mode has no note hints. Hints used are included in shared results.</p>
           <p>Open <strong>How to play</strong> any time to revisit this tutorial.</p>
         </>}
       </section>

@@ -126,7 +126,7 @@ export function guessFeedback(progress: GameProgress, target: readonly number[],
 }
 
 export function revealNextHint(progress: GameProgress, target: readonly number[], mode: GameMode = 'guided'): GameProgress {
-  if (isFinished(progress, mode) || progress.hintsUsed >= hintLimit(target)) return progress;
+  if (mode !== 'guided' || isFinished(progress, mode) || progress.hintsUsed >= hintLimit(target)) return progress;
   const next = { ...progress, hintsUsed: progress.hintsUsed + 1 };
   return { ...next, guess: restoreGuess(next, target, mode) };
 }

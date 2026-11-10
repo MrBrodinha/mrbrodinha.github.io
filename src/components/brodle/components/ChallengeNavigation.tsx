@@ -8,7 +8,7 @@ export type ChallengeNavigationProps = {
 export default function ChallengeNavigation({ date, previousDate, nextDate, archive }: ChallengeNavigationProps) {
   return <nav className="challenge-navigation brodle-content" aria-label="Other Brodle days">
     <div className="challenge-navigation-copy">
-      <h2>Want to play other days?</h2>
+      <h2>Play other days</h2>
       <p>{date ? displayDate(date) : 'Past puzzles will appear here once published.'}</p>
     </div>
     <div className="challenge-navigation-actions">

@@ -220,6 +220,7 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
   }
 
   function revealHint() {
+    if (!casual) return;
     if (melodyHintUnlocked) {
       togglePlayback(TARGET, 'hint-melody', MELODY);
       return;
@@ -331,7 +332,7 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
       ? 'You found the melody in a different octave.'
     : won
       ? 'You won in ' + winCount + (winCount === 1 ? ' attempt' : ' attempts') + ' with the correct melody at a shifted pitch!'
-      : 'Attempt ' + (attempts.length + 1) + '. Enter ' + TARGET.length + ' notes. Unlimited attempts.';
+      : 'Attempt ' + (attempts.length + 1) + '. Enter ' + TARGET.length + ' notes.';
 
   if (progressLoading) return <main className="route-loading" role="status">Restoring your Brodle attempts…</main>;
 
@@ -340,14 +341,15 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
       {celebration && <WinConfetti key={celebration} variant={celebration === 'octave' ? 'melody' : celebration} />}
       <main className="brodle-content brodle-main">
         <h1 className="sr-only">Brodle</h1>
-        <p className="puzzle-first-action">Play {TARGET.length} notes on the piano.</p>
 
         <div className="puzzle-toolbar">
-          <div className="daily-caption" aria-live="polite">
-            {challenge.date && <strong>{displayDate(challenge.date)} · {navigation.archive ? 'Selected day' : 'Midnight Lisbon reset'}</strong>}
-            {notice && notice !== 'Archive challenge' && <span>{notice}</span>}
-            {accountProgress && <span role="status">{progressStatus === 'saved' ? 'Progress saved to your account' : progressStatus === 'saving' ? 'Saving your progress…' : progressStatus === 'error' ? 'Account sync unavailable. Your progress will retry automatically.' : 'Progress saved in this browser'}</span>}
-            {accountProgress && progressStatus === 'error' && <button type="button" className="brodle-button" onClick={retrySync}>Retry saving progress</button>}
+          <div className="puzzle-intro">
+            <div className="daily-caption" aria-live="polite">
+              {challenge.date && <strong>{displayDate(challenge.date)} · {navigation.archive ? 'Selected day' : 'Midnight Lisbon reset'}</strong>}
+              {notice && notice !== 'Archive challenge' && <span>{notice}</span>}
+              {accountProgress && <span role="status">{progressStatus === 'saved' ? 'Progress saved to your account' : progressStatus === 'saving' ? 'Saving your progress…' : progressStatus === 'error' ? 'Account sync unavailable. Your progress will retry automatically.' : 'Progress saved in this browser'}</span>}
+              {accountProgress && progressStatus === 'error' && <button type="button" className="brodle-button" onClick={retrySync}>Retry saving progress</button>}
+            </div>
           </div>
           <p className="sr-only" role="status">{message}</p>
           <div className="game-mode-picker">
@@ -357,28 +359,6 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
             </div>}
             <BrodleTutorial maxHints={maxHints} onOpen={stopAudio} exactOnly={!casual} />
           </div>
-        </div>
-        <div className="puzzle-clue">
-          {casual && CHALLENGE.hint && <p className="tune-tip"><BrodleIcon name="sparkle" /><span>Clue</span><strong>{CHALLENGE.hint}</strong></p>}
-          {!finished && <div className="guess-hints">
-            <button type="button" className={'brodle-button' + (isMelodyHintPlaying ? ' is-playing' : '')} disabled={maxHints === 0 || (!casual && hintsUsed >= maxHints)} onClick={revealHint}
-              aria-pressed={melodyHintUnlocked ? isMelodyHintPlaying : undefined}
-              aria-describedby="hint-explanation"
-              title={melodyHintUnlocked ? 'Replay the challenge melody without using another hint.'
-                : nextHintPlaysMelody ? 'Use the final hint to reveal the next note and hear the challenge melody.'
-                : 'Reveal the next note.'}>
-              <BrodleIcon name={isMelodyHintPlaying ? 'stop' : melodyHintUnlocked || nextHintPlaysMelody ? 'play' : 'sparkle'} />
-              {isMelodyHintPlaying ? 'Stop melody' : melodyHintUnlocked ? 'Replay melody' : nextHintPlaysMelody ? 'Play melody (last hint)' : hintsUsed >= maxHints && maxHints > 0 ? 'All note hints used' : 'Reveal next note'}
-              <span>{hintsUsed} / {maxHints}</span>
-            </button>
-            <details className="hint-explanation">
-              <summary>About hints</summary>
-              <p id="hint-explanation">{hintsUsed > 0
-                ? `The first ${hintsUsed === 1 ? 'note stays' : `${hintsUsed} notes stay`} correct in every attempt.`
-                : `Use up to ${maxHints} optional note ${maxHints === 1 ? 'hint' : 'hints'}. Revealed notes stay correct.`}
-                {maxHints > 0 && (casual ? ' The final hint also plays the melody and unlocks free replays.' : ' Hard mode reveals notes only; challenge playback is off.')}</p>
-            </details>
-          </div>}
         </div>
         <div className="brodle-workspace">
           {won ? (
@@ -429,13 +409,19 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
           <section className="play-panel brodle-panel" aria-label="Draft and piano">
             {!finished ? <section ref={draft} className="current-guess" aria-label="Your guess" data-empty={guess.length === 0}>
               <div className="guess-heading">
-                <div>
-                  <h2>Your guess <span className="attempt-total">· Attempt {attempts.length + 1}</span></h2>
-                  <span className="draft-caption">Unlimited attempts</span>
+                <div className="guess-clue">
+                  {CHALLENGE.hint && <p className="tune-tip"><span>Clue:</span> {CHALLENGE.hint}</p>}
+                </div>
+                <div className="guess-title">
+                  <h2>Your guess <span className="attempt-total">Attempt {attempts.length + 1}</span></h2>
                 </div>
                 <div className="guess-heading-actions">
-                  <button type="button" className="brodle-button clear-guess" disabled={guess.length <= hintsUsed} onClick={() => editGuess([])}>Clear</button>
-                  <span className="note-count" aria-live="polite">{guess.length}<span> / {TARGET.length} notes</span></span>
+                  <button type="button" className={'brodle-button play-guess' + (playing === 'current' ? ' is-playing' : '')} disabled={!guess.length}
+                    aria-label={playing === 'current' ? 'Stop current guess' : 'Play current guess'}
+                    onClick={() => togglePlayback(guess, 'current')}>
+                    <BrodleIcon name={playing === 'current' ? 'stop' : 'play'} />{playing === 'current' ? 'Stop' : 'Listen'}
+                  </button>
+                  <span className="sr-only" aria-live="polite">{guess.length} of {TARGET.length} notes entered</span>
                 </div>
               </div>
               <SheetMusic abc={guessNotation.abc} musicalKey={guessKey} naming={noteNaming} bpm={bpm} timeSignature={timeSignature}
@@ -446,41 +432,56 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
                   selected: selectedNoteIndex === null ? null : { voice: 0, index: selectedNoteIndex },
                   onSelect: (_, index) => { stopAudio(); setFreePlay(false); setSelectedGuessIndex(index); } }}
                 label={notationLabel(guess, noteNaming, MELODY, sheetFeedback, guessKey)} />
-              <div className="draft-edit-status" data-empty={guess.length === 0}>
-                <p className="guess-edit-hint" role="status">{selectedNoteIndex !== null
-                  ? `Editing note ${selectedNoteIndex + 1}. Choose a piano key to replace it.`
-                  : guess.length ? 'Select a note to change it, then choose a piano key.' : 'Tap the piano keys to start your guess.'}</p>
-                {selectedNoteIndex !== null && <button type="button" className="brodle-button finish-edit" onClick={() => setSelectedGuessIndex(null)}>Done editing</button>}
-              </div>
+              {selectedNoteIndex !== null && <div className="draft-edit-status">
+                <p className="guess-edit-hint" role="status">Editing note {selectedNoteIndex + 1}. Choose a piano key to replace it.</p>
+                <button type="button" className="brodle-button finish-edit" onClick={() => setSelectedGuessIndex(null)}>Done editing</button>
+              </div>}
             </section> : <div className="completed-draft"><BrodleIcon name="check" /><p>Melody found. Play freely or revisit your attempts.</p></div>}
 
             <div className="play-controls">
               {!finished && <>
-                <div id="submission-help" className={'submission-help' + (invalidNotes.length ? ' has-issues' : '')} role="status">
-                  {invalidNotes.length ? <button type="button" onClick={fixFirstNote}>
-                    <span aria-hidden="true">!</span> {invalidNotes.length} {invalidNotes.length === 1 ? 'note outside its' : 'notes outside their'} allowed range. Fix note {invalidNotes[0] + 1} <span aria-hidden="true">→</span>
-                  </button> : guess.length < TARGET.length
-                    ? `${TARGET.length - guess.length} more ${TARGET.length - guess.length === 1 ? 'note' : 'notes'} to play before submitting.`
-                    : unchangedGuess ? 'Change at least one note from your last attempt.' : 'Your guess is ready to submit.'}
+                <div className="draft-guidance">
+                  <div id="submission-help" className={'submission-help' + (invalidNotes.length ? ' has-issues' : '')} role="status">
+                    {invalidNotes.length ? <button type="button" onClick={fixFirstNote}>
+                      <span aria-hidden="true">!</span> {invalidNotes.length} {invalidNotes.length === 1 ? 'note outside its' : 'notes outside their'} allowed range. Fix note {invalidNotes[0] + 1} <span aria-hidden="true">→</span>
+                    </button> : guess.length < TARGET.length
+                      ? `${TARGET.length - guess.length} more ${TARGET.length - guess.length === 1 ? 'note' : 'notes'} to play before submitting.`
+                      : unchangedGuess ? 'Change at least one note from your last attempt.' : 'Your guess is ready to submit.'}
+                  </div>
+                  {casual && <div className="guess-hints">
+                    <button type="button" className={'brodle-button' + (isMelodyHintPlaying ? ' is-playing' : '')} disabled={maxHints === 0} onClick={revealHint}
+                      aria-pressed={melodyHintUnlocked ? isMelodyHintPlaying : undefined}
+                      aria-describedby="hint-explanation"
+                      title={melodyHintUnlocked ? 'Replay the challenge melody without using another hint.'
+                        : nextHintPlaysMelody ? 'Use the final hint to reveal the next note and hear the challenge melody.'
+                        : 'Reveal the next note.'}>
+                      {(isMelodyHintPlaying || melodyHintUnlocked || nextHintPlaysMelody) && <BrodleIcon name={isMelodyHintPlaying ? 'stop' : 'play'} />}
+                      {isMelodyHintPlaying ? 'Stop melody' : melodyHintUnlocked ? 'Replay melody' : nextHintPlaysMelody ? 'Play melody (last hint)' : hintsUsed >= maxHints && maxHints > 0 ? 'All note hints used' : 'Reveal next note'}
+                      <span className="hint-count" aria-label={`${hintsUsed} of ${maxHints} hints used`}>{hintsUsed} / {maxHints}</span>
+                    </button>
+                    <details className="hint-explanation">
+                      <summary aria-label="About hints" title="About hints"><BrodleIcon name="help" /></summary>
+                      <p id="hint-explanation">{hintsUsed > 0
+                        ? `The first ${hintsUsed === 1 ? 'note stays' : `${hintsUsed} notes stay`} correct in every attempt.`
+                        : `Use up to ${maxHints} optional note ${maxHints === 1 ? 'hint' : 'hints'}. Revealed notes stay correct.`}
+                        {maxHints > 0 && ' The final hint also plays the melody and unlocks free replays.'}</p>
+                    </details>
+                  </div>}
                 </div>
                 <div className="game-controls guess-actions">
                   <div className="guess-edit-actions">
-                    <button type="button" className={'play-guess' + (playing === 'current' ? ' is-playing' : '')} disabled={!guess.length}
-                      aria-label={playing === 'current' ? 'Stop current guess' : 'Play current guess'}
-                      onClick={() => togglePlayback(guess, 'current')}>
-                      <BrodleIcon name={playing === 'current' ? 'stop' : 'play'} />{playing === 'current' ? 'Stop' : 'Listen'}
-                    </button>
                     <button type="button" className="undo-guess" disabled={guess.length <= hintsUsed} aria-keyshortcuts="Backspace"
                       title="Remove last note (Backspace)" onClick={() => editGuess(guess.slice(0, -1))}>
                       <BrodleIcon name="undo" /><span>Remove last note</span>
                     </button>
                   </div>
+                  <button type="button" className="clear-guess" disabled={guess.length <= hintsUsed} onClick={() => editGuess([])}>Clear</button>
                   <button type="button" className="primary-button submit-guess" aria-describedby="submission-help"
                     disabled={!submittable} onClick={submitGuess}>Submit<BrodleIcon name="check" /></button>
                 </div>
               </>}
               <section className="keyboard-section" aria-label="Piano">
-                <PianoControls audio={audio} naming={noteNaming} onNaming={setNoteNaming} collapsible
+                <PianoControls audio={audio} naming={noteNaming} onNaming={setNoteNaming} compact
                   freePlay={finished ? undefined : { enabled: freePlay, onToggle: toggleFreePlay }} />
                 {!finished && <p id="piano-mode-status" className="sr-only" role="status">{freePlay
                   ? 'Try any piano key. Your guess stays unchanged.'
@@ -491,10 +492,9 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
                   playing={isMelodyHintPlaying ? null : playing}
                   availableRange={availableRange}
                   highlightedNotes={highlightedGuessNotes} naming={noteNaming} onNote={addNote} />
-                <div className="piano-help">
-                  <p>{freePlay || finished ? 'Free play · Your draft stays unchanged.' : 'Tap to play. Hold to sustain.'}<span className="piano-scroll-hint"> Swipe for more keys.</span></p>
-                  {!finished && !freePlay && <span className="keyboard-shortcut"><kbd>⌫</kbd> Remove last note</span>}
-                </div>
+                {(freePlay || finished) && <div className="piano-help">
+                  <p>Free play · Your draft stays unchanged.</p>
+                </div>}
               </section>
             </div>
           </section>
@@ -523,7 +523,7 @@ export default function BrodlePage() {
   const [params] = useSearchParams();
   const date = params.get('date');
   if (date !== null && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date.startsWith('0000') || !Number.isFinite(Date.parse(date + 'T12:00:00Z')) || new Date(date + 'T12:00:00Z').toISOString().slice(0, 10) !== date)) {
-    return <main className="brodle-content brodle-main challenge-unavailable"><h1>Invalid puzzle date</h1><p>Choose a published day using the arrows below the game.</p><Link to="/brodle">Back to today’s puzzle</Link></main>;
+    return <main className="brodle-content brodle-main challenge-unavailable"><h1>Invalid puzzle date</h1><p>Return to today’s puzzle, then choose a published day below the game.</p><Link to="/brodle">Back to today’s puzzle</Link></main>;
   }
   return <BrodleDay key={date ?? 'daily'} date={date} />;
 }

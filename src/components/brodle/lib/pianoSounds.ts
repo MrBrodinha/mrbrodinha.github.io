@@ -4,7 +4,6 @@ import type { LoadProgress, Smplr } from 'smplr';
 export const PIANO_SOUNDS = {
   grand: 'Grand piano',
   electric: 'Electric piano',
-  musicbox: 'Music box',
   synth: 'Synth',
 } as const;
 
@@ -30,7 +29,7 @@ export async function createSampledPiano(
   sound: SampledPianoSound,
   onLoadProgress: (progress: LoadProgress) => void,
 ): Promise<Smplr> {
-  const { SplendidGrandPiano, ElectricPiano, Soundfont, SampleLoader } = await import('smplr');
+  const { SplendidGrandPiano, ElectricPiano, SampleLoader } = await import('smplr');
   if (context.state === 'closed') throw new Error('Audio context closed.');
 
   const baseLoader = SampleLoader(context);
@@ -64,7 +63,6 @@ export async function createSampledPiano(
       fallback: 'nearest' as const,
     },
   };
-  if (sound === 'musicbox') return Soundfont(context, { ...options, instrument: 'music_box', kit: 'FluidR3_GM', loadLoopData: false });
   return sound === 'grand'
     ? SplendidGrandPiano(context, { ...options, decayTime: .1 })
     : ElectricPiano(context, { ...options, instrument: 'WurlitzerEP200' });

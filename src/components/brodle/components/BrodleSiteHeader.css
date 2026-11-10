@@ -50,13 +50,6 @@
   .is-menu-open .brodle-site-brand { grid-column: 1; grid-row: 3; }
   .is-menu-open .puzzle-toolbar .game-mode-picker { flex-wrap: wrap; }
   .is-menu-open .game-mode-options .brodle-button { padding-inline: 7px; }
-  .is-menu-open .piano-toolbar.is-compact { flex-wrap: wrap; }
-  .is-menu-open .piano-settings { margin-left: 0; }
-  .is-menu-open .piano-settings .piano-settings-controls { right: auto; left: 0; width: calc(56vw - 48px); }
-  .is-menu-open .piano-settings .note-naming-control button { padding-inline: 6px; }
-  .is-menu-open .piano-settings .piano-sound { display: grid; gap: 6px; }
-  .is-menu-open .piano-settings .piano-volume { gap: 6px; }
-  .is-menu-open .piano-settings .piano-volume input { min-width: 0; }
   .is-menu-open .piano-octaves { flex-wrap: wrap; }
   .is-menu-open .brodle-page .play-panel .guess-actions { display: flex; flex-wrap: wrap; }
   .is-menu-open .brodle-page .play-panel .submit-guess { flex: 1 1 100%; }

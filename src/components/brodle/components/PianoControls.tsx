@@ -10,10 +10,10 @@ type Props = {
   naming: NoteNaming;
   onNaming: (value: NoteNaming) => void;
   freePlay?: { enabled: boolean; onToggle: () => void };
-  collapsible?: boolean;
+  compact?: boolean;
 };
 
-export default function PianoControls({ audio, naming, onNaming, freePlay, collapsible = false }: Props) {
+export default function PianoControls({ audio, naming, onNaming, freePlay, compact = false }: Props) {
   const id = useId();
   const namingControl = <div className="note-naming-control" role="group" aria-label="Note names">
     <button type="button" aria-label="Use A–G note names" aria-pressed={naming === 'letters'} onClick={() => onNaming('letters')}>A–G</button>
@@ -43,10 +43,9 @@ export default function PianoControls({ audio, naming, onNaming, freePlay, colla
           aria-valuetext={audio.volume + '%'} onChange={(event) => audio.setVolume(Number(event.currentTarget.value))} />
         <output htmlFor={`${id}-volume`}>{audio.volume}%</output>
       </div>
-      {collapsible && soundStatus}
     </div>;
   return <>
-    <div className={'piano-toolbar' + (freePlay ? ' has-free-play' : '') + (collapsible ? ' is-compact' : '')}>
+    <div className={'piano-toolbar' + (freePlay ? ' has-free-play' : '') + (compact ? ' is-compact' : '')}>
       {freePlay && <div className="piano-note-controls">
         <button type="button" className="brodle-button piano-free-play" aria-pressed={freePlay.enabled}
           aria-describedby="piano-mode-status" onClick={freePlay.onToggle}
@@ -54,13 +53,8 @@ export default function PianoControls({ audio, naming, onNaming, freePlay, colla
           <BrodleIcon name={freePlay.enabled ? 'check' : 'music'} />Free play{freePlay.enabled && <span>On</span>}
         </button>
       </div>}
-      {collapsible ? <details className="piano-settings">
-        <summary>Sound &amp; labels{audio.soundStatus !== 'ready' && <span className="sound-settings-status" role="status">
-          {audio.soundStatus === 'loading' ? ' · Loading' : audio.usingSynthFallback ? ' · Synth' : ' · !'}
-        </span>}</summary>
-        {settings}
-      </details> : settings}
+      {settings}
     </div>
-    {!collapsible && soundStatus}
+    {soundStatus}
   </>;
 }
