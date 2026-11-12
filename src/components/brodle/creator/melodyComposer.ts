@@ -1,7 +1,7 @@
-import { abcLength, MUSICAL_KEYS, TIME_SIGNATURES, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from '../lib/musicGame';
+import { abcLength, MUSICAL_KEYS, TIME_SIGNATURES } from '../lib/musicGame';
 import { restoreVictoryNotes } from '../lib/victoryMusic';
 import type { VictoryStep, Clef } from '../lib/victoryMusic';
-import type { MelodyStep, MusicalKey, TimeSignature } from '../lib/musicGame';
+import type { MelodyStep, MusicalKey, TimeSignature, TripletPosition } from '../lib/musicGame';
 
 export const DURATIONS = [
   { id: 'thirty-second', label: 'Demisemiquaver', beats: .125, fraction: '1/32' },
@@ -15,10 +15,11 @@ export type DurationId = typeof DURATIONS[number]['id'];
 export type ComposerDraft = { title?: string; source?: string; hint?: string; finalMelody?: VictoryStep[]; finalBass?: VictoryStep[]; finalClef?: Clef; finalBassClef?: Clef; finalBpm?: number; finalKey?: MusicalKey; melody: MelodyStep[]; bpm: number; key: MusicalKey; timeSignature: TimeSignature };
 export const COMPOSER_STORAGE_KEY = 'brodle:composer:v1';
 
-export function makeStep(midi: number | null, duration: DurationId, dotted: boolean): MelodyStep {
+export function makeStep(midi: number | null, duration: DurationId, dotted: boolean, triplet?: TripletPosition): MelodyStep {
+  if (triplet && (dotted || !['eighth', 'quarter'].includes(duration))) throw new Error('Triplets use undotted eighth or quarter notes.');
   const option = DURATIONS.find((value) => value.id === duration)!;
   const beats = option.beats * (dotted ? 1.5 : 1);
-  return { midi, length: abcLength(beats), beats, rhythm: `${dotted ? 'Dotted ' : ''}${dotted ? option.label.toLowerCase() : option.label} ${midi === null ? 'rest' : 'note'}` };
+  return { midi, length: abcLength(beats), beats, rhythm: `${dotted ? 'Dotted ' : ''}${dotted ? option.label.toLowerCase() : option.label}${triplet ? ' triplet' : ''} ${midi === null ? 'rest' : 'note'}`, ...(triplet ? { triplet } : {}) };
 }
 
 export function durationForStep(step: MelodyStep): { duration: DurationId; dotted: boolean } {
@@ -27,6 +28,26 @@ export function durationForStep(step: MelodyStep): { duration: DurationId; dotte
     if (option) return { duration: option.id, dotted };
   }
   return { duration: 'quarter', dotted: false };
+}
+
+// Editing one member changes the written duration of its whole 3:2 group.
+export function changeStepDuration(part: readonly VictoryStep[], index: number, duration: DurationId, dotted: boolean): VictoryStep[] {
+  const selected = part[index];
+  if (!selected) return [...part];
+  const start = selected.triplet ? index - selected.triplet + 1 : index;
+  const end = selected.triplet ? start + 3 : start + 1;
+  return part.map((step, position) => position >= start && position < end
+    ? makeVictoryStep(step.pitches ?? (step.midi === null ? [] : [step.midi]), duration, selected.triplet ? false : dotted, step.triplet)
+    : step);
+}
+
+export function finishTriplet(part: readonly VictoryStep[]): VictoryStep[] {
+  const last = part[part.length - 1];
+  if (!last?.triplet || last.triplet === 3) return [...part];
+  const duration = durationForStep(last).duration;
+  const result = [...part];
+  for (let position = last.triplet + 1; position <= 3; position++) result.push(makeStep(null, duration, false, position as TripletPosition));
+  return result;
 }
 
 export function emptyComposerDraft(): ComposerDraft { return { melody: [], bpm: 120, key: 'C', finalBpm: 120, finalKey: 'C', timeSignature: '4/4' }; }
@@ -42,14 +63,8 @@ export function parseComposerDraft(serialized: string | null): ComposerDraft {
     if (!value || !Array.isArray(value.melody) || !Number.isInteger(value.bpm) || value.bpm < 20 || value.bpm > 400 || !MUSICAL_KEYS.includes(value.key)) return emptyComposerDraft();
     const timeSignature = value.timeSignature ?? '4/4';
     if (!TIME_SIGNATURES.includes(timeSignature)) return emptyComposerDraft();
-    const melody: MelodyStep[] = [];
-    for (const step of value.melody) {
-      if (!step || 'pitches' in step || (step.midi !== null && (!Number.isInteger(step.midi) || step.midi < PIANO_MIN_MIDI || step.midi > PIANO_MAX_MIDI))) return emptyComposerDraft();
-      const { duration, dotted } = durationForStep(step);
-      const restored = makeStep(step.midi, duration, dotted);
-      if (restored.beats !== step.beats) return emptyComposerDraft();
-      melody.push(restored);
-    }
+    if (value.melody.some((step: VictoryStep) => step && 'pitches' in step)) return emptyComposerDraft();
+    const melody = restoreVictoryNotes(value.melody, Math.max(256, value.melody.length));
     const extras: Partial<ComposerDraft> = {};
     if (value.finalBpm !== undefined) {
       if (!Number.isInteger(value.finalBpm) || value.finalBpm < 20 || value.finalBpm > 400) return emptyComposerDraft();
@@ -86,7 +101,7 @@ export function exportMelodyCode(draft: ComposerDraft): string {
     ...(draft.finalBpm !== undefined ? [`export const FINAL_BPM = ${draft.finalBpm};`] : []),
     ...(draft.finalKey !== undefined ? [`export const FINAL_KEY: MusicalKey = '${draft.finalKey}';`] : []),
     'export const MELODY: MelodyStep[] = [',
-    ...draft.melody.map((step) => `  { midi: ${step.midi}, length: '${step.length}', beats: ${step.beats}, rhythm: '${step.rhythm}' },`),
+    ...draft.melody.map(exportVictoryStep),
     '];',
     ...(draft.finalMelody?.length ? ['', 'export const MELODY_FINAL: (MelodyStep & { pitches?: number[] })[] = [', ...draft.finalMelody.map(exportVictoryStep), '];'] : []),
     ...(draft.finalBass?.length ? ['', 'export const MELODY_FINAL_BASS: (MelodyStep & { pitches?: number[] })[] = [', ...draft.finalBass.map(exportVictoryStep), '];'] : []),
@@ -95,10 +110,12 @@ export function exportMelodyCode(draft: ComposerDraft): string {
 }
 
 function exportVictoryStep(step: VictoryStep) {
-  return `  { midi: ${step.midi},${step.pitches ? ` pitches: [${step.pitches.join(', ')}],` : ''} length: '${step.length}', beats: ${step.beats}, rhythm: '${step.rhythm}' },`;
+  return `  { midi: ${step.midi},${step.pitches ? ` pitches: [${step.pitches.join(', ')}],` : ''}${step.triplet ? ` triplet: ${step.triplet},` : ''} length: '${step.length}', beats: ${step.beats}, rhythm: '${step.rhythm}' },`;
 }
-export function makeVictoryStep(pitches: readonly number[], duration: DurationId, dotted: boolean): VictoryStep {
+export function makeVictoryStep(pitches: readonly number[], duration: DurationId, dotted: boolean, triplet?: TripletPosition): VictoryStep {
   const sorted = [...new Set(pitches)].sort((a,b) => a-b);
-  const base = makeStep(sorted[0] ?? null, duration, dotted);
-  return restoreVictoryNotes([{ ...base, ...(sorted.length > 1 ? { pitches: sorted } : {}) }])[0];
+  const base = makeStep(sorted[0] ?? null, duration, dotted, triplet);
+  // Validate the chord in isolation; its triplet position belongs to its part.
+  const note = restoreVictoryNotes([{ midi: base.midi, beats: base.beats, ...(sorted.length > 1 ? { pitches: sorted } : {}) }])[0];
+  return { ...note, rhythm: base.rhythm.replace('note', sorted.length > 1 ? 'chord' : 'note'), ...(triplet ? { triplet } : {}) };
 }

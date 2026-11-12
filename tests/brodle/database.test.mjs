@@ -27,6 +27,7 @@ test('private drafts, review and return permissions, immutable scheduling and se
     await db.exec(await readFile(new URL('../../database/migrations/202611010011_brodle_demisemiquavers.sql',import.meta.url),'utf8'));
     await db.exec(await readFile(new URL('../../database/migrations/202611010012_brodle_victory_settings.sql',import.meta.url),'utf8'));
     await db.exec(await readFile(new URL('../../database/migrations/202611010014_brodle_return_approved_melodies.sql',import.meta.url),'utf8'));
+    await db.exec(await readFile(new URL('../../database/migrations/202611110016_brodle_triplets.sql',import.meta.url),'utf8'));
     await db.query('insert into public.brodle_admins values($1)',[admin]);
     assert.equal(await scalar("select extract(epoch from ('2026-03-30'::timestamp at time zone 'Europe/Lisbon') - ('2026-03-29'::timestamp at time zone 'Europe/Lisbon'))::float8 / 3600"),23);
     assert.equal(await scalar("select extract(epoch from ('2026-10-26'::timestamp at time zone 'Europe/Lisbon') - ('2026-10-25'::timestamp at time zone 'Europe/Lisbon'))::float8 / 3600"),25);
@@ -51,6 +52,14 @@ test('private drafts, review and return permissions, immutable scheduling and se
     assert.deepEqual(await scalar('select notes from public.brodle_melodies'),JSON.parse(shortNotes));
     assert.deepEqual(await scalar('select final_notes from public.brodle_melodies'),JSON.parse(shortChords));
     assert.deepEqual(await scalar('select final_bass_notes from public.brodle_melodies'),JSON.parse(shortChords));
+    const triplets = [1,2,3].map(triplet => ({ midi: triplet === 2 ? null : 60, beats: .5, triplet }));
+    const tripletChords = [1,2,3].map(triplet => ({ midi: 60, pitches: [60,64,67], beats: 1, triplet }));
+    await db.query('update public.brodle_melodies set notes=$1,final_notes=$2,final_bass_notes=$2 where id=$3',[JSON.stringify(triplets),JSON.stringify(tripletChords),melodyId]);
+    assert.deepEqual(await scalar('select notes from public.brodle_melodies'),triplets);
+    assert.deepEqual(await scalar('select final_notes from public.brodle_melodies'),tripletChords);
+    for (const invalid of [triplets.slice(0,1), triplets.slice(1), [triplets[0], {...triplets[1],beats:1}, triplets[2]], [triplets[0], {midi:60,beats:1},triplets[2]], ...[0,4,null,'1',1.5].map(triplet=>[{midi:60,beats:.5,triplet}]), [1,2,3].map(triplet=>({midi:60,beats:.75,triplet}))]) {
+      for (const column of ['notes','final_notes','final_bass_notes']) await assert.rejects(db.query('update public.brodle_melodies set '+column+'=$1 where id=$2',[JSON.stringify(invalid),melodyId]),{code:'23514'});
+    }
     for (const column of ['notes','final_notes','final_bass_notes']) await assert.rejects(db.query('update public.brodle_melodies set '+column+'=$1 where id=$2',[JSON.stringify([{midi:60,beats:.0625}]),melodyId]),{code:'23514'});
     await db.query('update public.brodle_melodies set notes=$1,final_notes=$2,final_bass_notes=$2 where id=$3',[boundaries,boundaryChord,melodyId]);
     assert.deepEqual(await scalar('select notes from public.brodle_melodies'),JSON.parse(boundaries));

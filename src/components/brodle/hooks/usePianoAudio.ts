@@ -33,7 +33,7 @@ type HeldNote = {
   holdTimer?: ReturnType<typeof setTimeout>;
 };
 
-export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 'beats'>[] = MELODY, defaultBpm = BPM) {
+export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>[] = MELODY, defaultBpm = BPM) {
   const audioContext = useRef<AudioContext | null>(null);
   const masterGain = useRef<GainNode | null>(null);
   const volumeLevel = useRef(.6);
@@ -293,7 +293,7 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
   const playMelody = useCallback((melody: readonly PlayableStep[], id: string | null, bpm = defaultBpm) => playArrangement([melody], id, bpm), [playArrangement, defaultBpm]);
 
   const playNotes = useCallback((
-    notes: readonly number[], id: string | null, rhythm: readonly Pick<MelodyStep, 'midi' | 'beats'>[] = defaultMelody,
+    notes: readonly number[], id: string | null, rhythm: readonly Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>[] = defaultMelody,
   ) => playMelody(melodyForGuess(notes, rhythm), id), [playMelody, defaultMelody]);
 
   const startNote = useCallback(async (midi: number, source: string) => {

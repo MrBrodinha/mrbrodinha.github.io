@@ -1,8 +1,8 @@
 import type { DurationId } from '../creator/melodyComposer';
 
-type Props = { duration: DurationId; rest?: boolean; dotted?: boolean };
+type Props = { duration: DurationId; rest?: boolean; dotted?: boolean; triplet?: boolean };
 
-function RhythmGlyph({ duration, rest = false, dotted = false }: Props) {
+function RhythmGlyph({ duration, rest = false, dotted = false, triplet = false }: Props) {
   return <>
     {rest ? <g data-symbol="rest" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       {duration === 'whole' && <><path d="M-8 -7.75H8" /><rect x="-6" y="-7.75" width="12" height="4" stroke="none" /></>}
@@ -20,6 +20,7 @@ function RhythmGlyph({ duration, rest = false, dotted = false }: Props) {
       {duration === 'thirty-second' && <path d="M4.5 -12c0 7 11 8 6 17" fill="none" stroke="currentColor" strokeWidth="1.8" />}
     </g>}
     {dotted && <circle data-symbol="dot" cx="12" cy="0" r="2" fill="currentColor" />}
+    {triplet && <text data-symbol="triplet" x="-8" y="-21" fill="currentColor" fontSize="10" fontWeight="600">3</text>}
   </>;
 }
 

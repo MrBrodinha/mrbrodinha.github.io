@@ -10,7 +10,7 @@ const { outputText } = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
 });
 const musicModuleUrl = `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`;
-const { toAbc, noteName, notationKey, getWinKind, melodyPitchHint, scoreGuess, buildShareText, melodyToAbc, melodyNotation, notationForGuess, TIME_SIGNATURES, beatsPerBar } = await import(musicModuleUrl);
+const { toAbc, noteName, notationKey, getWinKind, melodyPitchHint, scoreGuess, buildShareText, melodyToAbc, melodyNotation, notationForGuess, TIME_SIGNATURES, beatsPerBar, melodyBeats, validateTriplets } = await import(musicModuleUrl);
 const victorySource = await readFile(new URL('../../src/components/brodle/lib/victoryMusic.ts', import.meta.url), 'utf8');
 const victoryJs = ts.transpileModule(victorySource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText.replace(/from ['"]\.\/musicGame['"]/g, `from '${musicModuleUrl}'`);
 const victoryUrl = `data:text/javascript;base64,${Buffer.from(victoryJs).toString('base64')}`;
@@ -19,7 +19,7 @@ const composerSource = await readFile(new URL('../../src/components/brodle/creat
 const composerJs = ts.transpileModule(composerSource, {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
 }).outputText.replace(/from ['"]\.\.\/lib\/musicGame['"]/g, `from '${musicModuleUrl}'`).replace(/from ['"]\.\.\/lib\/victoryMusic['"]/g, `from '${victoryUrl}'`);
-const { DURATIONS, makeStep, durationForStep, exportMelodyCode, parseComposerDraft, emptyComposerDraft, makeVictoryStep, victorySettings } = await import(`data:text/javascript;base64,${Buffer.from(composerJs).toString('base64')}`);
+const { DURATIONS, makeStep, durationForStep, exportMelodyCode, parseComposerDraft, emptyComposerDraft, makeVictoryStep, victorySettings, changeStepDuration, finishTriplet } = await import(`data:text/javascript;base64,${Buffer.from(composerJs).toString('base64')}`);
 const codeSource = await readFile(new URL('../../src/components/brodle/creator/melodyCode.ts', import.meta.url), 'utf8');
 const codeJs = ts.transpileModule(codeSource, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } }).outputText
   .replace(/from ['"]\.\.\/lib\/musicGame['"]/g, `from '${musicModuleUrl}'`).replace(/from ['"]\.\.\/lib\/victoryMusic['"]/g, `from '${victoryUrl}'`);
@@ -552,4 +552,111 @@ test('Casual victory transposition keeps both parts, chords, rests and timing at
     assert.ok([...keys.whiteKeys, ...keys.blackKeys].every(({ name }) => !name.includes('undefined')));
   }
   assert.deepEqual(parts, original, 'victory playback never rewrites the published arrangement');
+});
+
+// Read the renderer's parsed durations directly. Brodle plays its own timeline;
+// abcjs' optional MIDI sequencer includes bar records when counting tied tuplets.
+function parsedDuration(tune) {
+  let multiplier = 1;
+  return tune.lines.flatMap(line => line.staff?.[0]?.voices[0] ?? []).reduce((sum, element) => {
+    if (element.startTriplet) multiplier = element.tripletMultiplier;
+    const duration = element.duration ? element.duration * multiplier : 0;
+    if (element.endTriplet) multiplier = 1;
+    return sum + duration;
+  }, 0);
+}
+
+test('eighth and quarter triplets render and play exactly across bar lines in every meter', () => {
+  for (const duration of ['eighth', 'quarter']) {
+    for (const meter of TIME_SIGNATURES) {
+      for (const lead of [[], [makeStep(61, 'sixteenth', true)], [makeStep(null, 'half', true)]]) {
+        const group = [60, null, 67].map((midi, index) => makeStep(midi, duration, false, index + 1));
+        const notes = [...lead, ...group, makeStep(65, 'quarter', false)];
+        const score = melodyNotation(notes, 'letters', 'C', 120, meter, false);
+        const tune = abcjs.parseOnly(score.abc)[0];
+        assert.equal(tune.warnings, undefined, score.abc);
+        assert.match(score.abc, /\(3:2:/);
+        const expected = melodyBeats(notes);
+        assert.ok(Math.abs(parsedDuration(tune) - expected / 4) < 1e-8, score.abc);
+        assert.equal(arrangementTimeline([notes], 120).totalDuration, expected / 2);
+        assert.deepEqual(soundingPitches(tune), notes.filter(step => step.midi !== null).map(step => step.midi), score.abc);
+        assert.deepEqual([...new Set(score.stepIndices)], notes.map((_, index) => index));
+      }
+    }
+  }
+  const notes = Array.from({ length: 300 }, (_, index) => makeStep(60, 'eighth', false, index % 3 + 1));
+  assert.equal(melodyBeats(notes), 100);
+  assert.equal(arrangementTimeline([notes], 120).totalDuration, 50);
+});
+
+test('triplets, rests and chords survive browser, code, cloud and published snapshots', () => {
+  const draft = { ...emptyComposerDraft(),
+    finalClef: 'treble', finalBassClef: 'bass',
+    melody: [60, null, 67].map((midi, index) => makeStep(midi, 'eighth', false, index + 1)),
+    finalMelody: [[60, 64, 67], [], [62, 65, 69]].map((pitches, index) => makeVictoryStep(pitches, 'quarter', false, index + 1)),
+    finalBass: [36, 43, 48].map((midi, index) => makeStep(midi, 'eighth', false, index + 1)),
+  };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)), draft);
+  assert.deepEqual(parseMelodyCode(exportMelodyCode(draft)), draft);
+  const payload = melodyPayload(draft);
+  assert.deepEqual(restoreNotes(payload.notes), draft.melody);
+  assert.deepEqual(restoreVictoryNotes(payload.final_notes), draft.finalMelody);
+  assert.deepEqual(restoreVictoryNotes(payload.final_bass_notes), draft.finalBass);
+  const row = { ...payload, title: '', source: '', hint: '' };
+  assert.deepEqual(recordDraft(row), { ...draft, title: '', source: '', hint: '', finalClef: 'treble', finalBassClef: 'bass' });
+  const challenge = publishedChallenge('triplets', '2026-11-11', { ...draft, title: 'Triplets', source: '', hint: '', author: 'Composer', melody: payload.notes, finalMelody: payload.final_notes, finalBass: payload.final_bass_notes });
+  assert.deepEqual(challenge.melody, draft.melody);
+  assert.deepEqual(challenge.finalMelody, draft.finalMelody);
+  assert.deepEqual(challenge.finalBass, draft.finalBass);
+  const score = victoryScore(draft.finalMelody, draft.finalBass, 'letters', 'C', 120, '4/4');
+  const tune = abcjs.parseOnly(score.abc)[0];
+  assert.equal(tune.warnings, undefined);
+  assert.ok(Math.abs(tune.setUpAudio({}).totalDuration - .5) < 1e-8);
+  const timeline = arrangementTimeline([draft.finalMelody, draft.finalBass], 120);
+  assert.equal(timeline.totalDuration, 1);
+  assert.deepEqual(timeline.events.map(event => [event.time, event.pitches]), [[0, [60,64,67]], [0, [36]], [1/6, [43]], [1/3, [48]], [2/3, [62,65,69]]]);
+  const shifted = draft.finalMelody.map(step => ({ ...step, midi: step.midi === null ? null : step.midi + 12, ...(step.pitches ? { pitches: step.pitches.map(pitch => pitch + 12) } : {}) }));
+  assert.deepEqual(transposeVictory(draft.finalMelody, 12), shifted);
+  const guess = notationForGuess([60], 'letters', draft.melody, 'C', '4/4', 120);
+  assert.ok(Math.abs(parsedDuration(abcjs.parseOnly(guess.abc)[0]) - (1/3)/4) < 1e-8);
+});
+
+test('triplet edits keep groups together, unfinished browser drafts resume and invalid groups are rejected', () => {
+  const group = [makeStep(60, 'eighth', false, 1), makeStep(null, 'eighth', false, 2), makeVictoryStep([64,67], 'eighth', false, 3)];
+  const edited = changeStepDuration(group, 1, 'quarter', false);
+  assert.deepEqual(edited.map(step => [step.beats, step.triplet]), [[1,1], [1,2], [1,3]]);
+  assert.deepEqual(edited[2].pitches, [64,67]);
+  validateTriplets(edited, true);
+  assert.equal(melodyBeats(edited), 2);
+  const partial = group.slice(0, 1);
+  const draft = { ...emptyComposerDraft(), melody: partial };
+  assert.deepEqual(parseComposerDraft(JSON.stringify(draft)).melody, partial);
+  assert.equal(melodyBeats(finishTriplet(partial)), 1);
+  assert.deepEqual(finishTriplet(partial).map(step => [step.midi, step.triplet]), [[60,1], [null,2], [null,3]]);
+  assert.throws(() => melodyPayload(draft), /Complete each triplet/);
+  assert.throws(() => parseMelodyCode(exportMelodyCode(draft)));
+  for (const bad of [
+    [{ midi: 60, beats: .5, triplet: 2 }],
+    [{ midi: 60, beats: .5, triplet: 1 }, { midi: 60, beats: 1 }],
+    [{ midi: 60, beats: .5, triplet: 1 }, { midi: 60, beats: 1, triplet: 2 }],
+    [{ midi: 60, beats: .75, triplet: 1 }],
+    ...[0,4,null,'1',1.5].map(triplet => [{ midi:60, beats:.5, triplet }]),
+  ]) assert.throws(() => restoreVictoryNotes(bad));
+  assert.throws(() => makeStep(60, 'quarter', true, 1));
+  assert.throws(() => makeStep(60, 'half', false, 1));
+  assert.throws(() => validateTriplets([makeStep(null, 'thirty-second', true), ...group], true), /dotted 32nd/);
+});
+
+test('unfinished victory triplets display only authored entries while both parts play for their exact durations', () => {
+  for (const duration of ['eighth','quarter']) {
+    const main = [makeStep(60,duration,false,1)];
+    const bass = [makeStep(36,'quarter',false)];
+    const score = victoryScore(main,bass,'letters','C',120,'4/4');
+    const tune = abcjs.parseOnly(score.abc)[0];
+    assert.equal(tune.warnings,undefined,score.abc);
+    assert.match(score.abc,/\(3:2:1/);
+    assert.ok(Math.abs(parsedDuration(tune) - melodyBeats(main) / 4) < 1e-8,score.abc);
+    assert.deepEqual(score.stepIndices,[[0],[0]]);
+    assert.equal(arrangementTimeline([main,bass],120).totalDuration,.5);
+  }
 });

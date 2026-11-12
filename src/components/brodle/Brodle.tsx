@@ -160,7 +160,7 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
     }
   }
 
-  function togglePlayback(notes: readonly number[], id: string, rhythm?: readonly Pick<MelodyStep, 'midi' | 'beats'>[]) {
+  function togglePlayback(notes: readonly number[], id: string, rhythm?: readonly Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>[]) {
     if (playing === id) stopAudio();
     else void playNotes(notes, id, rhythm);
   }

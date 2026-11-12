@@ -2,7 +2,36 @@ export type Feedback = 'correct' | 'octave' | 'shifted' | 'low' | 'high';
 export type WinKind = 'exact' | 'octave' | 'shifted';
 export type Attempt = { id?: string; notes: number[]; feedback: Feedback[]; hintsUsed?: number };
 export type NoteNaming = 'letters' | 'solfege';
-export type MelodyStep = { midi: number | null; length: string; beats: number; rhythm: string };
+export type TripletPosition = 1 | 2 | 3;
+export type MelodyStep = { midi: number | null; length: string; beats: number; rhythm: string; triplet?: TripletPosition };
+
+// Written durations stay unchanged; a triplet takes two thirds of that time.
+// 96 ticks also represent dotted 32nds and tied fragments at triplet bar lines.
+export const RHYTHM_TICKS = 96;
+export const stepTicks = (step: Pick<MelodyStep, 'beats' | 'triplet'>) => Math.round(step.beats * RHYTHM_TICKS * (step.triplet ? 2 / 3 : 1));
+export const stepBeats = (step: Pick<MelodyStep, 'beats' | 'triplet'>) => stepTicks(step) / RHYTHM_TICKS;
+export const melodyBeats = (steps: readonly Pick<MelodyStep, 'beats' | 'triplet'>[]) => steps.reduce((sum, step) => sum + stepTicks(step), 0) / RHYTHM_TICKS;
+
+export function validateTriplets(steps: readonly Pick<MelodyStep, 'beats' | 'triplet'>[], complete = false) {
+  let expected = 1;
+  let duration = 0;
+  let elapsed = 0;
+  for (const step of steps) {
+    if (step.triplet === undefined) {
+      if (expected !== 1) throw new Error('Complete each triplet with three entries.');
+    } else {
+      // abcjs supports flags through 64ths. Starting halfway through a 32nd
+      // would need unsupported 128th-note ties when a triplet crosses a bar.
+      if (expected === 1 && elapsed % 4 !== 0) throw new Error('Complete the dotted 32nd subdivision before starting a triplet.');
+      if (![1, 2, 3].includes(step.triplet) || step.triplet !== expected || ![.5, 1].includes(step.beats)
+        || (expected !== 1 && step.beats !== duration)) throw new Error('Use three matching eighth or quarter notes/rests per triplet.');
+      duration = step.beats;
+      expected = step.triplet === 3 ? 1 : step.triplet + 1;
+    }
+    elapsed += stepTicks(step);
+  }
+  if (complete && expected !== 1) throw new Error('Complete each triplet with three entries.');
+}
 
 export const PIANO_MIN_MIDI = 31; // G1
 export const PIANO_MAX_MIDI = 103; // G7
@@ -244,54 +273,68 @@ export function melodyToAbc(melody: readonly MelodyStep[], naming: NoteNaming, k
 // Keep the original step/pitch indices when a long note or rest crosses a bar.
 // This maps selection and game feedback onto every fragment of a tied note.
 export function melodyNotation(melody: readonly MelodyStep[], naming: NoteNaming, key: MusicalKey, bpm: number, timeSignature: TimeSignature = TIME_SIGNATURE, showNoteNames = true, clef: 'treble' | 'bass' = 'treble') {
-  const fragments: (MelodyStep & { tie?: boolean; hideLabel?: boolean })[] = [];
+  const fragments: NotationFragment[] = [];
   const stepIndices: number[] = [];
   const noteIndices: number[] = [];
-  const barBeats = beatsPerBar(timeSignature);
+  const barTicks = Math.round(beatsPerBar(timeSignature) * RHYTHM_TICKS);
   let position = 0;
   let noteIndex = 0;
+  let groupStart = 0;
+  const finishGroup = () => {
+    if (fragments.length > groupStart) fragments[groupStart].tupletCount = fragments.length - groupStart;
+  };
   melody.forEach((step, stepIndex) => {
-    let remaining = step.beats;
+    if (step.triplet === 1) groupStart = fragments.length;
+    let remaining = stepTicks(step);
     let first = true;
     while (remaining > 0) {
-      const available = Math.min(remaining, barBeats - position);
+      const available = Math.min(remaining, barTicks - position);
       // Odd meters can leave durations such as 2.5 beats. Tie together
       // representable note values instead of asking the renderer to draw one.
-      const beats = [6, 4, 3, 2, 1.5, 1, .75, .5, .375, .25, .1875, .125, .0625].find((value) => value <= available) ?? available;
-      remaining -= beats;
-      fragments.push({ ...step, beats, length: abcLength(beats), tie: step.midi !== null && remaining > 0, hideLabel: !showNoteNames || !first });
+      const scale = step.triplet ? 2 / 3 : 1;
+      const written = [6, 4, 3, 2, 1.5, 1, .75, .5, .375, .25, .1875, .125, .0625, .03125]
+        .find((value) => Math.round(value * RHYTHM_TICKS * scale) <= available) ?? available / RHYTHM_TICKS / scale;
+      const ticks = Math.round(written * RHYTHM_TICKS * scale);
+      remaining -= ticks;
+      fragments.push({ ...step, beats: ticks / RHYTHM_TICKS, ticks, length: abcLength(written), tie: step.midi !== null && remaining > 0, hideLabel: !showNoteNames || !first });
       stepIndices.push(stepIndex);
       if (step.midi !== null) noteIndices.push(noteIndex);
       first = false;
-      position = (position + beats) % barBeats;
+      position = (position + ticks) % barTicks;
     }
+    if (step.triplet && (step.triplet === 3 || !melody[stepIndex + 1]?.triplet)) finishGroup();
     if (step.midi !== null) noteIndex++;
   });
   return { abc: renderMelodyAbc(fragments, naming, key, bpm, timeSignature, clef), stepIndices, noteIndices };
 }
 
 export function abcLength(beats: number): string {
-  let numerator = Math.round(beats * 16);
-  let denominator = 16;
-  while (denominator > 1 && numerator % 2 === 0) { numerator /= 2; denominator /= 2; }
+  let numerator = Math.round(beats * RHYTHM_TICKS);
+  let denominator = RHYTHM_TICKS;
+  let a = numerator, b = denominator;
+  while (b) { const remainder = a % b; a = b; b = remainder; }
+  numerator /= a; denominator /= a;
   return denominator === 1 ? String(numerator) : numerator === 1 ? `/${denominator}` : `${numerator}/${denominator}`;
 }
 
-function renderMelodyAbc(melody: readonly (MelodyStep & { pitches?: readonly number[]; tie?: boolean; hideLabel?: boolean })[], naming: NoteNaming, key: MusicalKey, bpm: number, timeSignature: TimeSignature, clef: 'treble' | 'bass' = 'treble'): string {
+type NotationFragment = MelodyStep & { pitches?: readonly number[]; tie?: boolean; hideLabel?: boolean; ticks: number; tupletCount?: number };
+
+function renderMelodyAbc(melody: readonly NotationFragment[], naming: NoteNaming, key: MusicalKey, bpm: number, timeSignature: TimeSignature, clef: 'treble' | 'bass' = 'treble'): string {
   const altered = new Map<string, number>();
   const signature = keyAccidentals(key);
   const tokens: string[] = [];
-  let beatsInBar = 0;
+  let ticksInBar = 0;
   const barBeats = beatsPerBar(timeSignature);
-  melody.forEach(({ midi, pitches, length, beats, tie, hideLabel }) => {
-    if (beatsInBar >= barBeats) {
+  melody.forEach(({ midi, pitches, length, ticks, tie, hideLabel, tupletCount }) => {
+    if (ticksInBar >= Math.round(barBeats * RHYTHM_TICKS)) {
       tokens.push('|');
       altered.clear();
-      beatsInBar = 0;
+      ticksInBar = 0;
     }
+    if (tupletCount) tokens.push(`(3:2:${tupletCount}`);
     if (midi === null) {
       tokens.push(`z${length}`);
-      beatsInBar += beats;
+      ticksInBar += ticks;
       return;
     }
     const renderPitch = (midi: number) => {
@@ -309,7 +352,7 @@ function renderMelodyAbc(melody: readonly (MelodyStep & { pitches?: readonly num
     };
     const symbol = pitches?.length ? `[${pitches.map(renderPitch).join('')}]` : renderPitch(midi);
     tokens.push(`${hideLabel ? '' : `"_${noteName(midi, naming, key)}"`}${symbol}${length}${tie ? '-' : ''}`);
-    beatsInBar += beats;
+    ticksInBar += ticks;
   });
   // No future durations are visible. An invisible spacer draws an empty staff.
   const music = tokens.length ? tokens.join(' ') : `x${abcLength(barBeats)}`;

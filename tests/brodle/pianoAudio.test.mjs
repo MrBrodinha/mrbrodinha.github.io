@@ -53,7 +53,7 @@ function mountAudio(t, initialContextState = 'running') {
     constructor() { contexts.push(this); }
     createGain() { return { ...node(), gain: parameter() }; }
     createOscillator() {
-      const oscillator = { ...node(), frequency: parameter(), stops: [], start() {}, stop(at) { this.stops.push(at); } };
+      const oscillator = { ...node(), frequency: parameter(), starts: [], stops: [], start(at) { this.starts.push(at); }, stop(at) { this.stops.push(at); } };
       this.oscillators.push(oscillator);
       return oscillator;
     }
@@ -179,4 +179,28 @@ test('leaving Brodle still stops playback and closes its audio context', async (
   assert.equal(playing.value, null);
   assert.equal(contexts[0].state, 'closed');
   assert.ok(contexts[0].oscillators.every((voice) => voice.stops.at(-1) === undefined));
+});
+
+test('triplet playback schedules chords together, keeps rests and highlights, then stops on the audio clock', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { audio, contexts, playing } = mountAudio(t);
+  const group = [{ midi: 60, pitches: [60,64,67], beats: 1, triplet: 1 }, { midi: null, beats: 1, triplet: 2 }, { midi: 62, pitches: [62,65], beats: 1, triplet: 3 }];
+  await audio.playMelody(group, 'triplet', 120);
+  const context = contexts[0];
+  const starts = context.oscillators.map(voice => voice.starts[0]);
+  assert.deepEqual(starts, [.03,.03,.03,.03 + 2/3,.03 + 2/3]);
+  context.currentTime = .04;
+  t.mock.timers.tick(40);
+  const pressed = hooks.states.find(state => state.initial instanceof Set);
+  assert.deepEqual([...pressed.value], [60,64,67]);
+  context.currentTime = 1.04;
+  t.mock.timers.tick(2000);
+  assert.equal(playing.value, null);
+  assert.equal(pressed.value.size, 0);
+
+  await audio.playNotes([72,74], 'guess', group.map(({ midi, beats, triplet }) => ({ midi, beats, triplet })));
+  assert.equal(context.oscillators.length, 7, 'guess playback substitutes pitches and preserves triplet timing');
+  assert.deepEqual(context.oscillators.slice(-2).map(voice => voice.starts[0]), [1.07, 1.07 + 4/9]);
+  audio.stopAudio();
+  assert.equal(playing.value, null);
 });

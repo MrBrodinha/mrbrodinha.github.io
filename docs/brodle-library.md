@@ -15,9 +15,11 @@ Supabase project's SQL Editor:
 8. `database/migrations/202611010013_brodle_player_progress.sql`
 9. `database/migrations/202611010014_brodle_return_approved_melodies.sql`
 10. `database/migrations/202611020015_brodle_note_hints.sql`
+11. `database/migrations/202611110016_brodle_triplets.sql`
 
-If Brodle is already set up through `0014`, run **only `0015`** before deploying
-this frontend. It saves revealed notes and each attempt's hint count to the account,
+If Brodle is already set up through `0015`, run **only `0016`** before deploying
+this frontend. It validates complete eighth- and quarter-note triplets in challenge
+and victory parts. Migration `0015` saves revealed notes and each attempt's hint count to the account,
 preserving hints when older tabs or other devices save progress. Migration `0014`
 allows administrators to return approved melodies for editing.
 Migration `0013` adds private, account-owned player progress and the load/save
@@ -111,6 +113,34 @@ appending. **Undo last note** always removes the last entry in the active part,
 including after a browser refresh or cloud load; it does not undo arbitrary edits
 or restore a cleared part. Display-only padding rests cannot be edited.
 
+## Triplets
+
+Choose **Triplet ③** beside Dotted, then **Eighth** or **Quarter**. Enter three
+notes or rests; **Triplet: 1/3** and **2/3** show the group's progress. Three eighth
+triplets take one quarter-note beat; three quarter triplets take two. The score
+shows a 3 over the group, and normal entry resumes after its third entry.
+Dotted is disabled while entering or editing a triplet.
+
+In victory parts, build each chord with the piano, then use **Done with chord** to
+advance to the next entry. A whole chord counts as one triplet entry; adding or
+removing its pitches does not advance the group. **Hear chord** previews one normal
+quarter note, including when the selected entry is a triplet.
+
+Select any member to change pitches or replace it with a rest. Changing its
+duration updates all three members. Undo can reopen the last triplet. Unfinished
+groups survive browser reloads; **Finish with rests** fills their remaining entries.
+Turning Triplet off during an unfinished group also fills it with rests. Finish
+each group before copying code or saving/submitting/scheduling to the account.
+
+For this first version, finish a dotted 32nd subdivision before starting a triplet:
+the notation renderer cannot draw the 128th-note ties that an offset group could
+need at a bar line. The Triplet control explains this when unavailable.
+
+Code and cloud data retain the written `beats` (`.5` or `1`) plus `triplet: 1`,
+`triplet: 2`, and `triplet: 3` on three consecutive entries of the same duration.
+Playback applies the 3:2 ratio, and timing/bar calculations use integer ticks.
+Unmarked notes and existing published snapshots keep their original timing.
+
 The code field is editable. Change the exported constants, then press **Apply
 code** to validate and update the score and browser draft. Title, source, and hint
 are retained. `midi` and `beats` define each entry; `length` and `rhythm` are
@@ -132,10 +162,16 @@ In the piano section, turn on **Chords** and tap keys to build the selected
 entry. Every change appears on the sheet and is saved to the browser draft
 immediately. A single pitch is a note; 2–8 pitches become a chord. Tap a selected
 key again to remove it. Removing the final pitch leaves a rest of the same
-duration. The Chords button highlights while active; a compact **checkmark** beside
-it confirms the entry and returns to normal note input. To start another chord,
+duration. **Hear chord** previews the selected entry with all its pitches together,
+for one normal quarter note at the victory tempo, using the chosen piano sound
+and volume. The preview length is independent of the entry's written duration.
+The speaker button switches to **Stop preview** during playback. It also works while building
+a chord, as soon as the first pitch is selected.
+The Chords button highlights while active; **Done with chord** finishes the entry
+and returns to normal note input. To start another chord,
 turn Chords on again. Notes appear immediately; no helper panel or extra chord
-text is displayed.
+text is displayed. **Play full melody** above the score plays the whole challenge;
+**Play full victory** plays both victory parts together.
 
 Select an existing chord on the sheet to adjust it immediately. Duration and
 Dotted controls update the selected entry. Switching parts keeps the notes
@@ -144,7 +180,7 @@ each part. Undo and Clear part retain the other part. Blank staff space does not
 insert notes, and dragging is disabled.
 
 Both parts begin at beat zero, with their own rhythm. Use rests to delay entry.
-**Play victory arrangement** plays both parts together and ends after the longer
+**Play full victory** plays both parts together and ends after the longer
 part, including trailing rests. The score pads the shorter staff visually with
 rests without changing the stored composition. Key signatures, accidentals,
 dotted values and ties work for chords on both clefs.

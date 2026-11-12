@@ -26,7 +26,12 @@
 .duration-picker button:hover { border-color: #a58acb; }
 .composer-duration-toolbar { max-width: 660px; margin: 23px auto 0; }
 .composer-entry-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.composer-mode-toggles { display: flex; align-items: center; gap: 8px; }
+.composer-mode-toggles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.composer-entry-tools { flex-wrap: wrap; }
+.duration-picker button:disabled, .dotted-button:disabled { opacity: .4; cursor: not-allowed; }
+.triplet-notice { margin: 12px 0 0; padding: 8px 10px; border-left: 2px solid #b99350; border-radius: 4px; background: #fbbf240a; color: #dfc18d; font-size: .7rem; line-height: 1.6; }
+.triplet-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; color: #cbb8f3; font-size: .7rem; line-height: 1.6; }
+.triplet-progress .brodle-button { min-height: 34px; padding: 6px 10px; font-size: .7rem; }
 .rest-mode-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid #494055; border-radius: 7px; background: #262131; color: #d8c9ed; font-size: .72rem; cursor: pointer; }
 .rest-mode-toggle input { width: 14px; height: 14px; accent-color: var(--accent); }
 .dotted-button { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 11px; border: 1px solid #494055; border-radius: 7px; background: #262131; color: #d8c9ed; font: inherit; font-size: .72rem; cursor: pointer; }
@@ -75,8 +80,16 @@
   .composer-export textarea { padding: 12px; }
 }
 .code-edit-actions { margin-top: 14px; }
-.piano-chord-controls { display: flex; align-items: center; gap: 8px; margin: 16px 0 20px; }
-.chord-mode-button, .confirm-chord { min-height: 40px; }
-.confirm-chord { display: inline-flex; align-items: center; justify-content: center; width: 40px; padding: 8px; border: 1px solid #655184; border-radius: 8px; background: #332944; color: #e2d5ff; cursor: pointer; }
-.confirm-chord:hover:not(:disabled) { border-color: #c4b5fd; background: #423054; }
-.confirm-chord:disabled { opacity: .4; cursor: not-allowed; }
+.piano-chord-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 16px 0 20px; }
+.piano-chord-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chord-mode-button, .confirm-chord, .play-chord { min-height: 44px; }
+.confirm-chord, .play-chord { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 12px; border: 1px solid #655184; border-radius: 8px; font: inherit; font-size: .75rem; line-height: 1.4; white-space: nowrap; cursor: pointer; }
+.play-chord { background: transparent; color: #c8b9e0; }
+.play-chord:hover:not(:disabled), .play-chord.is-playing { border-color: #c4b5fd; background: #332944; color: #e2d5ff; }
+.confirm-chord { border-color: #c4b5fd; background: #c4b5fd; color: #231a36; font-weight: 600; }
+.confirm-chord:hover:not(:disabled) { border-color: #ddd0ff; background: #ddd0ff; }
+.chord-mode-button:disabled, .confirm-chord:disabled, .play-chord:disabled { opacity: .4; cursor: not-allowed; }
+@media (max-width: 520px) {
+  .piano-chord-actions { flex: 1 1 100%; }
+  .piano-chord-actions button { flex: 1; }
+}

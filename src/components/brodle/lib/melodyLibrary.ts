@@ -1,8 +1,8 @@
-import { MUSICAL_KEYS, TIME_SIGNATURES, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from './musicGame';
+import { MUSICAL_KEYS, TIME_SIGNATURES, validateTriplets } from './musicGame';
 import type { MelodyStep, MusicalKey, TimeSignature } from './musicGame';
 import { restoreVictoryNotes } from './victoryMusic';
 import type { VictoryStep, Clef } from './victoryMusic';
-import { DURATIONS, makeStep, victorySettings } from '../creator/melodyComposer';
+import { victorySettings } from '../creator/melodyComposer';
 import type { ComposerDraft } from '../creator/melodyComposer';
 
 export type MelodyStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
@@ -13,7 +13,7 @@ export type MelodyRecord = {
   notes: StoredNote[]; final_notes: StoredVictoryNote[] | null; final_bass_notes?: StoredVictoryNote[] | null; final_clef?: Clef; final_bass_clef?: Clef; status: MelodyStatus; review_note: string;
   created_at: string; updated_at: string;
 };
-export type StoredNote = { midi: number | null; beats: number };
+export type StoredNote = Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>;
 export type StoredVictoryNote = StoredNote & { pitches?: number[] };
 export type ChallengeSnapshot = {
   title: string; source: string; hint: string; bpm: number; key: MusicalKey; timeSignature: TimeSignature;
@@ -30,16 +30,10 @@ export const MELODY_COLUMNS = 'id,created_by,author_username,title,source,hint,b
 
 export function restoreNotes(raw: unknown, limit = MAX_MELODY_STEPS): MelodyStep[] {
   if (!Array.isArray(raw) || raw.length > limit) throw new Error('Invalid melody');
-  return raw.map((step) => {
-    if (!step || 'pitches' in step || (step.midi !== null && (!Number.isInteger(step.midi) || step.midi < PIANO_MIN_MIDI || step.midi > PIANO_MAX_MIDI))) throw new Error('Invalid pitch');
-    for (const dotted of [false, true]) {
-      const duration = DURATIONS.find((option) => option.beats * (dotted ? 1.5 : 1) === step.beats);
-      if (duration) return makeStep(step.midi, duration.id, dotted);
-    }
-    throw new Error('Invalid duration');
-  });
+  if (raw.some((step) => step && 'pitches' in step)) throw new Error('Invalid pitch');
+  return restoreVictoryNotes(raw, limit);
 }
-export const storeNotes = (notes: readonly MelodyStep[]): StoredNote[] => notes.map(({ midi, beats }) => ({ midi, beats }));
+export const storeNotes = (notes: readonly MelodyStep[]): StoredNote[] => notes.map(({ midi, beats, triplet }) => ({ midi, beats, ...(triplet ? { triplet } : {}) }));
 export function recordDraft(row: Pick<MelodyRecord, 'title' | 'source' | 'hint' | 'bpm' | 'key_signature' | 'final_bpm' | 'final_key_signature' | 'time_signature' | 'notes' | 'final_notes' | 'final_bass_notes' | 'final_clef' | 'final_bass_clef'>): ComposerDraft {
   if (!MUSICAL_KEYS.includes(row.key_signature) || !TIME_SIGNATURES.includes(row.time_signature)
     || !Number.isInteger(row.bpm) || row.bpm < 20 || row.bpm > 400) throw new Error('Invalid melody settings');
@@ -55,6 +49,7 @@ export function melodyPayload(draft: ComposerDraft) {
   restoreNotes(draft.melody);
   restoreVictoryNotes(draft.finalMelody ?? []);
   restoreVictoryNotes(draft.finalBass ?? []);
+  [draft.melody, draft.finalMelody ?? [], draft.finalBass ?? []].forEach((part) => validateTriplets(part, true));
   return { title: (draft.title ?? '').trim(), source: (draft.source ?? '').trim(), hint: (draft.hint ?? '').trim(),
     bpm: draft.bpm, key_signature: draft.key, time_signature: draft.timeSignature,
     final_bpm: final.bpm, final_key_signature: final.key,
@@ -77,4 +72,4 @@ export function lisbonDate(date = new Date()): string {
 }
 export const displayDate = (date: string) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(date + 'T12:00:00Z'));
 
-export const storeVictoryNotes = (notes: readonly VictoryStep[]): StoredVictoryNote[] => notes.map(({ midi, beats, pitches }) => ({ midi, beats, ...(pitches ? { pitches: [...pitches] } : {}) }));
+export const storeVictoryNotes = (notes: readonly VictoryStep[]): StoredVictoryNote[] => notes.map(({ midi, beats, pitches, triplet }) => ({ midi, beats, ...(pitches ? { pitches: [...pitches] } : {}), ...(triplet ? { triplet } : {}) }));

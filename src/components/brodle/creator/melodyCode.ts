@@ -1,4 +1,4 @@
-import { MUSICAL_KEYS, TIME_SIGNATURES, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from '../lib/musicGame';
+import { MUSICAL_KEYS, TIME_SIGNATURES, PIANO_MIN_MIDI, PIANO_MAX_MIDI, validateTriplets } from '../lib/musicGame';
 import type { MusicalKey, TimeSignature } from '../lib/musicGame';
 import { restoreVictoryNotes } from '../lib/victoryMusic';
 import type { ComposerDraft } from './melodyComposer';
@@ -40,7 +40,7 @@ class LiteralReader {
         const key = this.text.slice(this.position).match(/^[A-Za-z_][A-Za-z0-9_]*/)?.[0];
         const name = key ?? this.literal(depth + 1);
         if (key) this.position += key.length;
-        if (typeof name !== 'string' || !['midi', 'beats', 'pitches', 'length', 'rhythm'].includes(name)) this.fail('Unknown note field');
+        if (typeof name !== 'string' || !['midi', 'beats', 'pitches', 'length', 'rhythm', 'triplet'].includes(name)) this.fail('Unknown note field');
         if (Object.prototype.hasOwnProperty.call(object, name)) this.fail(`Duplicate ${name} field`);
         if (!this.take(':')) this.fail('Expected : after the field name');
         object[name] = this.literal(depth + 1);
@@ -99,8 +99,9 @@ export function parseMelodyCode(code: string): Omit<ComposerDraft, 'title' | 'so
     try {
       const notes = restoreVictoryNotes(Object.prototype.hasOwnProperty.call(constants, name) ? constants[name] : [], limit);
       if (challenge && notes.some((step) => step.pitches)) throw new Error();
+      validateTriplets(notes, true);
       return notes;
-    } catch { throw new Error(`${name}: use up to ${limit} entries with midi ${PIANO_MIN_MIDI}–${PIANO_MAX_MIDI} or null, and supported beats (.125, .1875, .25, .375, .5, .75, 1, 1.5, 2, 3, 4, 6).${challenge ? ' Chords are only allowed in victory parts.' : ' Chord pitches must contain 2–8 ascending, unique notes; midi must equal the first pitch.'}`); }
+    } catch { throw new Error(`${name}: use up to ${limit} entries with midi ${PIANO_MIN_MIDI}–${PIANO_MAX_MIDI} or null, and supported beats (.125, .1875, .25, .375, .5, .75, 1, 1.5, 2, 3, 4, 6). Triplets use triplet: 1, 2, 3 with matching beats of .5 or 1.${challenge ? ' Chords are only allowed in victory parts.' : ' Chord pitches must contain 2–8 ascending, unique notes; midi must equal the first pitch.'}`); }
   };
   for (const name of ['FINAL_CLEF', 'FINAL_BASS_CLEF']) {
     if (constants[name] !== undefined && constants[name] !== 'treble' && constants[name] !== 'bass') throw new Error(`${name} must be 'treble' or 'bass'.`);
