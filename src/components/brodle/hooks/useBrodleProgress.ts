@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../auth/authContext';
-import { emptyProgress, progressStorageKey } from '../lib/gameProgress';
+import { emptyProgress, modeIsLocked, progressStorageKey } from '../lib/gameProgress';
 import type { GameMode, GameProgress } from '../lib/gameProgress';
 import { ProgressSync, readProgressCache, serializeProgressCache, emptyProgressCache } from '../lib/progressSync';
 import type { ProgressSyncState } from '../lib/progressSync';
@@ -24,7 +24,7 @@ export function useBrodleProgress(challengeId = CHALLENGE.id, target: readonly n
   useEffect(() => {
     const initial = loadCache(key, target, mode);
     const otherMode = mode === 'guided' ? 'classic' : 'guided';
-    const otherTransport = userId && restoreStartedMode && !initial.progress.attempts.length
+    const otherTransport = userId && restoreStartedMode && !modeIsLocked(initial.progress)
       ? progressTransport(userId, challengeId, target, otherMode) : undefined;
     const modeRequest = new AbortController();
     let checkingMode = Boolean(otherTransport);
@@ -37,15 +37,15 @@ export function useBrodleProgress(challengeId = CHALLENGE.id, target: readonly n
     }, mode);
     session.current = { key, sync };
     setState({ ...sync.state, loading: sync.state.loading || checkingMode, storageError: initial.storageError, key });
-    // A new device may prefer Casual even though this account already started
-    // the day in Hard. Resolve that before exposing the mode switch or piano.
+    // Restore a mode locked by a submission or hint on another device before
+    // exposing the mode switch or piano.
     void Promise.all([
       sync.sync(),
       otherTransport?.load(modeRequest.signal).catch(() => null),
     ]).then(([, other]) => {
       if (!active) return;
       checkingMode = false;
-      if (other?.attempts.length && !sync.state.progress.attempts.length) {
+      if (other && modeIsLocked(other) && !modeIsLocked(sync.state.progress)) {
         restoreStartedMode?.(otherMode);
       } else setState((previous) => previous.key === key ? { ...previous, ...sync.state } : previous);
     });

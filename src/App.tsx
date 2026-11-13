@@ -12,6 +12,7 @@ const AccountPage = lazy(() => import('./auth/AccountPage'));
 const Mvg = lazy(() => import('./components/mvg/Mvg'));
 const CrazyWildlife = lazy(() => import('./components/wildlife/CrazyWildlife'));
 const Brodle = lazy(() => import('./components/brodle/Brodle'));
+const BrodlePractice = lazy(() => import('./components/brodle/BrodlePractice'));
 const MyMelodies = lazy(() => import('./components/brodle/library/MyMelodies'));
 const BrodleAdmin = lazy(() => import('./components/brodle/admin/BrodleAdmin'));
 const MelodyCreator = lazy(() => import('./components/brodle/creator/MelodyCreator'));
@@ -33,6 +34,7 @@ function App() {
           <Route path="/CrazyWildlife/*" element={<Navigate to="/crazy-wildlife" replace />} />
           <Route path="/redbull/*" element={<Redbull />} />
           <Route path="/brodle" element={<Brodle />} />
+          <Route path="/brodle/tutorial" element={<BrodlePractice />} />
           <Route path="/brodle/melodies" element={<MyMelodies />} />
           <Route path="/brodle/admin" element={<BrodleAdmin />} />
           <Route path="/brodle/create" element={<MelodyCreator />} />

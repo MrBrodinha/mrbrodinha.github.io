@@ -39,10 +39,11 @@ export const PIANO_MAX_MIDI = 103; // G7
 export function challengePianoRange(target: readonly number[]) {
   const lowest = target.length ? Math.min(...target) : PIANO_MIN_MIDI;
   const highest = target.length ? Math.max(...target) : PIANO_MAX_MIDI;
-  // Frame the melody with the nearest C below it and the nearest B above it.
+  // Use the fewest complete C-to-C octaves that contain every target note.
+  const minMidi = Math.floor(lowest / 12) * 12;
   return {
-    minMidi: Math.floor((lowest - 1) / 12) * 12,
-    maxMidi: Math.floor((highest + 1) / 12) * 12 + 11,
+    minMidi,
+    maxMidi: Math.max(minMidi + 12, Math.ceil(highest / 12) * 12),
   };
 }
 // Quarter-note beats per minute for the challenge melody.
@@ -229,7 +230,7 @@ export function buildShareText(attempts: readonly Attempt[], target: readonly nu
 
   return [
     `Brodle${exactWin !== -1 ? ' 🎉' : octaveWin !== -1 ? ' ↕' : melodyWin !== -1 ? ' ♪' : ''}`,
-    summary, `Hints used: ${hintsUsed}`, `Latest ${recent.length} of ${count(attempts.length)}:`,
+    summary, ...(hintsUsed > 0 ? [`Hints used: ${hintsUsed}`] : []), `Latest ${recent.length} of ${count(attempts.length)}:`,
     ...recent.map((attempt, index) =>
       `${start + index + 1}. ${attempt.feedback.map((value) => symbols[value]).join('')}`,
     ),

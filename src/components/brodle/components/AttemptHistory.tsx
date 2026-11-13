@@ -51,7 +51,7 @@ export default function AttemptHistory({ attempts, selectedIndex, melody, musica
 
   if (!latest) return null;
 
-  return <section className="attempts-panel brodle-panel" aria-label="Latest attempt and history">
+  return <section data-tour="attempts" className="attempts-panel brodle-panel" aria-label="Latest attempt and history">
     <div className="attempt-summary-row">
       <p className="latest-attempt-summary" role="status">
         <strong>Attempt {latestIndex + 1}</strong><span aria-hidden="true"> · </span>{attemptSummary(latest, true)}

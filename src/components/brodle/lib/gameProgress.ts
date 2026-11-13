@@ -9,9 +9,13 @@ export function gameModeStorageKey(challengeId: string, target: readonly number[
   return `brodle:mode:v1:${userId ? 'user:' + userId : 'guest'}:${challengeId}:${target.join('-')}`;
 }
 
-export function modeWithAttempts(preferred: GameMode, rounds: Record<GameMode, GameProgress>): GameMode {
+export function modeIsLocked(progress: GameProgress): boolean {
+  return progress.attempts.length > 0 || progress.hintsUsed > 0 || progress.songHintUsed === true;
+}
+
+export function modeWithProgress(preferred: GameMode, rounds: Record<GameMode, GameProgress>): GameMode {
   const other = preferred === 'guided' ? 'classic' : 'guided';
-  return rounds[preferred].attempts.length || !rounds[other].attempts.length ? preferred : other;
+  return modeIsLocked(rounds[preferred]) || !modeIsLocked(rounds[other]) ? preferred : other;
 }
 
 export type GameProgress = {
@@ -19,6 +23,7 @@ export type GameProgress = {
   attempts: Attempt[];
   selectedAttempt: number;
   hintsUsed: number;
+  songHintUsed?: boolean;
 };
 
 // Existing shared rounds stay in Casual. Hard has its own browser/account ID.
@@ -131,6 +136,11 @@ export function revealNextHint(progress: GameProgress, target: readonly number[]
   return { ...next, guess: restoreGuess(next, target, mode) };
 }
 
+export function markSongHintUsed(progress: GameProgress, mode: GameMode = 'guided'): GameProgress {
+  if (mode !== 'guided' || isFinished(progress, mode) || progress.songHintUsed) return progress;
+  return { ...progress, songHintUsed: true };
+}
+
 function winningFeedback(feedback: readonly Feedback[], mode: GameMode): boolean {
   const first = feedback[0];
   return (first === 'correct' || (mode === 'guided' && (first === 'octave' || first === 'shifted')))
@@ -178,7 +188,8 @@ export function parseProgress(serialized: string | null, target: readonly number
       revealedHints = Math.max(revealedHints, verifiedHints);
       if (winningFeedback(feedback, mode)) break;
     }
-    const progress = { ...emptyProgress(), attempts, hintsUsed: revealedHints };
+    const progress = { ...emptyProgress(), attempts, hintsUsed: revealedHints,
+      ...('songHintUsed' in saved && saved.songHintUsed === true ? { songHintUsed: true } : {}) };
     if (!isFinished(progress, mode) && 'guess' in saved && validNotes(saved.guess) && saved.guess.length <= target.length) {
       progress.guess = saved.guess;
     }
@@ -199,6 +210,7 @@ export function serializeProgress(progress: GameProgress): string {
     attemptIds: progress.attempts.map((attempt, index) => attempt.id ?? legacyAttemptId(attempt.notes, index)),
     selectedAttempt: progress.selectedAttempt,
     hintsUsed: progress.hintsUsed,
+    ...(progress.songHintUsed ? { songHintUsed: true } : {}),
     attemptHints: progress.attempts.map((attempt) => attempt.hintsUsed ?? 0),
   });
 }
@@ -229,5 +241,6 @@ export function mergeProgress(saved: GameProgress, incoming: GameProgress, targe
   const selectedIndex = attempts.findIndex((attempt) => attempt.id === selectedId);
   return parseProgress(serializeProgress({ guess: draft.guess, attempts, selectedAttempt: selectedIndex >= 0 ? selectedIndex : Math.max(0, attempts.length - 1),
     hintsUsed: Math.max(saved.hintsUsed, incoming.hintsUsed),
+    ...(saved.songHintUsed || incoming.songHintUsed ? { songHintUsed: true } : {}),
   }), target, mode);
 }

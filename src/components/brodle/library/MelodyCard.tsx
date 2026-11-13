@@ -8,6 +8,7 @@ import type { usePianoAudio } from '../hooks/usePianoAudio';
 import { victoryNotation } from '../lib/victoryMusic';
 import SheetMusic from '../components/SheetMusic';
 import BrodleIcon from '../components/BrodleIcon';
+import MelodyDifficulty from '../components/MelodyDifficulty';
 import { victorySettings } from '../creator/melodyComposer';
 import MelodyCodePreview from './MelodyCodePreview';
 
@@ -21,8 +22,8 @@ export default function MelodyCard({ row, audio, children, dangerAction, reviewF
   return <article className="brodle-panel melody-card" data-melody-id={row.id}>
     <div className="melody-card-header"><div><h2>{row.title || 'Untitled melody'}</h2><p className="melody-author">By {row.author_username}</p></div><span className={'melody-status status-' + row.status}>{row.status === 'rejected' ? 'Returned' : row.status}</span></div>
     <div className="melody-metadata" aria-label="Music settings"><span>{keyName(draft.key, naming)}</span><span>{draft.timeSignature}</span><span>{draft.bpm} BPM</span></div>
+    <MelodyDifficulty melody={draft.melody} />
     {row.source && <p className="library-muted">{row.source}</p>}
-    {row.hint && <p className="library-muted">Hint: {row.hint}</p>}
     <details className="melody-preview" onToggle={(event) => setOpen(event.currentTarget.open)}><summary>View sheet music</summary>
       {open && <SheetMusic abc={melodyToAbc(draft.melody, naming, draft.key, draft.bpm, draft.timeSignature)} musicalKey={draft.key} naming={naming} bpm={draft.bpm} timeSignature={draft.timeSignature} wrap />}
       {open && hasVictory ? <><p className="library-muted">Victory arrangement · {keyName(final.key, naming)} · {final.bpm} BPM</p><SheetMusic abc={victoryNotation(draft.finalMelody?.length ? draft.finalMelody : draft.melody, draft.finalBass ?? [], naming, final.key, final.bpm, draft.timeSignature, draft.finalClef, draft.finalBassClef)} musicalKey={final.key} naming={naming} bpm={final.bpm} timeSignature={draft.timeSignature} wrap /></> : null}

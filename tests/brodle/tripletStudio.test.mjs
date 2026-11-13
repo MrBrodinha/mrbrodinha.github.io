@@ -50,7 +50,7 @@ const hostUrl = moduleUrl(`
 `);
 const host = await import(hostUrl);
 const imports = Object.fromEntries([
-  'react', '../../../auth/authContext', 'react-router-dom', '../components/BrodleIcon', '../components/PianoKeyboard',
+  'react', '../../../auth/authContext', 'react-router-dom', '../components/BrodleIcon', '../components/MelodyDifficulty', '../components/PianoKeyboard',
   '../components/PianoControls', '../components/SheetMusic', '../components/RhythmSymbol', '../hooks/usePianoAudio',
   './StudioCloudPanel', './useStudioCloud', '../lib/melodyLibrary',
 ].map(name => [name, hostUrl]));

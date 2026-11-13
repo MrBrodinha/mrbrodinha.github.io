@@ -95,6 +95,28 @@ test('Hard account progress never restores an octave guess as a win', async (t) 
   assert.deepEqual(restored, []);
 });
 
+test('a hint-only Casual account round restores Casual before Hard can be exposed', async (t) => {
+  for (const metadata of [{ hintsUsed: 1, guess: [60] }, { songHintUsed: true, guess: [] }]) {
+    const casual = parseProgress(JSON.stringify({ attempts: [], ...metadata }), target);
+    const { state, restored, unmount } = mountProgress(t, 'classic', async mode => mode === 'guided' ? casual : emptyProgress());
+    assert.equal(state.value.loading, true);
+    await setImmediate();
+    assert.deepEqual(restored, ['guided']);
+    assert.equal(state.value.loading, true, 'keep Hard hidden until the Casual round loads');
+    unmount();
+  }
+});
+
+test('an existing Casual hint lock takes precedence over mode discovery', async (t) => {
+  const casual = parseProgress(JSON.stringify({ attempts: [], guess: [], songHintUsed: true }), target);
+  const hard = parseProgress(JSON.stringify({ attempts: [[59, 64, 66]] }), target, 'classic');
+  const { state, restored } = mountProgress(t, 'guided', async mode => mode === 'guided' ? casual : hard);
+  await setImmediate();
+  assert.equal(state.value.progress.songHintUsed, true);
+  assert.equal(state.value.loading, false);
+  assert.deepEqual(restored, [], 'restoring account metadata cannot move a hinted round to Hard');
+});
+
 test('leaving a puzzle cancels mode discovery and ignores late account responses', async (t) => {
   let finish;
   let signal;

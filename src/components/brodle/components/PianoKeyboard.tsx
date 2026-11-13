@@ -20,12 +20,13 @@ type Props = Pick<ReturnType<typeof usePianoAudio>, 'playing' | 'pressedNotes' |
 export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIANO_MAX_MIDI, chordNotes, highlightedNotes, availableRange, fitToWidth = false, octaveNavigation = false, playbackMode = false, naming, onNote, playing, pressedNotes, startNote, releaseNote, playNotes }: Props) {
   const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 700px)').matches);
   const firstOctave = Math.floor(minMidi / 12) * 12;
-  const lastOctave = Math.floor(maxMidi / 12) * 12;
+  // The closing C belongs to the previous octave; it needs no separate page.
+  const lastOctave = Math.max(firstOctave, Math.ceil(maxMidi / 12) * 12 - 12);
   const [octave, setOctave] = useState(() => Math.floor((minMidi + maxMidi) / 24) * 12);
   const oneOctave = octaveNavigation && narrow;
   const activeOctave = Math.max(firstOctave, Math.min(lastOctave, octave));
   const visibleMin = oneOctave ? activeOctave : minMidi;
-  const visibleMax = oneOctave ? activeOctave + 11 : maxMidi;
+  const visibleMax = oneOctave ? Math.min(activeOctave + 12, maxMidi) : maxMidi;
   const { whiteKeys, blackKeys } = keyboardKeys(visibleMin, visibleMax);
   const startsBlack = blackKeys[0]?.midi === visibleMin;
   const endsBlack = blackKeys[blackKeys.length - 1]?.midi === visibleMax;
@@ -48,11 +49,15 @@ export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIAN
       midi = Math.max(availableRange.minMidi, Math.min(availableRange.maxMidi, midi));
     }
     if (midi !== undefined) {
-      setOctave(Math.floor(midi / 12) * 12);
+      const pitch = midi;
+      setOctave((current) => {
+        const start = Math.max(firstOctave, Math.min(lastOctave, current));
+        return pitch >= start && pitch <= Math.min(start + 12, maxMidi) ? current : Math.floor(pitch / 12) * 12;
+      });
     } else if (availableRange && availableRange.minMidi <= availableRange.maxMidi) {
       setOctave((current) => {
         const start = Math.max(firstOctave, Math.min(lastOctave, current));
-        if (start + 11 >= availableRange.minMidi && start <= availableRange.maxMidi) return current;
+        if (Math.min(start + 12, maxMidi) >= availableRange.minMidi && start <= availableRange.maxMidi) return current;
         return Math.floor(Math.max(minMidi, Math.min(maxMidi, availableRange.minMidi)) / 12) * 12;
       });
     }
@@ -117,14 +122,14 @@ export default function PianoKeyboard({ minMidi = PIANO_MIN_MIDI, maxMidi = PIAN
   return <>
     {oneOctave && <div className="piano-octaves" role="group" aria-label="Piano octave">
       <button type="button" className="brodle-button" disabled={activeOctave <= firstOctave}
-        aria-label={`Previous octave${activeOctave > firstOctave ? ': ' + noteName(activeOctave - 12, naming) + ' to ' + noteName(activeOctave - 1, naming) : ''}`}
+        aria-label={`Previous octave${activeOctave > firstOctave ? ': ' + noteName(activeOctave - 12, naming) + ' to ' + noteName(activeOctave, naming) : ''}`}
         onClick={() => setOctave(activeOctave - 12)}>‹ Lower octave</button>
-      <span role="status">{noteName(activeOctave, naming)}–{noteName(activeOctave + 11, naming)}</span>
+      <span role="status">{noteName(activeOctave, naming)}–{noteName(visibleMax, naming)}</span>
       <button type="button" className="brodle-button" disabled={activeOctave >= lastOctave}
-        aria-label={`Next octave${activeOctave < lastOctave ? ': ' + noteName(activeOctave + 12, naming) + ' to ' + noteName(activeOctave + 23, naming) : ''}`}
+        aria-label={`Next octave${activeOctave < lastOctave ? ': ' + noteName(activeOctave + 12, naming) + ' to ' + noteName(Math.min(activeOctave + 24, maxMidi), naming) : ''}`}
         onClick={() => setOctave(activeOctave + 12)}>Higher octave ›</button>
     </div>}
-    <div ref={scroll} className="piano-scroll" tabIndex={oneOctave ? undefined : 0} role="region" aria-label={oneOctave ? 'One-octave piano keyboard' : 'Scrollable piano keyboard'}>
+    <div data-tour="keyboard" ref={scroll} className="piano-scroll" tabIndex={oneOctave ? undefined : 0} role="region" aria-label={oneOctave ? 'One-octave piano keyboard' : 'Scrollable piano keyboard'}>
       <div className={'piano-keyboard' + (fitToWidth ? ' is-playback' : '')} data-dense={fitToWidth && keySlots > 14}
         style={{ minWidth: fitToWidth || oneOctave ? 0 : keySlots * 44, maxWidth: fitToWidth && !oneOctave ? keySlots * 60 : undefined }}>
         {startsBlack && <span className="piano-edge-space" aria-hidden="true" />}

@@ -1,29 +1,103 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { Link } from 'react-router-dom';
 import BrodleIcon from './BrodleIcon';
+import { placeTutorialCard, tutorialSteps } from '../lib/tutorial';
+import type { TourRect } from '../lib/tutorial';
 
-const titles = ['Find the melody', 'Casual mode', 'Hard mode', 'Make the piano yours'];
-
-export default function BrodleTutorial({ maxHints, onOpen, exactOnly = false }: { maxHints: number; onOpen: () => void; exactOnly?: boolean }) {
+export default function BrodleTutorial({ maxHints, onOpen, exactOnly = false, finished = false, hasAttempts = false }: {
+  maxHints: number; onOpen: () => void; exactOnly?: boolean; finished?: boolean; hasAttempts?: boolean;
+}) {
+  const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
+  const card = useRef<HTMLDivElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const originalScroll = useRef({ left: 0, top: 0 });
+  const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [highlight, setHighlight] = useState<TourRect | null>(null);
+  const [position, setPosition] = useState({ left: 16, top: 16 });
+  const maskId = useId();
+  const headingId = useId();
+  const descriptionId = useId();
+  const steps = useMemo(() => tutorialSteps({ maxHints, exactOnly, finished, hasAttempts }), [maxHints, exactOnly, finished, hasAttempts]);
+  const current = Math.min(step, steps.length - 1);
+  const active = steps[current];
 
   useEffect(() => {
-    if (dialog.current?.open) heading.current?.focus();
-  }, [step]);
+    if (!open) return;
+    const scroll = originalScroll.current;
+    return () => {
+      window.scrollTo({ ...scroll, behavior: 'instant' });
+      trigger.current?.focus({ preventScroll: true });
+    };
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const root = trigger.current?.closest('.brodle-page');
+    const target = root?.querySelector<HTMLElement>(`[data-tour="${active.id}"]`);
+    let frame = 0;
+    const measure = () => {
+      const viewport = { width: document.documentElement.clientWidth, height: window.innerHeight };
+      const panel = card.current?.getBoundingClientRect();
+      if (!panel) return;
+      const bounds = target?.getBoundingClientRect();
+      const rect = bounds ? { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height } : null;
+      setHighlight(rect);
+      setPosition(placeTutorialCard(rect, panel, viewport));
+    };
+    target?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+    // Leave enough room for the card when a centered target fills most of a phone.
+    const bounds = target?.getBoundingClientRect();
+    const panel = card.current?.getBoundingClientRect();
+    if (bounds && panel && bounds.height + panel.height + 48 <= window.innerHeight
+      && bounds.top < panel.height + 32 && window.innerHeight - bounds.bottom < panel.height + 32) {
+      window.scrollBy({ top: bounds.top - 16, behavior: 'instant' });
+    }
+    measure();
+    heading.current?.focus({ preventScroll: true });
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleMeasure);
+    if (target) observer?.observe(target);
+    if (card.current) observer?.observe(card.current);
+    window.addEventListener('resize', scheduleMeasure);
+    window.addEventListener('scroll', scheduleMeasure, true);
+    window.visualViewport?.addEventListener('resize', scheduleMeasure);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize', scheduleMeasure);
+      window.removeEventListener('scroll', scheduleMeasure, true);
+      window.visualViewport?.removeEventListener('resize', scheduleMeasure);
+    };
+  }, [open, active.id]);
 
   function openTutorial() {
     onOpen();
+    originalScroll.current = { left: window.scrollX, top: window.scrollY };
     setStep(0);
     dialog.current?.showModal();
-    heading.current?.focus();
+    setOpen(true);
+  }
+
+  function closeTutorial() {
+    dialog.current?.close();
+    setOpen(false);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
     event.stopPropagation();
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      setStep(Math.max(0, Math.min(steps.length - 1, current + (event.key === 'ArrowRight' ? 1 : -1))));
+      return;
+    }
     if (event.key !== 'Tab') return;
-    const buttons = event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');
+    const buttons = event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]');
     const first = buttons[0];
     const last = buttons[buttons.length - 1];
     if (!first || !last) return;
@@ -37,70 +111,48 @@ export default function BrodleTutorial({ maxHints, onOpen, exactOnly = false }: 
   }
 
   return <>
-    <button type="button" className="brodle-button tutorial-trigger" aria-haspopup="dialog" onClick={openTutorial}>
+    <button ref={trigger} type="button" className="brodle-button tutorial-trigger" aria-haspopup="dialog"
+      aria-label="How to play: guided tour" title="Show me around Brodle" onClick={openTutorial}>
       <BrodleIcon name="help" />How to play
     </button>
-    <dialog ref={dialog} className="brodle-tutorial" aria-labelledby="tutorial-title" onKeyDown={handleKeyDown}>
-      <div className="tutorial-header">
-        <h2 id="tutorial-title">How to play Brodle</h2>
-        <button type="button" className="brodle-button ghost-button" aria-label="Close tutorial" onClick={() => dialog.current?.close()}>
-          <BrodleIcon name="close" />
-        </button>
-      </div>
-      <div className="tutorial-progress" aria-label={`Step ${step + 1} of ${titles.length}`}>
-        {titles.map((title, index) => <span key={title} className={index === step ? 'is-current' : ''} aria-hidden="true" />)}
-      </div>
-      <section className="tutorial-step" aria-labelledby="tutorial-step-title">
-        <span className="tutorial-eyebrow">Step {step + 1} of {titles.length}</span>
-        <h3 id="tutorial-step-title" ref={heading} tabIndex={-1}>{titles[step]}</h3>
-        {step === 0 && <>
-          <p>Use the piano to guess the hidden melody, one note at a time. Rhythm and rests are filled in for you. Enter every note, then choose <strong>Submit</strong>.</p>
-          <ul className="tutorial-feedback">
-            <li><span className="feedback-pill feedback-correct">✓ Correct</span> The right pitch in the right position.</li>
-            <li><span className="feedback-pill feedback-low">↑ Raise</span> Try a higher note at this position.</li>
-            <li><span className="feedback-pill feedback-high">↓ Lower</span> Try a lower note at this position.</li>
-            {!exactOnly && <><li><span className="feedback-pill feedback-shifted">♪ Right melody, shifted pitch</span> The melody matches at a different pitch.</li>
-            <li><span className="feedback-pill feedback-octave">↕ Right note, different octave</span> The melody matches in a different octave.</li></>}
-          </ul>
-          <p>{exactOnly ? 'Hard mode requires every note at the correct pitch and octave to win.' : 'In Casual mode, a melody at a consistent shifted pitch or octave wins too. The full victory arrangement plays at your winning pitch.'}</p>
-        </>}
-        {step === 1 && <>
-          <p>A little help as you go. Casual mode is the default and includes the song clue when one is available.</p>
-          <ul>
-            <li>The piano remembers feedback for each position. After a note is too low or too high, ruled-out keys become unavailable.</li>
-            <li>Previously correct notes stay correct when you fill or copy their positions. Clear and Remove last note keep what the piano has learned.</li>
-            <li>Optional note hints reveal the next note in order. The final hint also plays the challenge melody and unlocks free replays.</li>
-            <li>A matching melody at a different pitch or octave finishes the round and plays the victory arrangement in that pitch.</li>
-          </ul>
-          <p>After submitting, start a fresh guess or select any entry in <strong>Attempts</strong> to replay it or copy it to your draft. If copied notes fall outside their allowed range, choose the message beside Submit to jump to the first one.</p>
-        </>}
-        {step === 2 && <>
-          <p>Find the exact melody, including its pitch and octave. Every note must match to win.</p>
-          <ul>
-            <li>Every playable pitch stays available. Previous feedback does not narrow the piano or lock correct guesses.</li>
-            <li>The song clue is available when one has been provided.</li>
-            <li>A shifted pitch or different octave gets normal higher/lower feedback and does not count as a win.</li>
-            <li>Note hints and challenge-melody playback are off.</li>
-          </ul>
-          <p>You can still listen to your own guesses. Choose Casual or Hard before your first submission; the mode locks once you submit a guess.</p>
-        </>}
-        {step === 3 && <>
-          <ul>
-            <li>Select a note on your guess to replace it, then choose a piano key. <strong>Listen</strong> plays your current guess.</li>
-            <li><strong>Remove last note</strong> or <strong>Backspace</strong> removes the last entered note. <strong>Clear</strong> starts the draft again. Revealed notes stay in place.</li>
-            <li><strong>Free play</strong> lets you try keys without changing your guess. Turn it off to continue entering notes.</li>
-            <li>The controls above the piano let you choose A–G or Dó–Si note names, the instrument, and volume. On phones, use the labeled octave buttons to reach lower or higher notes.</li>
-          </ul>
-          <p>{maxHints > 0 ? <>In Casual mode, this puzzle has <strong>{maxHints} optional note {maxHints === 1 ? 'hint' : 'hints'}</strong>. Each reveals the next note permanently, up to half the melody rounded down.</> : 'This short puzzle has no note hints. Longer puzzles allow up to half their notes to be revealed in Casual mode, rounded down.'} Hard mode has no note hints. Hints used are included in shared results.</p>
-          <p>Open <strong>How to play</strong> any time to revisit this tutorial.</p>
-        </>}
-      </section>
-      <div className="tutorial-actions">
-        <button type="button" className="brodle-button" disabled={step === 0} onClick={() => setStep((previous) => previous - 1)}>Back</button>
-        {step < titles.length - 1
-          ? <button type="button" className="brodle-button tutorial-next" onClick={() => setStep((previous) => previous + 1)}>Next<span aria-hidden="true">→</span></button>
-          : <button type="button" className="brodle-button tutorial-next" onClick={() => dialog.current?.close()}>Start playing</button>}
-      </div>
+    <dialog ref={dialog} className="brodle-tutorial" aria-labelledby={headingId} aria-describedby={descriptionId}
+      onKeyDown={handleKeyDown} onClose={() => setOpen(false)}>
+      {open && <>
+        <svg className="tutorial-spotlight" aria-hidden="true">
+          <defs><mask id={maskId} maskUnits="userSpaceOnUse">
+            <rect width="100%" height="100%" fill="white" />
+            {highlight && <rect x={highlight.left - 7} y={highlight.top - 7} width={highlight.width + 14} height={highlight.height + 14} rx="12" fill="black" />}
+          </mask></defs>
+          <rect width="100%" height="100%" fill="#070a14" fillOpacity=".8" mask={`url(#${maskId})`} />
+          {highlight && <rect className="tutorial-target-outline" x={highlight.left - 7} y={highlight.top - 7} width={highlight.width + 14} height={highlight.height + 14} rx="12" />}
+        </svg>
+        {highlight && <span className="tutorial-target-number" aria-hidden="true"
+          style={{ left: Math.max(8, highlight.left - 12), top: Math.max(8, highlight.top - 12) }}>{current + 1}</span>}
+        <div ref={card} className="tutorial-card" style={position}>
+          <div className="tutorial-header">
+            <span>How to play · Guided tour</span>
+            <button type="button" className="brodle-button ghost-button" aria-label="Close tutorial" onClick={closeTutorial}>
+              <BrodleIcon name="close" />
+            </button>
+          </div>
+          <nav className="tutorial-progress" aria-label="Tour steps">
+            {steps.map((item, index) => <button key={item.id} type="button" aria-label={`Step ${index + 1}: ${item.title}`}
+              aria-current={index === current ? 'step' : undefined} onClick={() => setStep(index)}>{index + 1}</button>)}
+          </nav>
+          <section className="tutorial-step">
+            <span className="tutorial-eyebrow">Step {current + 1} of {steps.length}</span>
+            <h2 id={headingId} ref={heading} tabIndex={-1}>{active.title}</h2>
+            <p id={descriptionId}>{active.description}</p>
+          </section>
+          <div className="tutorial-actions">
+            <button type="button" className="brodle-button" disabled={current === 0} onClick={() => setStep(current - 1)}>Back</button>
+            {current < steps.length - 1
+              ? <button type="button" className="brodle-button tutorial-next" onClick={() => setStep(current + 1)}>Next<span aria-hidden="true">→</span></button>
+              : <button type="button" className="brodle-button tutorial-next" onClick={closeTutorial}>Back to game</button>}
+          </div>
+          <Link to="/brodle/tutorial" className="tutorial-practice-link" onClick={closeTutorial}>Try a hands-on example<span aria-hidden="true">→</span></Link>
+        </div>
+      </>}
     </dialog>
   </>;
 }

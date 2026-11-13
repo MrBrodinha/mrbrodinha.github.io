@@ -13,13 +13,65 @@ async function moduleUrl(path, imports = {}) {
 const musicUrl = await moduleUrl('../../src/components/brodle/lib/musicGame.ts');
 const { scoreGuess } = await import(musicUrl);
 const progressUrl = await moduleUrl('../../src/components/brodle/lib/gameProgress.ts', { './musicGame': musicUrl });
-const { emptyProgress, parseProgress, serializeProgress, mergeProgress, progressStorageKey, progressRoundId, gameModeStorageKey, modeWithAttempts, winningAttempt, isFinished, hintLimit, editProgressGuess, revealNextHint, noteConstraints, replaceGuessNote, canSubmitGuess, guessFeedback, copyLastAttempt, copyAttemptToDraft, guessRangeIssues } = await import(progressUrl);
+const { emptyProgress, parseProgress, serializeProgress, mergeProgress, progressStorageKey, progressRoundId, gameModeStorageKey, modeIsLocked, modeWithProgress, winningAttempt, isFinished, hintLimit, editProgressGuess, revealNextHint, noteConstraints, replaceGuessNote, markSongHintUsed, canSubmitGuess, guessFeedback, copyLastAttempt, copyAttemptToDraft, guessRangeIssues } = await import(progressUrl);
 const syncUrl = await moduleUrl('../../src/components/brodle/lib/progressSync.ts', { './gameProgress': progressUrl });
 const { ProgressSync, readProgressCache, serializeProgressCache } = await import(syncUrl);
 const target = [60,64];
 const progress = (attempts = [], guess = [], attemptIds = attempts.map((_,index) => `attempt-${index}`)) => parseProgress(JSON.stringify({ attempts, guess, attemptIds, selectedAttempt: Math.max(0,attempts.length-1) }), target);
 const initial = (value = emptyProgress(), pending = false) => ({ progress: value, pending });
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
+
+test('either Casual hint locks the mode before any submission, while an unsubmitted draft stays switchable', () => {
+  const tune = [60, 64, 67, 65];
+  const empty = emptyProgress();
+  const draft = editProgressGuess(empty, [59, 63], tune);
+  assert.equal(modeIsLocked(draft), false);
+  assert.equal(modeWithProgress('classic', { guided: draft, classic: empty }), 'classic');
+  for (const assisted of [revealNextHint(draft, tune), markSongHintUsed(draft)]) {
+    assert.equal(assisted.attempts.length, 0);
+    assert.equal(modeIsLocked(assisted), true);
+    const restored = parseProgress(serializeProgress(assisted), tune);
+    assert.equal(modeIsLocked(restored), true, 'reload preserves the lock');
+    assert.equal(modeWithProgress('classic', { guided: restored, classic: empty }), 'guided', 'a Hard preference cannot bypass the Casual hint lock');
+  }
+  const heard = markSongHintUsed(draft);
+  assert.deepEqual(heard.guess, draft.guess, 'hearing the song never edits the draft');
+  assert.equal(heard.hintsUsed, 0, 'hearing the song uses no note hints');
+  assert.equal(markSongHintUsed(heard), heard, 'replays keep the same lock');
+  assert.equal(markSongHintUsed(empty, 'classic'), empty, 'Hard cannot use song hints');
+  const solved = progress([target]);
+  assert.equal(markSongHintUsed(solved), solved, 'completed rounds cannot use song hints');
+});
+
+test('stale tabs and devices cannot erase song hint usage or unlock Hard', async () => {
+  const heard = markSongHintUsed(emptyProgress());
+  const stale = emptyProgress();
+  for (const merged of [mergeProgress(heard, stale, target), mergeProgress(stale, heard, target), mergeProgress(heard, stale, target, false)]) {
+    assert.equal(merged.songHintUsed, true);
+    assert.equal(modeIsLocked(merged), true);
+  }
+  let remote = emptyProgress();
+  const transport = { load: async () => remote, save: async next => (remote = mergeProgress(remote, next, target)) };
+  const first = new ProgressSync(target, initial(), transport, () => {});
+  await first.sync();
+  first.update(markSongHintUsed);
+  assert.equal(modeIsLocked(first.state.progress), true, 'lock is immediate, before the save finishes');
+  await setImmediate();
+  first.dispose();
+  const returning = new ProgressSync(target, initial(), transport, () => {});
+  await returning.sync();
+  assert.equal(returning.state.progress.songHintUsed, true);
+  assert.equal(modeWithProgress('classic', { guided: returning.state.progress, classic: stale }), 'guided');
+  returning.dispose();
+});
+
+test('legacy progress remains compatible and only a boolean true restores song usage', () => {
+  assert.equal(parseProgress(serializeProgress(emptyProgress()), target).songHintUsed, undefined);
+  for (const songHintUsed of [false, null, 0, 1, 'true', [], {}]) {
+    assert.equal(modeIsLocked(parseProgress(JSON.stringify({ attempts: [], guess: [], songHintUsed }), target)), false);
+  }
+  assert.equal(modeIsLocked(parseProgress(JSON.stringify({ attempts: [], guess: [], songHintUsed: true }), target)), true);
+});
 
 test('older attempts copy to the draft with current hints and confirmed notes, while exposing each blocked position', () => {
   const tune = [60, 64, 67, 65];
@@ -179,12 +231,12 @@ test('Hard restores shifted and octave guesses as normal feedback and requires a
 test('mode selection restores an already-started puzzle and keeps accounts, days and targets separate', () => {
   const empty = emptyProgress();
   const started = progress([[59,64]]);
-  assert.equal(modeWithAttempts('guided', { guided: empty, classic: empty }), 'guided');
-  assert.equal(modeWithAttempts('classic', { guided: empty, classic: empty }), 'classic');
-  assert.equal(modeWithAttempts('guided', { guided: empty, classic: started }), 'classic');
-  assert.equal(modeWithAttempts('classic', { guided: started, classic: empty }), 'guided');
+  assert.equal(modeWithProgress('guided', { guided: empty, classic: empty }), 'guided');
+  assert.equal(modeWithProgress('classic', { guided: empty, classic: empty }), 'classic');
+  assert.equal(modeWithProgress('guided', { guided: empty, classic: started }), 'classic');
+  assert.equal(modeWithProgress('classic', { guided: started, classic: empty }), 'guided');
   // Existing users with two historical rounds keep the round they selected.
-  for (const mode of ['guided', 'classic']) assert.equal(modeWithAttempts(mode, { guided: started, classic: started }), mode);
+  for (const mode of ['guided', 'classic']) assert.equal(modeWithProgress(mode, { guided: started, classic: started }), mode);
   const keys = [
     gameModeStorageKey('day-a', target, null), gameModeStorageKey('day-a', target, 'alice'),
     gameModeStorageKey('day-a', target, 'bob'), gameModeStorageKey('day-b', target, 'alice'),

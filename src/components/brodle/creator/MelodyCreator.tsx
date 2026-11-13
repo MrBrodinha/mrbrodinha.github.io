@@ -7,6 +7,7 @@ import PianoKeyboard from '../components/PianoKeyboard';
 import PianoControls from '../components/PianoControls';
 import SheetMusic from '../components/SheetMusic';
 import RhythmSymbol from '../components/RhythmSymbol';
+import MelodyDifficulty from '../components/MelodyDifficulty';
 import { usePianoAudio } from '../hooks/usePianoAudio';
 import { keyName, melodyNotation, melodyBeats, stepTicks, stepBeats, validateTriplets, MUSICAL_KEYS, TIME_SIGNATURES, noteName } from '../lib/musicGame';
 import type { MusicalKey, NoteNaming, TimeSignature, TripletPosition } from '../lib/musicGame';
@@ -295,7 +296,12 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
           <div className="melody-details-grid">
             <div className="composer-field"><label htmlFor="melody-title">Title</label><input id="melody-title" maxLength={160} value={draft.title ?? ''} disabled={!editable} onChange={(event) => setDraft((previous) => ({ ...previous, title: event.target.value }))} placeholder="The song or melody name" /></div>
             <div className="composer-field"><label htmlFor="melody-source">Source / artist <span>Optional</span></label><input id="melody-source" maxLength={200} value={draft.source ?? ''} disabled={!editable} onChange={(event) => setDraft((previous) => ({ ...previous, source: event.target.value }))} /></div>
-            <div className="composer-field melody-hint-field"><label htmlFor="melody-hint">Player hint <span>Optional</span></label><input id="melody-hint" maxLength={300} value={draft.hint ?? ''} disabled={!editable} onChange={(event) => setDraft((previous) => ({ ...previous, hint: event.target.value }))} placeholder="A clue without giving away the title" /></div>
+          </div>
+          <div className="composer-difficulty" aria-live="polite">
+            <MelodyDifficulty melody={draft.melody} />
+            <p>{draft.melody.some((step) => step.midi !== null)
+              ? 'Rated automatically from the challenge melody. Updates as you edit.'
+              : 'Add a note to see the estimated difficulty.'}</p>
           </div>
         </section>
         <section className="brodle-panel composer-settings" aria-labelledby="settings-title">

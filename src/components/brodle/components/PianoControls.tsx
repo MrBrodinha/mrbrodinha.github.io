@@ -45,7 +45,7 @@ export default function PianoControls({ audio, naming, onNaming, freePlay, compa
       </div>
     </div>;
   return <>
-    <div className={'piano-toolbar' + (freePlay ? ' has-free-play' : '') + (compact ? ' is-compact' : '')}>
+    <div data-tour="settings" className={'piano-toolbar' + (freePlay ? ' has-free-play' : '') + (compact ? ' is-compact' : '')}>
       {freePlay && <div className="piano-note-controls">
         <button type="button" className="brodle-button piano-free-play" aria-pressed={freePlay.enabled}
           aria-describedby="piano-mode-status" onClick={freePlay.onToggle}

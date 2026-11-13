@@ -32,6 +32,7 @@ test('Brodle progress is private to its account, resumes after login, and merges
     await save(alice, legacy, 'legacy');
     await db.exec('reset role');
     await db.exec(await readFile(new URL('../../database/migrations/202611020015_brodle_note_hints.sql',import.meta.url),'utf8'));
+    await db.exec(await readFile(new URL('../../database/migrations/202611130017_brodle_hint_mode_lock.sql',import.meta.url),'utf8'));
     await role(alice);
     assert.deepEqual(await load(alice, 'legacy'), legacy, 'the upgrade preserves existing rounds');
     assert.deepEqual(await save(alice, legacy, 'legacy'), progress([[59,64]], [60], ['legacy']), 'old clients can still save');
@@ -110,5 +111,16 @@ test('Brodle progress is private to its account, resumes after login, and merges
     ]) await assert.rejects(save(bob,invalid,'invalid-hints',tune),{code:'23514'});
     await role(alice);
     assert.equal(await load(alice,'hints',tune),null,'revealed notes stay private to their account');
+    const heard = { ...progress([], [59]), songHintUsed: true };
+    assert.deepEqual(await save(alice, heard, 'song-hint'), heard, 'song use saves before any submission');
+    assert.deepEqual(await load(alice, 'song-hint'), heard, 'a new device restores song use');
+    const staleSong = await save(alice, progress(), 'song-hint');
+    assert.equal(staleSong.songHintUsed, true, 'old clients cannot clear song usage');
+    assert.equal((await save(alice, { ...progress(), songHintUsed: false }, 'song-hint')).songHintUsed, true, 'explicit false cannot refund song usage');
+    for (const songHintUsed of [null, 0, 1, 'true', [], {}]) {
+      await assert.rejects(save(alice, { ...progress(), songHintUsed }, 'invalid-song-hint'), { code: '23514' });
+    }
+    await role(bob);
+    assert.equal(await load(bob, 'song-hint'), null, 'song usage belongs to its account');
   } finally { await db.close(); }
 });
