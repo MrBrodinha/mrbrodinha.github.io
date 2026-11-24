@@ -3,6 +3,7 @@ import { Navigate, Routes, Route } from 'react-router-dom';
 import Home from './components/home/Home';
 import { AuthProvider } from './auth/AuthProvider';
 import SiteLayout from './components/layout/SiteLayout';
+import TestingAccess from './components/testing/TestingAccess';
 import './App.css';
 
 const Redbull = lazy(() => import('./components/redbull/Redbull'));
@@ -16,6 +17,9 @@ const BrodlePractice = lazy(() => import('./components/brodle/BrodlePractice'));
 const MyMelodies = lazy(() => import('./components/brodle/library/MyMelodies'));
 const BrodleAdmin = lazy(() => import('./components/brodle/admin/BrodleAdmin'));
 const MelodyCreator = lazy(() => import('./components/brodle/creator/MelodyCreator'));
+const Testing = lazy(() => import('./components/testing/Testing'));
+const TestingNotFound = lazy(() => import('./components/testing/TestingNotFound'));
+const SheetEditor = lazy(() => import('./components/testing/sheet-editor/SheetEditor'));
 
 function App() {
   return (
@@ -33,6 +37,11 @@ function App() {
           <Route path="/crazy-wildlife" element={<CrazyWildlife />} />
           <Route path="/CrazyWildlife/*" element={<Navigate to="/crazy-wildlife" replace />} />
           <Route path="/redbull/*" element={<Redbull />} />
+          <Route path="/testing" element={<TestingAccess />}>
+            <Route index element={<Testing />} />
+            <Route path="sheet-editor" element={<SheetEditor />} />
+            <Route path="*" element={<TestingNotFound />} />
+          </Route>
           <Route path="/brodle" element={<Brodle />} />
           <Route path="/brodle/tutorial" element={<BrodlePractice />} />
           <Route path="/brodle/melodies" element={<MyMelodies />} />

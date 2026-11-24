@@ -1,0 +1,16 @@
+.testing-page {
+  flex: 1;
+  width: min(760px, 100%);
+  margin-inline: auto;
+  padding: clamp(24px, 5vw, 48px) 24px;
+  overflow-wrap: anywhere;
+}
+.testing-page h1 { margin: 0 0 16px; }
+.testing-page p { line-height: 1.6; }
+.testing-page a { color: var(--site-accent); text-underline-offset: 3px; }
+.testing-page a:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 4px; }
+.testing-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px; }
+.testing-empty, .testing-destinations { margin-top: 24px; padding: 20px; border: 1px solid var(--site-border); border-radius: 12px; background: var(--site-surface); }
+.testing-destinations { list-style: none; }
+.testing-destinations li + li { margin-top: 24px; }
+.testing-destinations p { margin-bottom: 0; color: var(--site-muted); }

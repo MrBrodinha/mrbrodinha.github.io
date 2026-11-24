@@ -11,6 +11,9 @@ const HOLD_THRESHOLD_MS = 180;
 const TAP_DECAY_SECONDS = .42;
 const TAP_DURATION_SECONDS = .45;
 
+export type ScheduledTone = { midi: number; time: number; duration: number; sustain?: boolean };
+export type AudioTimeline = { events: ScheduledTone[]; totalDuration: number };
+
 type Voice = {
   stop: (time?: number) => void;
   tap: () => void;
@@ -36,6 +39,9 @@ type HeldNote = {
 export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>[] = MELODY, defaultBpm = BPM) {
   const audioContext = useRef<AudioContext | null>(null);
   const masterGain = useRef<GainNode | null>(null);
+  const reverbEnabled = useRef(false);
+  const reverbImpulse = useRef<AudioBuffer | null>(null);
+  const reverbGraph = useRef<{ convolver: ConvolverNode; wet: GainNode } | null>(null);
   const volumeLevel = useRef(.6);
   const voices = useRef(new Set<Voice>());
   const sequenceVoices = useRef(new Set<Voice>());
@@ -53,9 +59,48 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
   const [soundProgress, setSoundProgress] = useState(0);
   const [usingSynthFallback, setUsingSynthFallback] = useState(false);
   const [volume, setVolumeState] = useState(60);
+  const [reverb, setReverbState] = useState(false);
   const [playing, setPlaying] = useState<string | null>(null);
   const [audioError, setAudioError] = useState('');
   const [pressedNotes, setPressedNotes] = useState<Set<number>>(new Set());
+
+  const clearReverb = useCallback(() => {
+    const graph = reverbGraph.current;
+    if (!graph) return;
+    masterGain.current?.disconnect(graph.convolver);
+    graph.convolver.disconnect();
+    graph.wet.disconnect();
+    reverbGraph.current = null;
+  }, []);
+
+  const connectReverb = useCallback((context: AudioContext, output: GainNode) => {
+    if (reverbGraph.current) return;
+    if (!reverbImpulse.current) {
+      const length = Math.ceil(context.sampleRate * .38);
+      const impulse = context.createBuffer(2, length, context.sampleRate);
+      for (let channel = 0; channel < 2; channel++) {
+        const samples = impulse.getChannelData(channel);
+        for (let index = 0; index < length; index++)
+          samples[index] = (Math.random() * 2 - 1) * (1 - index / length) ** 3;
+      }
+      reverbImpulse.current = impulse;
+    }
+    const convolver = context.createConvolver(), wet = context.createGain();
+    convolver.buffer = reverbImpulse.current;
+    wet.gain.value = .12;
+    output.connect(convolver);
+    convolver.connect(wet);
+    wet.connect(context.destination);
+    reverbGraph.current = { convolver, wet };
+  }, []);
+
+  const setReverb = useCallback((enabled: boolean) => {
+    reverbEnabled.current = enabled;
+    setReverbState(enabled);
+    const context = audioContext.current;
+    if (!enabled) clearReverb();
+    else if (context && context.state !== 'closed') connectReverb(context, masterGain.current!);
+  }, [clearReverb, connectReverb]);
 
   const updatePressedNotes = useCallback(() => {
     const notes = new Set([...heldNotes.current.values()].map((note) => note.midi));
@@ -82,9 +127,10 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
     });
     voices.current.forEach((voice) => voice.stop());
     voices.current.clear();
+    clearReverb();
     heldNotes.current.clear();
     updatePressedNotes();
-  }, [stopSequence, updatePressedNotes]);
+  }, [stopSequence, updatePressedNotes, clearReverb]);
 
   const ensureAudio = useCallback(() => {
     if (!audioContext.current) {
@@ -93,8 +139,9 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       masterGain.current.gain.value = volumeLevel.current;
       masterGain.current.connect(audioContext.current.destination);
     }
+    if (reverbEnabled.current) connectReverb(audioContext.current, masterGain.current!);
     return { context: audioContext.current, output: masterGain.current! };
-  }, []);
+  }, [connectReverb]);
 
   const getInstrument = useCallback((context: AudioContext, output: GainNode, choice: SampledPianoSound): Promise<Smplr> => {
     const cached = instruments.current.get(choice);
@@ -167,12 +214,13 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
     return { context, output, instrument };
   }, [ensureAudio, getInstrument]);
 
-  const createVoice = useCallback((context: AudioContext, output: GainNode, instrument: Smplr | null, midi: number, time: number, duration?: number) => {
+  const createVoice = useCallback((context: AudioContext, output: GainNode, instrument: Smplr | null, midi: number, time: number, duration?: number, options: { sustain?: boolean } = {}) => {
+    const gate = options.sustain ? 1 : .9;
     const cleanup = () => {
       voices.current.delete(voice);
       sequenceVoices.current.delete(voice);
     };
-    // Extreme Casual transpositions can exceed a sampler's MIDI map. Keep
+    // Arrangement pitches can exceed a sampler's MIDI map. Keep
     // those pitches exact with the synth instead of dropping or folding notes.
     if (instrument && midi >= 0 && midi <= 127) {
       let stopNote: (time?: number) => void = () => {};
@@ -184,8 +232,8 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       };
       voices.current.add(voice);
       stopNote = instrument.start({
-        note: midi, time, velocity: 80, ampRelease: .1,
-        duration: duration === undefined ? null : duration * .9,
+        note: midi, time, velocity: 80, ampRelease: options.sustain ? .015 : .1,
+        duration: duration === undefined ? null : duration * gate,
         stopId: `voice-${nextVoiceId.current++}`,
         onEnded: () => { voices.current.delete(voice); sequenceVoices.current.delete(voice); },
       });
@@ -225,8 +273,13 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
     oscillator.start(time);
     voices.current.add(voice);
     if (duration !== undefined) {
-      gain.gain.exponentialRampToValueAtTime(.0001, time + duration * .85);
-      oscillator.stop(time + duration * .9);
+      if (options.sustain) {
+        const release = Math.min(.03, duration * .2);
+        gain.gain.linearRampToValueAtTime(.18, time + Math.min(.02, duration * .2));
+        gain.gain.setValueAtTime(.18, time + duration - release);
+        gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
+      } else gain.gain.exponentialRampToValueAtTime(.0001, time + duration * .85);
+      oscillator.stop(time + duration * gate);
     } else {
       gain.gain.exponentialRampToValueAtTime(.12, time + HOLD_THRESHOLD_MS / 1000);
       gain.gain.exponentialRampToValueAtTime(.0001, time + TAP_DECAY_SECONDS);
@@ -234,16 +287,26 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
     return voice;
   }, []);
 
-  const playArrangement = useCallback(async (
-    parts: readonly (readonly PlayableStep[])[], id: string | null, bpm = defaultBpm,
-  ) => {
+  const runTimeline = useCallback(async (build: () => AudioTimeline, id: string | null, strict = true) => {
     stopAudio();
-    if (!parts.some((part) => part.length)) return;
     const request = playbackRequest.current;
     setPlaying(id);
     setAudioError('');
     try {
-      if (!Number.isFinite(bpm) || bpm <= 0) throw new Error('Invalid tempo.');
+      const requested = build();
+      // Freeze the accepted values before awaiting a sampler or resumed context.
+      const timeline = { totalDuration: requested.totalDuration, events: requested.events.map(event => ({ ...event })) };
+      if (
+        !Number.isFinite(timeline.totalDuration) || timeline.totalDuration < 0 ||
+        (strict && (timeline.totalDuration > 3600 || timeline.events.length > 4096)) ||
+        timeline.events.some(event =>
+          !Number.isFinite(event.time) || !Number.isFinite(event.duration) ||
+          event.time < 0 || event.duration <= 0 ||
+          event.time + event.duration > timeline.totalDuration + 1e-8 ||
+          !Number.isFinite(event.midi) ||
+          (strict && (!Number.isInteger(event.midi) || event.midi < 0 || event.midi > 127)),
+        )
+      ) throw new Error('Invalid audio timeline.');
       const { context, output, instrument } = await getAudio();
       if (request !== playbackRequest.current || context.state === 'closed') return;
       const schedule = (at: number, callback: () => void) => {
@@ -271,11 +334,11 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
         });
       };
       const start = context.currentTime + .03;
-      const { events, totalDuration } = arrangementTimeline(parts, bpm);
-      events.forEach(({ pitches, time, duration }) => {
-        for (const midi of pitches) sequenceVoices.current.add(createVoice(context, output, instrument, midi, start + time, duration));
-        highlight(pitches, start + time, true);
-        highlight(pitches, start + time + duration * .9, false);
+      const { events, totalDuration } = timeline;
+      events.forEach(({ midi, time, duration, sustain }) => {
+        sequenceVoices.current.add(createVoice(context, output, instrument, midi, start + time, duration, { sustain }));
+        highlight([midi], start + time, true);
+        highlight([midi], start + time + duration * (sustain ? 1 : .9), false);
       });
       const time = start + totalDuration;
       schedule(time, () => {
@@ -288,7 +351,18 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       stopAudio();
       setAudioError(error instanceof PianoSoundError ? error.message : 'Audio could not start. You can still enter and submit notes.');
     }
-  }, [createVoice, getAudio, stopAudio, updatePressedNotes, defaultBpm]);
+  }, [createVoice, getAudio, stopAudio, updatePressedNotes]);
+  const playTimeline = useCallback((timeline: AudioTimeline, id: string | null) => runTimeline(() => timeline, id), [runTimeline]);
+  const playArrangement = useCallback((parts: readonly (readonly PlayableStep[])[], id: string | null, bpm = defaultBpm) => {
+    if (!parts.some(part => part.length)) { stopAudio(); return Promise.resolve(); }
+    return runTimeline(() => {
+      const legacy = arrangementTimeline(parts, bpm);
+      return {
+        totalDuration: legacy.totalDuration,
+        events: legacy.events.flatMap(event => event.pitches.map(midi => ({ midi, time: event.time, duration: event.duration }))),
+      };
+    }, id, false);
+  }, [runTimeline, defaultBpm, stopAudio]);
 
   const playMelody = useCallback((melody: readonly PlayableStep[], id: string | null, bpm = defaultBpm) => playArrangement([melody], id, bpm), [playArrangement, defaultBpm]);
 
@@ -442,10 +516,11 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       const context = audioContext.current;
       audioContext.current = null;
       masterGain.current = null;
+      reverbImpulse.current = null;
       if (context && context.state !== 'closed') void context.close();
     };
   }, [stopAudio, releaseNote, releaseHeldNotes]);
 
-  return { sound, setSound, soundStatus, soundProgress, usingSynthFallback, retrySound, volume, setVolume,
-    playing, audioError, setAudioError, pressedNotes, playNotes, playMelody, playArrangement, startNote, releaseNote, stopAudio };
+  return { sound, setSound, soundStatus, soundProgress, usingSynthFallback, retrySound, volume, setVolume, reverb, setReverb,
+    playing, audioError, setAudioError, pressedNotes, playNotes, playMelody, playArrangement, playTimeline, startNote, releaseNote, stopAudio };
 }

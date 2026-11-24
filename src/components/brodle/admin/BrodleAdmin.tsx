@@ -58,6 +58,7 @@ function BrodleAdmin() {
   }
   return <LibraryShell title="Manage Brodle" intro="Review submissions and prepare the daily calendar.">
     {adminLoading ? <p role="status">Checking administrator access…</p> : !admin ? <section className="brodle-panel"><h2>Administrator access required</h2><p className="library-muted">{adminError ?? 'This area is reserved for Brodle administrators.'}</p>{!user && <Link className="creator-link" to="/login?next=%2Fbrodle%2Fadmin">Log in</Link>}</section> : <>
+      <p><Link className="creator-link" to="/testing">Testing</Link></p>
       <div className="library-tabs" role="group" aria-label="Manage melodies">{[['submitted','Submission inbox'],['approved','Approved'],['rejected','Returned'],['calendar','Daily calendar']].map(([value,label]) => <button key={value} aria-pressed={tab === value} disabled={Boolean(busy)} onClick={() => { audio.stopAudio(); setTab(value as MelodyStatus | 'calendar'); }}>{label}</button>)}</div>
       {tab === 'calendar' ? <ChallengeCalendar /> : <>
         <section className="brodle-panel library-toolbar" aria-label="Review controls"><div className="library-toolbar-actions"><button className="library-button library-button--quiet" disabled={loading || Boolean(busy)} onClick={() => void load()}><BrodleIcon name="restart" />Refresh submissions</button></div><div className="library-sound-controls"><PianoControls audio={audio} naming={naming} onNaming={setNaming} /></div></section>

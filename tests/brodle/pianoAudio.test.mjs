@@ -38,20 +38,29 @@ const { usePianoAudio } = await import(moduleUrl((await source('hooks/usePianoAu
 function mountAudio(t, initialContextState = 'running') {
   const contexts = [];
   const parameter = () => ({
-    value: 0,
-    setValueAtTime(value) { this.value = value; },
+    value: 0,events:[],
+    setValueAtTime(value,time) { this.value = value;this.events.push(['set',value,time]); },
     linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {},
     cancelScheduledValues() {}, setTargetAtTime() {},
   });
-  const node = () => ({ connect() {}, disconnect() {} });
+  const node = () => ({ connections:[], disconnects:[], connect(target) { this.connections.push(target); }, disconnect(target) { this.disconnects.push(target);this.connections=target?this.connections.filter(value=>value!==target):[]; } });
   class AudioContext {
     state = initialContextState;
     currentTime = 0;
     destination = node();
     oscillators = [];
+    gains = [];
+    convolvers = [];
+    buffers = [];
+    sampleRate = 48000;
     resumeCalls = 0;
     constructor() { contexts.push(this); }
-    createGain() { return { ...node(), gain: parameter() }; }
+    createGain() { const gain={ ...node(), gain: parameter() };this.gains.push(gain);return gain; }
+    createConvolver() { const convolver={...node(),buffer:null};this.convolvers.push(convolver);return convolver; }
+    createBuffer(channels,length,sampleRate) {
+      const data=Array.from({length:channels},()=>new Float32Array(length));
+      const buffer={numberOfChannels:channels,length,sampleRate,duration:length/sampleRate,getChannelData:channel=>data[channel]};this.buffers.push(buffer);return buffer;
+    }
     createOscillator() {
       const oscillator = { ...node(), frequency: parameter(), starts: [], stops: [], start(at) { this.starts.push(at); }, stop(at) { this.stops.push(at); } };
       this.oscillators.push(oscillator);
@@ -203,4 +212,43 @@ test('triplet playback schedules chords together, keeps rests and highlights, th
   assert.deepEqual(context.oscillators.slice(-2).map(voice => voice.starts[0]), [1.07, 1.07 + 4/9]);
   audio.stopAudio();
   assert.equal(playing.value, null);
+});
+
+test('opt-in exact timelines sustain ties fully, stagger voices and clean up sustained notes',async t=>{
+ const {audio,contexts}=mountAudio(t);
+ await audio.playTimeline({totalDuration:1,events:[{midi:60,time:0,duration:1,sustain:true},{midi:64,time:1/7,duration:2/7}]},'exact');
+ const voices=contexts[0].oscillators;assert.equal(voices.length,2);assert.equal(voices[0].stops[0],1.03);assert.equal(voices[1].starts[0],.03+1/7);assert.ok(contexts[0].gains[1].gain.events.some(e=>e[0]==='set'&&e[1]===.18&&Math.abs(e[2]-1)<1e-8),'full sustain retains a plateau until the final release');
+ audio.stopAudio();assert.ok(voices.every(v=>v.stops.at(-1)===undefined));
+});
+
+test('invalid exact timelines never create an audio device or schedule voices',async t=>{
+ const {audio,contexts,playing}=mountAudio(t);
+ for(const events of [[{midi:128,time:0,duration:1}],[{midi:60,time:NaN,duration:1}],[{midi:60,time:0,duration:2}],[{midi:60,time:0,duration:-1}],[{midi:60,time:-1,duration:1}]]){await audio.playTimeline({totalDuration:1,events},'invalid');assert.equal(playing.value,null);}
+ assert.equal(contexts.length,0);
+});
+
+
+test('light reverb is opt-in, lazy and preserves dry sound and exact note scheduling',async t=>{
+ const {audio,contexts}=mountAudio(t);assert.equal(audio.reverb,false);
+ audio.setReverb(true);assert.equal(contexts.length,0,'toggling never creates an audio device');
+ await audio.playTimeline({totalDuration:1,events:[{midi:60,time:0,duration:1,sustain:true}]},'reverb');
+ const context=contexts[0],convolver=context.convolvers[0],master=context.gains[0],wet=context.gains[1];
+ assert.equal(context.convolvers.length,1);assert.ok(master.connections.includes(context.destination));assert.ok(master.connections.includes(convolver));
+ assert.deepEqual(convolver.connections,[wet]);assert.deepEqual(wet.connections,[context.destination]);assert.equal(wet.gain.value,.12);
+ assert.equal(convolver.buffer.numberOfChannels,2);assert.ok(convolver.buffer.duration<.4);
+ assert.ok(convolver.buffer.getChannelData(0).some(value=>value!==0));
+ assert.deepEqual(context.oscillators[0].starts,[.03]);assert.deepEqual(context.oscillators[0].stops,[1.03]);
+ audio.setReverb(false);assert.equal(master.connections.includes(convolver),false);assert.equal(convolver.connections.length,0);assert.equal(wet.connections.length,0);
+ assert.deepEqual(context.oscillators[0].stops,[1.03],'effect toggles do not interrupt scheduled notes');
+ audio.setReverb(true);assert.equal(context.convolvers.length,2);assert.equal(context.buffers.length,1,'reuse the short impulse');
+ audio.setReverb(true);assert.equal(context.convolvers.length,2,'do not duplicate the effect');
+});
+
+test('Stop and unmount remove reverb tails, and subsequent playback restores the enabled effect',async t=>{
+ const {audio,contexts,unmount}=mountAudio(t);
+ await audio.playMelody(melody,'dry',120);const context=contexts[0];assert.equal(context.convolvers.length,0);
+ audio.setReverb(true);assert.equal(context.convolvers.length,1,'can enable during playback');
+ const first=context.convolvers[0];audio.stopAudio();assert.equal(first.connections.length,0);assert.ok(context.oscillators.every(voice=>voice.stops.at(-1)===undefined));
+ await audio.playMelody(melody,'wet',120);assert.equal(context.convolvers.length,2);assert.ok(context.convolvers[1].connections.length);
+ unmount();assert.equal(context.convolvers[1].connections.length,0);assert.equal(context.state,'closed');
 });
