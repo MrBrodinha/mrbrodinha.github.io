@@ -1,0 +1,1 @@
+import{j as t,L as e}from"./react-vendor-BqT2t67X.js";function s(){return t.jsxs("main",{className:"testing-page",children:[t.jsx("h1",{children:"Testing page not found"}),t.jsx("p",{children:"This experiment is not available."}),t.jsx(e,{to:"/testing",children:"Back to testing"})]})}export{s as default};
