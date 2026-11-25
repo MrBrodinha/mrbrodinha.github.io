@@ -45,7 +45,7 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
   const CHALLENGE = challenge;
   const { melody: MELODY, finalMelody: MELODY_FINAL, key: KEY, bpm, timeSignature } = challenge;
   const TARGET = useMemo(() => MELODY.flatMap((step, i) => step.midi === null || MELODY[i - 1]?.tieToNext?.includes(step.midi) ? [] : [step.midi]), [MELODY]);
-  const audio = usePianoAudio(MELODY, bpm);
+  const audio = usePianoAudio(MELODY, bpm, 'grand');
   const { soundStatus, playing, audioError, playNotes, stopAudio } = audio;
   const { progress, updateProgress, storageError, loading: progressLoading, status: progressStatus, accountProgress, retrySync } = useBrodleProgress(CHALLENGE.id, TARGET);
   const { guess, attempts, hintsUsed } = progress;
@@ -421,7 +421,7 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
                 </div>
               </>}
               <section className="keyboard-section" aria-label="Piano">
-                <PianoControls audio={audio} naming={noteNaming} onNaming={setNoteNaming} compact
+                <PianoControls audio={audio} naming={noteNaming} onNaming={setNoteNaming} compact allowInstrumentChange={false}
                   freePlay={finished ? undefined : { enabled: freePlay, onToggle: toggleFreePlay }} />
                 {!finished && <p id="piano-mode-status" className="sr-only" role="status">{freePlay
                   ? 'Try any piano key. Your guess stays unchanged.'

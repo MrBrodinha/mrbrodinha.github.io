@@ -10,8 +10,8 @@ export function tutorialSteps({ maxHints, finished, hasAttempts }: TutorialConte
       ? 'The piano is now yours to play freely. Replay the victory arrangement from the result panel to see and hear the complete melody.'
       : 'Tap a key to add a note, or hold it to sustain the sound. The keyboard shows only the complete C-to-C octaves needed for this melody. On phones, the Lower octave and Higher octave buttons above the keys switch pages when needed.' },
     { id: 'settings', title: 'Make the piano yours', description: finished
-      ? 'Switch between A–G and Dó–Si note names, choose an instrument, and adjust the volume here.'
-      : 'Free play lets you try keys without changing your guess; turn it off to continue entering notes. You can also switch between A–G and Dó–Si note names, choose an instrument, and adjust the volume.' },
+      ? 'Switch between A–G and Dó–Si note names and adjust the volume here. The instrument is Grand piano, with Synth as an automatic backup if it cannot load.'
+      : 'Free play lets you try keys without changing your guess; turn it off to continue entering notes. You can also switch between A–G and Dó–Si note names and adjust the volume. The instrument is Grand piano, with Synth as an automatic backup if it cannot load.' },
     ...(!finished ? [{ id: 'hints', title: 'Two separate ways to get help', description: (maxHints > 0
       ? `Add note permanently reveals the next correct note, up to ${maxHints} ${maxHints === 1 ? 'note' : 'notes'} in this puzzle. `
       : 'This short melody has no note reveals. ')

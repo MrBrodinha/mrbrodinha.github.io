@@ -31,6 +31,8 @@ test('the tour explains exact wins and optional assistance without mode controls
   assert.match(steps.find(step => step.id === 'staff').description, /original pitch and octave to win/);
   assert.match(steps.find(step => step.id === 'hints').description, /up to 3 notes/);
   assert.match(steps.find(step => step.id === 'hints').description, /recorded in your shared result/);
+  assert.match(steps.find(step => step.id === 'settings').description, /Grand piano, with Synth as an automatic backup/);
+  assert.doesNotMatch(steps.find(step => step.id === 'settings').description, /choose an instrument/);
   assert.doesNotMatch(JSON.stringify(steps), /Casual|Hard:|Mode locked|game mode/);
   assert.equal(tutorialSteps({ ...context, hasAttempts: true }).at(-1).id, 'attempts');
   assert.match(tutorialSteps({ ...context, maxHints: 0 }).find(step => step.id === 'hints').description, /no note reveals/);
@@ -40,6 +42,7 @@ test('completed rounds point to results and skip hidden draft, hint, and submit 
   const steps = tutorialSteps({ ...context, finished: true, hasAttempts: true });
   assert.deepEqual(steps.map(step => step.id), ['song', 'difficulty', 'keyboard', 'settings', 'attempts', 'result']);
   assert.match(steps.find(step => step.id === 'settings').description, /instrument/);
+  assert.match(steps.find(step => step.id === 'settings').description, /Grand piano, with Synth as an automatic backup/);
   assert.doesNotMatch(steps.find(step => step.id === 'settings').description, /Free play/);
 });
 

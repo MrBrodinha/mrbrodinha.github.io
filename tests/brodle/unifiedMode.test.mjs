@@ -74,7 +74,7 @@ const hostUrl = dataUrl(`
   audio.stopAudio = () => { audio.playing = null; };
   audio.playNotes = async (notes, id) => { audio.calls.push({ notes, id }); audio.playing = id; };
   audio.playArrangement = async (parts, id) => { audio.calls.push({ parts, id }); audio.playing = id; };
-  export const usePianoAudio = () => audio;
+  export const usePianoAudio = (...args) => { audio.options = args; return audio; };
   export const displayDate = value => value;
   export const lisbonDate = () => '2026-11-24';
   export const useDailyChallenge = () => ({});
@@ -100,6 +100,39 @@ const flatten = node => Array.isArray(node) ? node.flatMap(flatten) : node && ty
 const text = node => Array.isArray(node) ? node.map(text).join('') : node && typeof node === 'object' ? text(node.props?.children) : typeof node === 'string' || typeof node === 'number' ? String(node) : '';
 const render = () => { host.begin(); return flatten(Brodle({ challenge, notice: '', navigation: {} })); };
 const button = (nodes, label) => nodes.find(node => node.type === 'button' && text(node).startsWith(label));
+
+test('Brodle fixes Grand piano and preserves note naming, volume and free play without an instrument picker', () => {
+  host.reset(emptyProgress());
+  const nodes = render();
+  assert.deepEqual(host.audio.options, [melody, 120, 'grand']);
+  const controls = nodes.find(node => node.props?.audio === host.audio);
+  assert.equal(controls.props.allowInstrumentChange, false);
+  assert.equal(controls.props.freePlay.enabled, false);
+  assert.equal(typeof controls.props.onNaming, 'function');
+});
+
+const { default: PianoControls } = await import(await sourceUrl('components/PianoControls.tsx', {
+  './BrodleIcon': dummyUrl,
+  '../lib/pianoSounds': dataUrl("export const PIANO_SOUNDS = { grand: 'Grand piano', synth: 'Synth', electric: 'Electric piano' };"),
+}));
+test('fixed piano controls render Grand or automatic Synth backup, retain retry, and offer no instrument choices', () => {
+  for (const failed of [false, true]) {
+    const markup = renderToStaticMarkup(createElement(PianoControls, {
+      audio: { sound: 'grand', soundStatus: failed ? 'error' : 'ready', usingSynthFallback: failed, volume: 60, retrySound() {} },
+      naming: 'letters', onNaming() {}, allowInstrumentChange: false,
+      freePlay: { enabled: false, onToggle() {} },
+    }));
+    assert.doesNotMatch(markup, /<select|Use Synth|Electric piano/);
+    assert.match(markup, /A–G/);
+    assert.match(markup, /Volume/);
+    assert.match(markup, /Free play/);
+    assert.match(markup, failed ? /Synth \(backup\)/ : /Grand piano/);
+    if (failed) {
+      assert.match(markup, /Using Synth so you can keep playing/);
+      assert.match(markup, /Retry sound/);
+    }
+  }
+});
 
 function globals(t, values) {
   const originals = new Map(Object.keys(values).map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)]));
