@@ -71,3 +71,8 @@ test('accepted timeline snapshots cannot be changed while waiting for a sampler'
 test('Studio fixes Grand on devices that default to Synth and prevents manual instrument changes',t=>{
  const f=mount(t);assert.equal(f.audio.sound,'grand');f.audio.setSound('synth');assert.equal(f.render().sound,'grand');f.audio.setSound('electric');assert.equal(f.render().sound,'grand');
 });
+
+test('shared game playback honors expressive durations instead of the default short tap envelope',async t=>{
+ const f=mount(t),pending=f.audio.playMelody([{midi:60,beats:1,tieToNext:[60]},{midi:60,beats:1},{midi:64,beats:2,staccato:true}],'song',120);
+ f.resolve();await pending;assert.deepEqual(f.starts.map(note=>note.note),[60,64]);assert.deepEqual(f.starts.map(note=>note.duration),[1,.5]);
+});

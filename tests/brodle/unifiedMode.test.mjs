@@ -181,3 +181,14 @@ test('song listening records help independently; own playback and free play do n
   assert.equal(host.state.progress.hintsUsed, 1);
   assert.equal(host.state.progress.songHintUsed, true);
 });
+
+test('expressive tied melody wins by entering only the two attacked pitches',t=>{
+ globals(t,{requestAnimationFrame:()=>1});
+ const expressive=[{midi:60,beats:1,length:'1',rhythm:'Quarter',tieToNext:[60]},{midi:60,beats:1,length:'1',rhythm:'Quarter'},{midi:64,beats:2,length:'2',rhythm:'Half',staccato:true}];
+ const round={...challenge,melody:expressive,finalMelody:expressive};host.reset(emptyProgress());
+ const view=()=>{host.begin();return flatten(Brodle({challenge:round,notice:'',navigation:{}}));};
+ let nodes=view();for(const pitch of [60,64]){nodes.find(node=>node.props.onNote).props.onNote(pitch);nodes=view();}
+ assert.deepEqual(host.state.progress.guess,[60,64]);assert.equal(button(nodes,'Submit').props.disabled,false);
+ const sheet=nodes.find(node=>node.type===SheetStub);assert.deepEqual(sheet.props.feedbackIndices,[0,0,1]);
+ button(nodes,'Submit').props.onClick();nodes=view();assert.equal(isFinished(host.state.progress),true);assert.equal(button(nodes,'Submit'),undefined);
+});

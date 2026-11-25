@@ -14,7 +14,7 @@ import { usePianoAudio } from './hooks/usePianoAudio';
 import { useBrodleProgress } from './hooks/useBrodleProgress';
 import { canSubmitGuess, copyAttemptToDraft, editProgressGuess, guessFeedback, guessRangeIssues, hintLimit, isFinished, noteConstraints, replaceGuessNote, revealNextHint, markSongHintUsed, winningAttempt } from './lib/gameProgress';
 import {
-  noteName, scoreGuess, notationForGuess, melodyForGuess,
+  noteName, scoreGuess, notationForGuess, melodyForGuess, melodyAttackIndices,
   buildShareText, getWinKind, challengePianoRange,
 } from './lib/musicGame';
 import type { Attempt, Feedback, MelodyStep, MusicalKey, NoteNaming } from './lib/musicGame';
@@ -32,10 +32,10 @@ const EMPTY_PRESSED_NOTES = new Set<number>();
 
 function notationLabel(notes: readonly number[], naming: NoteNaming, MELODY: readonly MelodyStep[], feedback: readonly (Feedback | undefined)[] | undefined, key: MusicalKey): string {
   if (!notes.length) return 'Empty staff. Use the piano to enter your guess.';
-  let position = 0;
-  return melodyForGuess(notes, MELODY).map((step) => {
+  const sequence = melodyForGuess(notes, MELODY), indices = melodyAttackIndices(sequence);
+  return sequence.map((step, i) => {
     if (step.midi === null) return step.rhythm;
-    const index = position++;
+    const index = indices[i]!;
     const status = feedback?.[index];
     return `Note ${index + 1}: ${noteName(step.midi, naming, key)}${status ? `, ${feedbackLabels[status]}` : ''}`;
   }).join('. ');
@@ -44,7 +44,7 @@ function notationLabel(notes: readonly number[], naming: NoteNaming, MELODY: rea
 function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; notice: string; navigation: ChallengeNavigationProps }) {
   const CHALLENGE = challenge;
   const { melody: MELODY, finalMelody: MELODY_FINAL, key: KEY, bpm, timeSignature } = challenge;
-  const TARGET = useMemo(() => MELODY.flatMap((step) => step.midi === null ? [] : [step.midi]), [MELODY]);
+  const TARGET = useMemo(() => MELODY.flatMap((step, i) => step.midi === null || MELODY[i - 1]?.tieToNext?.includes(step.midi) ? [] : [step.midi]), [MELODY]);
   const audio = usePianoAudio(MELODY, bpm);
   const { soundStatus, playing, audioError, playNotes, stopAudio } = audio;
   const { progress, updateProgress, storageError, loading: progressLoading, status: progressStatus, accountProgress, retrySync } = useBrodleProgress(CHALLENGE.id, TARGET);

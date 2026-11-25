@@ -41,7 +41,6 @@ test('unsupported music stays saved but cannot be silently simplified for Brodle
  for(const [steps,options,issue] of [
   [[{midi:60,pitches:[60,64],duration:'whole'}],{},/single notes/],
   [[{midi:24,duration:'whole'}],{},/G1 and G7/],
-  [[{midi:60,duration:'whole',staccato:true}],{},/staccato/],
   [[{midi:60,duration:'whole'}],{staffs:[{id:'a',clef:'treble',steps:[{midi:60,duration:'whole'}]},{id:'b',clef:'bass',steps:[{midi:36,duration:'whole'}]}]},/one staff/],
  ]){
   const draft=ready();delete draft.document.main.notation;draft.document.main.score=scoreCode(steps,options);assert.match(studio.studioSubmissionIssue(draft),issue);const payload=studio.studioPayload(draft);assert.deepEqual(payload.notes,[]);assert.equal(payload.studio_document.main.score,draft.document.main.score);

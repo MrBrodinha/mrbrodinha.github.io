@@ -18,9 +18,12 @@ Supabase project's SQL Editor:
 11. `database/migrations/202611110016_brodle_triplets.sql`
 12. `database/migrations/202611130017_brodle_hint_mode_lock.sql`
 13. `database/migrations/202611250018_melody_studio_documents.sql`
+14. `database/migrations/202611250019_brodle_expressions.sql`
 
-If Brodle is already set up through `0016`, run **`0017` and `0018`** before
-deploying this frontend. If `0017` is already applied, run only **`0018`**.
+If Brodle is already set up through `0016`, run **`0017`, `0018` and `0019`** before
+deploying this frontend. If `0017` is already applied, run **`0018` and `0019`**.
+If `0018` is already applied, run only **`0019`**. It validates expressive note
+metadata and Game monophony without rewriting existing snapshots.
 Migration `0017` saves challenge-song hint usage without letting stale devices
 or older clients erase it, preserving assistance disclosure across devices.
 Migration `0016` validates complete eighth- and quarter-note triplets in challenge
@@ -113,8 +116,10 @@ Submit's “For future Brodles” explanation appears on hover or keyboard focus
 Until Brodle's game format is extended, submission requires a single-note Game
 staff, up to two Victory staffs with Treble/Bass clefs, game-supported meters and
 G1–G7 pitches, and representable tempo/rhythm. Eighth/quarter 3:2 triplets work;
-other tuplets, authored ties, staccato and arpeggios stay losslessly saved but block
-submission. Tempo beat units are converted to equivalent quarter-note BPM only
+other tuplets stay losslessly saved but block submission. Staccato, authored ties
+and Victory arpeggios are supported through optional note metadata after migration
+`0019`. Game remains monophonic: tied continuations share one guess, feedback and
+selection position. Players enter pitches only; articulation and timing are supplied. Tempo beat units are converted to equivalent quarter-note BPM only
 when exact and within 20–400. Nothing is silently dropped to publish a melody.
 
 ## Author workflow

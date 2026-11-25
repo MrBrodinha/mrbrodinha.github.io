@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from 'react';
 import { attemptSummary, feedbackLabels } from '../lib/feedback';
-import { melodyForGuess, notationForGuess, noteName } from '../lib/musicGame';
+import { melodyForGuess, notationForGuess, noteName, melodyAttackIndices } from '../lib/musicGame';
 import type { Attempt, MelodyStep, MusicalKey, NoteNaming, TimeSignature } from '../lib/musicGame';
 import BrodleIcon from './BrodleIcon';
 import FeedbackLegend from './FeedbackLegend';
@@ -30,10 +30,10 @@ function AttemptScore({ attempt, melody, musicalKey, naming, timeSignature, bpm 
   const key = musicalKey;
   const notation = useMemo(() => notationForGuess(attempt.notes, naming, melody, key, timeSignature, bpm),
     [attempt, naming, melody, key, timeSignature, bpm]);
-  let position = 0;
-  const label = melodyForGuess(attempt.notes, melody).map((step) => {
+  const sequence = melodyForGuess(attempt.notes, melody), indices = melodyAttackIndices(sequence);
+  const label = sequence.map((step, i) => {
     if (step.midi === null) return step.rhythm;
-    const note = position++;
+    const note = indices[i]!;
     return `Note ${note + 1}: ${noteName(step.midi, naming, key)}, ${feedbackLabels[attempt.feedback[note]]}`;
   }).join('. ');
 

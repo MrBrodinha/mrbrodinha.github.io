@@ -40,7 +40,7 @@ class LiteralReader {
         const key = this.text.slice(this.position).match(/^[A-Za-z_][A-Za-z0-9_]*/)?.[0];
         const name = key ?? this.literal(depth + 1);
         if (key) this.position += key.length;
-        if (typeof name !== 'string' || !['midi', 'beats', 'pitches', 'length', 'rhythm', 'triplet'].includes(name)) this.fail('Unknown note field');
+        if (typeof name !== 'string' || !['midi', 'beats', 'pitches', 'length', 'rhythm', 'triplet', 'staccato', 'arpeggio', 'tieToNext'].includes(name)) this.fail('Unknown note field');
         if (Object.prototype.hasOwnProperty.call(object, name)) this.fail(`Duplicate ${name} field`);
         if (!this.take(':')) this.fail('Expected : after the field name');
         object[name] = this.literal(depth + 1);
@@ -48,6 +48,7 @@ class LiteralReader {
       }
       return object;
     }
+    for (const [word,value] of [['true',true],['false',false]] as const) { if (this.text.slice(this.position).match(new RegExp('^'+word+'\\b'))) { this.position+=word.length;return value; } }
     const quote = this.text[this.position];
     if (quote === "'" || quote === '"') {
       this.position++;

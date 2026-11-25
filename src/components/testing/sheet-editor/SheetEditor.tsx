@@ -84,7 +84,7 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
     staff = score.staffs.find((s) => s.id === state.active)!,
     events = staff.events,
     ref = primary(state);
-  const invalidGameLayout = gameMelody && (score.staffs.length !== 1 || score.staffs[0].clef !== 'treble');
+  const invalidGameLayout = gameMelody && (score.staffs.length !== 1 || score.staffs[0].clef !== 'treble' || score.staffs[0].events.some(event=>eventTones(event).length>1));
   const selectedStaff = score.staffs.find((s) => s.id === (ref?.staffId ?? state.rest?.staffId));
   const selected = selectedStaff?.events.find(
     (e) => e.id === (ref?.eventId ?? state.rest?.eventId),
@@ -225,7 +225,7 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
     const previous = now.current,
       command = { ...action, revision: state.revision, context: state.context },
       next = scoreReducer(previous, command);
-    if (gameMelody && (next.score.staffs.length !== 1 || next.score.staffs[0].clef !== 'treble')) return;
+    if (gameMelody && (next.score.staffs.length !== 1 || next.score.staffs[0].clef !== 'treble' || next.score.staffs[0].events.some(event=>eventTones(event).length>1))) return;
     now.current = next;
     dispatch(command);
     const caretMoved = action.type === 'pitch-step' && next.pitch !== previous.pitch;
@@ -313,6 +313,7 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
         throw new Error('The score changed. Reset the draft before applying.');
       const parsed = parseSheetCode(displayed);
       if (gameMelody && (parsed.staffs.length !== 1 || parsed.staffs[0].clef !== 'treble')) throw new Error('Game melody must have exactly one staff in Treble clef.');
+      if (gameMelody && parsed.staffs[0].steps.some(step => (step.pitches?.length ?? 0)>1)) throw new Error('Game melody uses single notes only. Put chords in Victory melody.');
       const action: Action = {
           type: 'apply',
           value: parsed,
@@ -493,7 +494,7 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
       </dialog>}
       {children}
       <div className="sheet-editor-panel" id={labelledBy ? 'studio-score-panel' : undefined} role={labelledBy ? 'tabpanel' : undefined} aria-labelledby={labelledBy}>
-        {invalidGameLayout && <p role="alert" className="studio-save-error">This saved Game melody has an unsupported staff layout. Your music is preserved in Melody code. Keep exactly one Treble staff there before continuing, or reset the score.</p>}
+        {invalidGameLayout && <p role="alert" className="studio-save-error">This saved Game melody has an unsupported staff layout. Your music is preserved in Melody code. Keep exactly one Treble staff with single notes there before continuing, or reset the score.</p>}
         <div className="studio-command-row">
           <div className="sheet-editor-tools studio-mode" role="group" aria-label="Editor mode">
             <button type="button" aria-label="Write" aria-keyshortcuts="N" aria-pressed={state.mode === 'place'} disabled={locked} onClick={() => switchMode('place')}><BrodleIcon name="music" />Write</button>
@@ -675,6 +676,7 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
         {!invalidGameLayout && <EditableStaff
           zoom={zoom}
           fixedClef={gameMelody}
+          allowChords={!gameMelody}
           entryKind={state.entryKind}
           staffActions={gameMelody ? undefined : <div className="studio-add-staff"><button type="button" className="studio-add-staff-button" data-studio-panel data-add-staff aria-label="Add staff" aria-haspopup="dialog" aria-expanded={panel === 'add-staff'} disabled={locked || score.staffs.length >= 4} onClick={event => togglePanel('add-staff', event.currentTarget)}>
             <svg width="26" height="24" viewBox="0 0 26 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">

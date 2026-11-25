@@ -3,7 +3,7 @@ import type { MelodyStep, MusicalKey, NoteNaming, TimeSignature } from './musicG
 
 export type Clef = 'treble' | 'bass';
 export type VictoryStep = MelodyStep & { pitches?: number[] };
-export type PlayableStep = Pick<VictoryStep, 'midi' | 'beats' | 'pitches' | 'triplet'>;
+export type PlayableStep = Pick<VictoryStep, 'midi' | 'beats' | 'pitches' | 'triplet' | 'staccato' | 'arpeggio' | 'tieToNext'>;
 export const VICTORY_MIN_MIDI = PIANO_MIN_MIDI;
 export const VICTORY_MAX_MIDI = PIANO_MAX_MIDI;
 export const stepPitches = (step: PlayableStep): readonly number[] => step.pitches ?? (step.midi === null ? [] : [step.midi]);
@@ -32,30 +32,53 @@ export function restoreVictoryNotes(raw: unknown, limit = 512): VictoryStep[] {
       pitches = [...step.pitches];
       if (pitches.some((pitch, index) => index > 0 && pitch <= pitches![index - 1]) || step.midi !== pitches[0]) throw new Error('Invalid chord pitches');
     }
-    return { midi: step.midi, beats: step.beats, length: abcLength(step.beats), rhythm: `${rhythms[step.beats]}${step.triplet !== undefined ? ' triplet' : ''} ${pitches ? 'chord' : step.midi === null ? 'rest' : 'note'}`, ...(pitches ? { pitches } : {}), ...(Object.prototype.hasOwnProperty.call(step, 'triplet') ? { triplet: step.triplet } : {}) };
+    return { midi: step.midi, beats: step.beats, length: abcLength(step.beats), rhythm: `${rhythms[step.beats]}${step.triplet !== undefined ? ' triplet' : ''} ${pitches ? 'chord' : step.midi === null ? 'rest' : 'note'}`, ...(pitches ? { pitches } : {}), ...(step.staccato !== undefined ? {staccato:step.staccato} : {}), ...(step.arpeggio !== undefined ? {arpeggio:step.arpeggio} : {}), ...(step.tieToNext !== undefined ? {tieToNext:Array.isArray(step.tieToNext)?[...step.tieToNext]:step.tieToNext} : {}), ...(Object.prototype.hasOwnProperty.call(step, 'triplet') ? { triplet: step.triplet } : {}) };
   });
   validateTriplets(notes);
+  validateExpressions(notes);
   return notes;
 }
 export function transposeVictory(part: readonly VictoryStep[], offset: number): VictoryStep[] {
-  return part.map((step) => ({ ...step, midi: step.midi === null ? null : step.midi + offset, ...(step.pitches ? { pitches: step.pitches.map((pitch) => pitch + offset) } : {}) }));
+  return part.map((step) => ({ ...step, midi: step.midi === null ? null : step.midi + offset, ...(step.pitches ? { pitches: step.pitches.map((pitch) => pitch + offset) } : {}), ...(step.tieToNext ? {tieToNext:step.tieToNext.map(pitch=>pitch+offset)} : {}) }));
+}
+export function validateExpressions(notes: readonly PlayableStep[]) {
+  for (const [i, step] of notes.entries()) {
+    const pitches = stepPitches(step);
+    if (step.staccato !== undefined && (typeof step.staccato !== 'boolean' || !pitches.length)) throw new Error('Invalid staccato');
+    if (step.arpeggio !== undefined && (!['up','down'].includes(step.arpeggio) || pitches.length < 2)) throw new Error('Invalid arpeggio');
+    if (step.tieToNext !== undefined) {
+      if (!Array.isArray(step.tieToNext) || !step.tieToNext.length || step.tieToNext.length > 8 || step.tieToNext.some((pitch,j,a) => !Number.isInteger(pitch) || (j>0 && pitch<=a[j-1]) || !pitches.includes(pitch) || !stepPitches(notes[i+1] ?? {midi:null,beats:1}).includes(pitch))) throw new Error('Invalid tie destination');
+    }
+  }
 }
 export function arrangementTimeline(parts: readonly (readonly PlayableStep[])[], bpm: number) {
   if (!Number.isFinite(bpm) || bpm <= 0) throw new Error('Invalid tempo');
-  const events: { pitches: readonly number[]; time: number; duration: number }[] = [];
+  const events: { pitches: readonly number[]; time: number; duration: number; sustain?: boolean }[] = [];
   let totalDuration = 0;
   for (const part of parts) {
     let ticks = 0;
-    for (const step of part) {
-      const duration = stepTicks(step) / RHYTHM_TICKS * 60 / bpm;
-      const pitches = stepPitches(step);
-      if (pitches.length) events.push({ pitches, time: ticks / RHYTHM_TICKS * 60 / bpm, duration });
-      ticks += stepTicks(step);
+    const starts = part.map(step => {const start=ticks;ticks+=stepTicks(step);return start;});
+    const seconds = (ticks:number) => ticks/RHYTHM_TICKS*60/bpm;
+    for (const [i,step] of part.entries()) {
+      const pitches=stepPitches(step),attacks=pitches.filter(pitch => !part[i-1]?.tieToNext?.includes(pitch));
+      const ordered=[...attacks].sort((a,b)=>(a-b)*(step.arpeggio==='down'?-1:1));
+      const spread=step.arpeggio&&ordered.length>1?Math.min(.12,seconds(stepTicks(step))/3):0;
+      if (!step.staccato && !step.arpeggio && !step.tieToNext && attacks.length===pitches.length) {
+        if(pitches.length)events.push({pitches,time:seconds(starts[i]),duration:seconds(stepTicks(step))});
+        continue;
+      }
+      for(const pitch of attacks){
+        let end=starts[i]+stepTicks(step),cursor=i,tied=false;
+        while(part[cursor]?.tieToNext?.includes(pitch)&&part[cursor+1]&&stepPitches(part[cursor+1]).includes(pitch)){cursor++;end=starts[cursor]+stepTicks(part[cursor]);tied=true;}
+        const time=seconds(starts[i])+(ordered.length>1?ordered.indexOf(pitch)*spread/(ordered.length-1):0);
+        events.push({pitches:[pitch],time,duration:(seconds(end)-time)*(step.staccato && !tied ? .5 : 1),sustain:true});
+      }
     }
-    totalDuration = Math.max(totalDuration, ticks / RHYTHM_TICKS * 60 / bpm);
+    totalDuration=Math.max(totalDuration,seconds(ticks));
   }
-  return { events: events.sort((a,b) => a.time-b.time), totalDuration };
+  return {events:events.sort((a,b)=>a.time-b.time),totalDuration};
 }
+
 export function victoryNotation(main: readonly VictoryStep[], second: readonly VictoryStep[], naming: NoteNaming,
   key: MusicalKey, bpm: number, meter: TimeSignature, mainClef: Clef = 'treble', secondClef: Clef = 'bass', showSecond = second.length > 0): string {
   return victoryScore(main, second, naming, key, bpm, meter, mainClef, secondClef, showSecond).abc;

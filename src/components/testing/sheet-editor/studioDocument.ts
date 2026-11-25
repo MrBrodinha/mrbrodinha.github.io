@@ -59,9 +59,8 @@ function partNotes(score: Score, staffIndex: number, challenge: boolean) {
     const tones = eventTones(event), pitches = tones.map(t => pitchMidi(t.spelling)).sort((a,b) => a-b);
     if (challenge && pitches.length > 1) throw new Error('Game melody must use single notes. Chords can go in Victory melody.');
     if (pitches.some(p => p < 31 || p > 103)) throw new Error('For Brodle, keep notes between G1 and G7.');
-    if (event.staccato || event.arpeggio || tones.some(t => t.tieToNext)) throw new Error('Brodle does not yet support staccato, arpeggios or authored ties. They remain saved in your draft.');
     if (event.tuplet && (event.tuplet.count !== 3 || event.tuplet.inTimeOf !== 2 || !['eighth','quarter'].includes(event.duration))) throw new Error('For Brodle, tuplets must be eighth-note or quarter-note triplets. Other tuplets remain saved in your draft.');
-    return { midi: pitches[0] ?? null, ...(pitches.length > 1 ? { pitches } : {}), beats: NOTE_TICKS[event.duration] / TICKS_PER_BEAT * (event.dotted ? 1.5 : 1), ...(event.tuplet ? { triplet: event.tuplet.index } : {}) };
+    return { midi: pitches[0] ?? null, ...(pitches.length > 1 ? { pitches } : {}), ...(event.staccato ? {staccato:true} : {}), ...(event.arpeggio ? {arpeggio:event.arpeggio} : {}), ...(tones.some(t=>t.tieToNext)?{tieToNext:tones.filter(t=>t.tieToNext).map(t=>pitchMidi(t.spelling)).sort((a,b)=>a-b)}:{}), beats: NOTE_TICKS[event.duration] / TICKS_PER_BEAT * (event.dotted ? 1.5 : 1), ...(event.tuplet ? { triplet: event.tuplet.index } : {}) };
   });
   const notes = restoreVictoryNotes(stored);
   validateTriplets(notes, true);
@@ -109,7 +108,7 @@ export function studioFromRecord(row: MelodyRecord): StudioDraft {
   const convert = (main: boolean) => {
     const parts: VictoryStep[][] = main ? [old.melody] : [old.finalMelody ?? [], old.finalBass ?? []].filter(part => part.length);
     if (!parts.length || !parts.some(part => part.some(step => step.midi !== null))) return result.document.final;
-    const input = { bpm: main ? old.bpm : old.finalBpm ?? old.bpm, key: main ? old.key : old.finalKey ?? old.key, meter: { numerator: Number(old.timeSignature.split('/')[0]), denominator: Number(old.timeSignature.split('/')[1]) as Meter['denominator'] }, staffs: parts.map((steps, index) => ({ id: 'staff-'+(index+1), clef: main ? 'treble' as const : index ? old.finalBassClef ?? 'bass' : old.finalClef ?? 'treble', steps: steps.map((step, stepIndex) => ({ midi: step.midi, ...(step.pitches ? { pitches: step.pitches } : {}), beats: step.beats, ...(step.triplet ? { duration: step.beats === .5 ? 'eighth' as const : 'quarter' as const, tuplet: { id: 'legacy-'+(stepIndex - (step.triplet - 1)), count: 3, inTimeOf: 2, index: step.triplet } } : {}) })) })) };
+    const input = { bpm: main ? old.bpm : old.finalBpm ?? old.bpm, key: main ? old.key : old.finalKey ?? old.key, meter: { numerator: Number(old.timeSignature.split('/')[0]), denominator: Number(old.timeSignature.split('/')[1]) as Meter['denominator'] }, staffs: parts.map((steps, index) => ({ id: 'staff-'+(index+1), clef: main ? 'treble' as const : index ? old.finalBassClef ?? 'bass' : old.finalClef ?? 'treble', steps: steps.map((step, stepIndex) => ({ midi: step.midi, ...(step.pitches ? { pitches: step.pitches } : {}), beats: step.beats, ...(step.staccato ? {staccato:true} : {}), ...(step.arpeggio ? {arpeggio:step.arpeggio} : {}), ...(step.tieToNext ? {tieToNext:step.tieToNext} : {}), ...(step.triplet ? { duration: step.beats === .5 ? 'eighth' as const : 'quarter' as const, tuplet: { id: 'legacy-'+(stepIndex - (step.triplet - 1)), count: 3, inTimeOf: 2, index: step.triplet } } : {}) })) })) };
     // Legacy scores may stop inside a bar; the editor import pads them.
     const score = importScore(initialScore(), input, 'legacy:');
     if (!score) throw new Error('This older melody cannot be opened losslessly in Studio. Open it in the classic composer.');

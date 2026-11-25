@@ -3,7 +3,7 @@ export type TutorialStep = { id: string; title: string; description: string; sel
 
 export function tutorialSteps({ maxHints, finished, hasAttempts }: TutorialContext): TutorialStep[] {
   return [
-    { id: 'song', title: 'The melody to rebuild', description: 'The title and source identify the melody to reconstruct. Enter its notes in order on the piano, including the original octaves. Rhythm and rests are already filled in. There is one set of rules; using optional help is recorded in your shared result.' },
+    { id: 'song', title: 'The melody to rebuild', description: 'The title and source identify the melody to reconstruct. Enter its notes in order on the piano, including the original octaves. Rhythm and rests are already filled in. Timing and articulation are handled for you; tied continuations need no extra key press. There is one set of rules; using optional help is recorded in your shared result.' },
     { id: 'difficulty', title: 'How challenging is this melody?', description: 'Very Easy, Easy, Medium, Hard, and Very Hard estimate how challenging the pitches are to reconstruct. Note count and pitch variety matter most; pitch span and interval jumps also contribute. Rhythm and rests are already filled in. Difficulty does not change the rules or available hints.' },
     ...(!finished ? [{ id: 'staff', title: 'Build and edit your guess', description: 'Your piano notes appear on this staff. Select a note, then press a piano key to replace it. Every note must match the original pitch and octave to win. A notice above the sheet helps when your whole melody is shifted. Listen plays your current guess without submitting it.' }] : []),
     { id: 'keyboard', title: 'Play the notes here', description: finished

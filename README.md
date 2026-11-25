@@ -83,8 +83,10 @@ When that browser draft contains work, Studio offers a link to reopen it.
 Apply `database/migrations/202611250018_melody_studio_documents.sql` after earlier
 Brodle migrations to enable cloud Studio saves. The migration adds private, lossless
 source documents and optimistic saves to the existing melody library. It does not
-rewrite existing melodies or daily snapshots. Unsupported notation is retained in
-drafts and explicitly blocks submission until Brodle can represent it.
+rewrite existing melodies or daily snapshots. Migration `202611250019_brodle_expressions.sql` adds validated staccato, authored
+ties and Victory arpeggios. Game notes remain monophonic and tied continuations
+share one guessed pitch; players never need to reproduce articulation. Unsupported
+meters/tuplets are retained in drafts and explicitly block submission.
 
 The dark studio layout groups musical icon controls above a
 centered score, with compact zoom and reverb controls beside it. A collapsed

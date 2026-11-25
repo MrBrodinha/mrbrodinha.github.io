@@ -684,3 +684,12 @@ test('key picker groups modes and Write accidentals toggle back to key-following
  page.button('Natural').onClick();page.render();assert.equal(page.button('Natural')['aria-pressed'],false);
  page.staff().onPlace({tick:2*model.NOTE_TICKS.quarter,pitch:65});page.render();assert.equal(page.staff().events[2].midi,66);
 });
+
+test('Game rejects chord actions and code while Victory still accepts the same chord',t=>{
+ const props={gameMelody:true},page=mount(t,props);
+ page.staff().onPlace({tick:0,pitch:60});page.render();const event=page.staff().events[0],before=code(page).value;
+ page.staff().onAddTone({kind:'add-tone',eventId:event.id,pitch:64,staffId:page.staff().activeStaffId});page.render();assert.equal(code(page).value,before);
+ const chord="const BPM=120;const KEY='C';const TIME_SIGNATURE='4/4';const STAVES=[{id:'a',clef:'treble',steps:[{midi:60,pitches:[60,64],duration:'whole'}]}];";
+ code(page).onChange(chord);page.render();code(page).onApply();page.render();assert.match(code(page).error,/single notes only/);assert.equal(page.staff().events[0].midi,60);
+ props.gameMelody=false;page.render();code(page).onApply();page.render();assert.equal(model.eventTones(page.staff().events[0]).length,2);
+});

@@ -19,7 +19,7 @@ export type MelodyRecord = {
   studio_document?: StudioDocument | null;
   created_at: string; updated_at: string;
 };
-export type StoredNote = Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>;
+export type StoredNote = Pick<MelodyStep, 'midi' | 'beats' | 'triplet' | 'staccato' | 'arpeggio' | 'tieToNext'>;
 export type StoredVictoryNote = StoredNote & { pitches?: number[] };
 export type ChallengeSnapshot = {
   title: string; source: string; hint: string; bpm: number; key: MusicalKey; timeSignature: TimeSignature;
@@ -39,7 +39,7 @@ export function restoreNotes(raw: unknown, limit = MAX_MELODY_STEPS): MelodyStep
   if (raw.some((step) => step && 'pitches' in step)) throw new Error('Invalid pitch');
   return restoreVictoryNotes(raw, limit);
 }
-export const storeNotes = (notes: readonly MelodyStep[]): StoredNote[] => notes.map(({ midi, beats, triplet }) => ({ midi, beats, ...(triplet ? { triplet } : {}) }));
+export const storeNotes = (notes: readonly MelodyStep[]): StoredNote[] => notes.map(({ midi, beats, triplet, staccato, arpeggio, tieToNext }) => ({ midi, beats, ...(triplet ? { triplet } : {}), ...(staccato !== undefined ? {staccato} : {}), ...(arpeggio ? {arpeggio} : {}), ...(tieToNext ? {tieToNext:[...tieToNext]} : {}) }));
 export function recordDraft(row: Pick<MelodyRecord, 'title' | 'source' | 'hint' | 'bpm' | 'key_signature' | 'final_bpm' | 'final_key_signature' | 'time_signature' | 'notes' | 'final_notes' | 'final_bass_notes' | 'final_clef' | 'final_bass_clef'>): ComposerDraft {
   if (!MUSICAL_KEYS.includes(row.key_signature) || !TIME_SIGNATURES.includes(row.time_signature)
     || !Number.isInteger(row.bpm) || row.bpm < 20 || row.bpm > 400) throw new Error('Invalid melody settings');
@@ -78,6 +78,6 @@ export function lisbonDate(date = new Date()): string {
 }
 export const displayDate = (date: string) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(date + 'T12:00:00Z'));
 
-export const storeVictoryNotes = (notes: readonly VictoryStep[]): StoredVictoryNote[] => notes.map(({ midi, beats, pitches, triplet }) => ({ midi, beats, ...(pitches ? { pitches: [...pitches] } : {}), ...(triplet ? { triplet } : {}) }));
+export const storeVictoryNotes = (notes: readonly VictoryStep[]): StoredVictoryNote[] => notes.map(({ midi, beats, pitches, triplet,staccato,arpeggio,tieToNext }) => ({ midi, beats, ...(pitches ? { pitches: [...pitches] } : {}), ...(triplet ? { triplet } : {}), ...(staccato !== undefined ? {staccato} : {}), ...(arpeggio ? {arpeggio} : {}), ...(tieToNext ? {tieToNext:[...tieToNext]} : {}) }));
 
 export const melodyEditorPath = (row: Pick<MelodyRecord, 'studio_document'>, action: 'id' | 'copy', id: string) => (row.studio_document ? '/brodle/create' : '/brodle/create/classic') + '?' + action + '=' + encodeURIComponent(id);

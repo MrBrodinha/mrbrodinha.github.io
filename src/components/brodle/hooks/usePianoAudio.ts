@@ -359,7 +359,7 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
       const legacy = arrangementTimeline(parts, bpm);
       return {
         totalDuration: legacy.totalDuration,
-        events: legacy.events.flatMap(event => event.pitches.map(midi => ({ midi, time: event.time, duration: event.duration }))),
+        events: legacy.events.flatMap(event => event.pitches.map(midi => ({ midi, time: event.time, duration: event.duration, ...(event.sustain ? {sustain:true} : {}) }))),
       };
     }, id, false);
   }, [runTimeline, defaultBpm, stopAudio]);

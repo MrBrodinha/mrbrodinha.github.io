@@ -3,6 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { studio } from './studioModules.mjs';
+import {expressiveDraft} from './studioExpressionFixtures.mjs';
 import { codeUrl, scoreModel } from './sheetEditorModules.mjs';
 const { scoreCodeSnapshot } = await import(codeUrl);
 const alice='11111111-1111-4111-8111-111111111111',bob='22222222-2222-4222-8222-222222222222',admin='33333333-3333-4333-8333-333333333333',id='44444444-4444-4444-8444-444444444444';
@@ -18,6 +19,7 @@ test('Studio migration preserves old records and enforces private optimistic sav
   for(const file of ['202610310002_brodle_library.sql','202610310003_victory_parts.sql','202610310004_piano_range.sql','202611010011_brodle_demisemiquavers.sql','202611010012_brodle_victory_settings.sql','202611010014_brodle_return_approved_melodies.sql','202611110016_brodle_triplets.sql'])await db.exec(await readFile(new URL('../../database/migrations/'+file,import.meta.url),'utf8'));
   await db.exec(`insert into public.brodle_admins values('${admin}');insert into public.brodle_melodies(created_by,title,bpm,key_signature,time_signature,notes) values('${alice}','Legacy',120,'C','4/4','[{"midi":60,"beats":4}]');`);
   await db.exec(await readFile(new URL('../../database/migrations/202611250018_melody_studio_documents.sql',import.meta.url),'utf8'));
+  await db.exec(await readFile(new URL('../../database/migrations/202611250019_brodle_expressions.sql',import.meta.url),'utf8'));
   assert.equal(await scalar("select count(*)::int from public.brodle_melodies where title='Legacy' and studio_document is null"),1);
   const draft=studio.emptyStudioDraft();draft.title='My tune';draft.source='Artist';const score=scoreModel.importScore(scoreModel.initialScore(),{bpm:120,key:'C',staffs:[{id:'staff-1',clef:'treble',steps:[{midi:60,duration:'whole'}]}]},'save');draft.document.main=studio.studioScoreDocument(score,null);
   const content=studio.studioPayload(draft);
@@ -38,6 +40,11 @@ test('Studio migration preserves old records and enforces private optimistic sav
   await role(admin);await db.query("select public.review_brodle_melody($1,'approved','Ready')",[id]);await db.query("select public.schedule_brodle_melody($1,(now() at time zone 'Europe/Lisbon')::date+1)",[id]);
   const snapshot=await scalar('select snapshot from public.brodle_daily_challenges');assert.equal(snapshot.melody[0].midi,60);assert.equal(snapshot.source,'Revised artist');
   await role(alice);await assert.rejects(save(changed,row.updated_at),/brodle_not_editable/);
+  await role(alice);let expressive=await save(studio.studioPayload(expressiveDraft()),null,'66666666-6666-4666-8666-666666666666');
+  await db.query('select public.submit_brodle_melody($1)',[expressive.id]);await role(admin);await db.query("select public.review_brodle_melody($1,'approved','')",[expressive.id]);await db.query("select public.schedule_brodle_melody($1,(now() at time zone 'Europe/Lisbon')::date+2)",[expressive.id]);
+  const published=await scalar('select snapshot from public.brodle_daily_challenges where melody_id=$1',[expressive.id]);assert.deepEqual(published.melody[0].tieToNext,[60]);assert.equal(published.melody[2].staccato,true);assert.equal(published.finalMelody[0].arpeggio,'down');assert.deepEqual(published.finalMelody[0].tieToNext,[60,64]);
+  for(const notes of [[{midi:60,pitches:[60,64],beats:1}],[{midi:60,beats:1,tieToNext:[60]}],[{midi:60,beats:1,staccato:'yes'}],[{midi:60,beats:1,arpeggio:'up'}]])assert.equal(await scalar('select public.brodle_valid_notes($1,256)',[JSON.stringify(notes)]),false);
+
   const malformed=structuredClone(content);malformed.studio_document.main.score='';await assert.rejects(save(malformed,null,'55555555-5555-4555-8555-555555555555'),{code:'23514'});
  }finally{await db.close();}
 });

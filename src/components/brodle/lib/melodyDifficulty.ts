@@ -31,8 +31,8 @@ export function difficultyForScore(score: number) {
 
 // Rate the sounding challenge notes only. Pitch span (rather than octave labels)
 // keeps the rating unchanged when the same melody is transposed.
-export function rateMelody(melody: readonly Pick<MelodyStep, 'midi'>[]): MelodyDifficultyRating | null {
-  const notes = melody.flatMap(({ midi }) => midi === null ? [] : [midi]);
+export function rateMelody(melody: readonly Pick<MelodyStep, 'midi' | 'tieToNext'>[]): MelodyDifficultyRating | null {
+  const notes = melody.flatMap(({ midi }, i) => midi === null || melody[i - 1]?.tieToNext?.includes(midi) ? [] : [midi]);
   if (!notes.length) return null;
 
   const noteCount = notes.length;

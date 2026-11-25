@@ -42,6 +42,7 @@ type Command = PlacementCommand & { staffId?: string };
 type Props = EntryTool & {
   zoom?: number;
   fixedClef?: boolean;
+  allowChords?: boolean;
   onProperty?: (kind: 'clef' | 'key' | 'meter' | 'tempo', staffId: string, anchor?: HTMLElement) => void;
   onAddMeasure?: () => void;
   staffActions?: ReactNode;
@@ -145,6 +146,7 @@ const signature = (score: Score) =>
     })),
   });
 function candidateScore(props: Props, command: Command): Score | null {
+  if (props.allowChords === false && command.kind === 'add-tone') return null;
   const score = snapshot(props),
     id = command.staffId ?? props.activeStaffId ?? score.staffs[0].id,
     staff = score.staffs.find((s) => s.id === id);

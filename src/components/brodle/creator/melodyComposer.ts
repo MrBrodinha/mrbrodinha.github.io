@@ -110,7 +110,7 @@ export function exportMelodyCode(draft: ComposerDraft): string {
 }
 
 function exportVictoryStep(step: VictoryStep) {
-  return `  { midi: ${step.midi},${step.pitches ? ` pitches: [${step.pitches.join(', ')}],` : ''}${step.triplet ? ` triplet: ${step.triplet},` : ''} length: '${step.length}', beats: ${step.beats}, rhythm: '${step.rhythm}' },`;
+  return `  { midi: ${step.midi},${step.pitches ? ` pitches: [${step.pitches.join(', ')}],` : ''}${step.triplet ? ` triplet: ${step.triplet},` : ''}${step.staccato ? ' staccato: true,' : ''}${step.arpeggio ? ` arpeggio: '${step.arpeggio}',` : ''}${step.tieToNext ? ` tieToNext: [${step.tieToNext.join(', ')}],` : ''} length: '${step.length}', beats: ${step.beats}, rhythm: '${step.rhythm}' },`;
 }
 export function makeVictoryStep(pitches: readonly number[], duration: DurationId, dotted: boolean, triplet?: TripletPosition): VictoryStep {
   const sorted = [...new Set(pitches)].sort((a,b) => a-b);

@@ -3,7 +3,7 @@ export type WinKind = 'exact';
 export type Attempt = { id?: string; notes: number[]; feedback: Feedback[]; hintsUsed?: number };
 export type NoteNaming = 'letters' | 'solfege';
 export type TripletPosition = 1 | 2 | 3;
-export type MelodyStep = { midi: number | null; length: string; beats: number; rhythm: string; triplet?: TripletPosition };
+export type MelodyStep = { midi: number | null; length: string; beats: number; rhythm: string; triplet?: TripletPosition; staccato?: boolean; arpeggio?: 'up' | 'down'; tieToNext?: number[] };
 
 // Written durations stay unchanged; a triplet takes two thirds of that time.
 // 96 ticks also represent dotted 32nds and tied fragments at triplet bar lines.
@@ -117,7 +117,7 @@ export const MELODY_FINAL_BASS: (MelodyStep & { pitches?: number[] })[] = [];
 export const FINAL_CLEF: 'treble' | 'bass' = 'treble';
 export const FINAL_BASS_CLEF: 'treble' | 'bass' = 'bass';
 
-export const TARGET = MELODY.flatMap((note) => note.midi === null ? [] : [note.midi]);
+export const TARGET = MELODY.flatMap((note, i) => note.midi === null || MELODY[i - 1]?.tieToNext?.includes(note.midi) ? [] : [note.midi]);
 const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
 const SOLFEGE_NAMES = ['Dó', 'Dó#', 'Ré', 'Mib', 'Mi', 'Fá', 'Fá#', 'Sol', 'Sol#', 'Lá', 'Sib', 'Si'];
 const NATURAL_PITCHES: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -230,16 +230,27 @@ export function buildShareText(attempts: readonly Attempt[], target: readonly nu
   ].join('\n');
 }
 
-export function melodyForGuess<T extends { midi: number | null }>(notes: readonly number[], melody: readonly T[]): T[] {
+// Written tie continuations share one attack, guess and feedback position.
+export function melodyAttackIndices(melody: readonly { midi: number | null; tieToNext?: readonly number[] }[]): (number | null)[] {
+  let index = -1;
+  return melody.map((step, i) => step.midi === null ? null : melody[i - 1]?.tieToNext?.includes(step.midi) ? index : ++index);
+}
+export function melodyForGuess<T extends { midi: number | null; tieToNext?: number[] }>(notes: readonly number[], melody: readonly T[]): T[] {
   if (!notes.length) return [];
-  const complete = notes.length === melody.filter((step) => step.midi !== null).length;
+  const indices = melodyAttackIndices(melody);
+  const complete = notes.length === Math.max(-1, ...indices.filter((index): index is number => index !== null)) + 1;
   const sequence: T[] = [];
-  let position = 0;
-  for (const step of melody) {
-    // Include leading/between-note rests, and trailing rests on a complete guess.
-    // A partial guess must not reveal the rhythm of future notes or rests.
-    if (position === notes.length && (!complete || step.midi !== null)) break;
-    sequence.push(step.midi === null ? { ...step } : { ...step, midi: notes[position++] });
+  let entered = 0;
+  for (const [i, step] of melody.entries()) {
+    const index = indices[i];
+    if (index === null) {
+      if (entered === notes.length && !complete) break;
+      sequence.push({ ...step });
+    } else {
+      if (index >= notes.length) break;
+      entered = index + 1;
+      sequence.push({ ...step, midi: notes[index], ...(step.tieToNext ? { tieToNext: [notes[index]] } : {}) });
+    }
   }
   return sequence;
 }
@@ -251,8 +262,7 @@ export function toAbc(notes: readonly number[], naming: NoteNaming = 'letters', 
 export function notationForGuess(notes: readonly number[], naming: NoteNaming, melody: readonly MelodyStep[], key: MusicalKey, timeSignature: TimeSignature = TIME_SIGNATURE, bpm = BPM) {
   const steps = melodyForGuess(notes, melody);
   const notation = melodyNotation(steps, naming, key, bpm, timeSignature);
-  let noteIndex = 0;
-  const guessPositions = steps.map((step) => step.midi === null ? null : noteIndex++);
+  const guessPositions = melodyAttackIndices(steps);
   return { ...notation, guessIndices: notation.stepIndices.map((index) => guessPositions[index]) };
 }
 
@@ -268,7 +278,7 @@ export function melodyNotation(melody: readonly MelodyStep[], naming: NoteNaming
   const noteIndices: number[] = [];
   const barTicks = Math.round(beatsPerBar(timeSignature) * RHYTHM_TICKS);
   let position = 0;
-  let noteIndex = 0;
+  const attackIndices = melodyAttackIndices(melody);
   let groupStart = 0;
   const finishGroup = () => {
     if (fragments.length > groupStart) fragments[groupStart].tupletCount = fragments.length - groupStart;
@@ -286,14 +296,13 @@ export function melodyNotation(melody: readonly MelodyStep[], naming: NoteNaming
         .find((value) => Math.round(value * RHYTHM_TICKS * scale) <= available) ?? available / RHYTHM_TICKS / scale;
       const ticks = Math.round(written * RHYTHM_TICKS * scale);
       remaining -= ticks;
-      fragments.push({ ...step, beats: ticks / RHYTHM_TICKS, ticks, length: abcLength(written), tie: step.midi !== null && remaining > 0, hideLabel: !showNoteNames || !first });
+      fragments.push({ ...step, beats: ticks / RHYTHM_TICKS, ticks, length: abcLength(written), tie: step.midi !== null && remaining > 0, hideLabel: !showNoteNames || !first || (stepIndex > 0 && attackIndices[stepIndex] === attackIndices[stepIndex - 1]), ...(first ? {} : { staccato: false, arpeggio: undefined }), tieToNext: remaining > 0 ? undefined : step.tieToNext });
       stepIndices.push(stepIndex);
-      if (step.midi !== null) noteIndices.push(noteIndex);
+      if (step.midi !== null) noteIndices.push(attackIndices[stepIndex]!);
       first = false;
       position = (position + ticks) % barTicks;
     }
     if (step.triplet && (step.triplet === 3 || !melody[stepIndex + 1]?.triplet)) finishGroup();
-    if (step.midi !== null) noteIndex++;
   });
   return { abc: renderMelodyAbc(fragments, naming, key, bpm, timeSignature, clef), stepIndices, noteIndices };
 }
@@ -315,7 +324,7 @@ function renderMelodyAbc(melody: readonly NotationFragment[], naming: NoteNaming
   const tokens: string[] = [];
   let ticksInBar = 0;
   const barBeats = beatsPerBar(timeSignature);
-  melody.forEach(({ midi, pitches, length, ticks, tie, hideLabel, tupletCount }) => {
+  melody.forEach(({ midi, pitches, length, ticks, tie, hideLabel, tupletCount, staccato, arpeggio, tieToNext }) => {
     if (ticksInBar >= Math.round(barBeats * RHYTHM_TICKS)) {
       tokens.push('|');
       altered.clear();
@@ -340,8 +349,8 @@ function renderMelodyAbc(melody: readonly NotationFragment[], naming: NoteNaming
       altered.set(pitch, spelling.accidental);
       return `${accidental}${letter}${suffix}`;
     };
-    const symbol = pitches?.length ? `[${pitches.map(renderPitch).join('')}]` : renderPitch(midi);
-    tokens.push(`${hideLabel ? '' : `"_${noteName(midi, naming, key)}"`}${symbol}${length}${tie ? '-' : ''}`);
+    const symbol = pitches?.length ? `[${pitches.map(pitch => renderPitch(pitch) + (tieToNext?.includes(pitch) ? '-' : '')).join('')}]` : renderPitch(midi);
+    tokens.push(`${hideLabel ? '' : `"_${noteName(midi, naming, key)}"`}${arpeggio ? (arpeggio === 'down' ? '"^↓"!arpeggio!' : '!arpeggio!') : ''}${staccato ? '.' : ''}${symbol}${length}${tie || (!pitches?.length && tieToNext?.includes(midi)) ? '-' : ''}`);
     ticksInBar += ticks;
   });
   // No future durations are visible. An invisible spacer draws an empty staff.
