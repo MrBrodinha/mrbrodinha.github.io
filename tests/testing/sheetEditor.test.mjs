@@ -362,7 +362,7 @@ test('workspace length is derived from logical score capacity and simultaneous p
 
 test('toolbar exposes five glyph durations, three accidentals and direct expression controls',t=>{
  const page=mount(t),accidentals=flatten(page.nodes().find(n=>n.props?.['aria-label']==='Accidentals')).filter(n=>n.type==='button');
- assert.deepEqual(accidentals.map(n=>n.props['aria-label']),['Sharp','Flat','Natural']);assert.equal(page.button('Natural')['aria-pressed'],true);
+ assert.deepEqual(accidentals.map(n=>n.props['aria-label']),['Sharp','Flat','Natural']);assert.equal(page.button('Natural')['aria-pressed'],false);
  page.button('Natural').onClick();page.render();assert.equal(page.staff().entryAccidental,0);assert.equal(page.nodes().some(n=>n.props?.['aria-label']==='More'),false);assert.equal(page.button('Tie').disabled,true);assert.equal(page.button('Arpeggio').disabled,true);
  assert.ok(page.nodes().some(n=>text(n).includes('Toggle dotted notes or rests')));
  for(const name of ['Notes','Rests']) {page.button(name).onClick();page.render();const values=flatten(page.nodes().find(n=>n.props?.['aria-label']==='Note value')).filter(n=>n.type==='button');assert.equal(values.length,5);for(const value of values){assert.equal(text(value),'');assert.ok(value.props['aria-label']);assert.ok(value.props['data-tooltip']);}}
@@ -441,7 +441,7 @@ test('sheet-only workspace puts Staff below the score and retains accessible acc
  assert.ok(addIndex>staffIndex);assert.ok(addIndex<footerIndex);
  assert.equal(nodes.some(node=>node.props?.['aria-label']==='Input method'||typeof node.props?.onInput==='function'),false);
  assert.equal(nodes.some(node=>node.props?.className==='studio-accidental-label'),false);
- assert.equal(page.button('Natural')['aria-pressed'],true);assert.equal(page.button('Tuplets').disabled,true);
+ assert.equal(page.button('Natural')['aria-pressed'],false);assert.equal(page.button('Tuplets').disabled,true);
  page.button('Add staff').onClick();page.render();assert.equal(page.staff().score.staffs.length,2);
  openProperty(page,'clef');field(page,'Staff clef').onChange({target:{value:'alto'}});page.render();submitProperty(page);assert.equal(page.staff().score.staffs[1].clef,'alto');
  page.button('Undo').onClick();page.render();assert.equal(page.staff().score.staffs[1].clef,'bass');
@@ -669,4 +669,18 @@ test('bottom Piano commits keys without cancelling or duplicating held audio and
  const beforeStop=stopCount(),beforeFeedback=feedbackCount();piano().onNote(61);page.render();assert.ok(note(page,61));assert.equal(stopCount(),beforeStop);assert.equal(feedbackCount(),beforeFeedback);assert.equal(page.button('Undo').disabled,false);
  const before=page.staff().score,stale=piano().onNote;code(page).onChange('// pending\n'+code(page).value);page.render();assert.equal(piano().locked,true);piano().onNote(64);stale(65);page.render();assert.equal(page.staff().score,before);
  code(page).onReset();page.render();const old=piano().onNote;props.readOnly=true;page.render();old(67);piano().onNote(69);page.render();assert.equal(page.staff().score,before);assert.equal(piano().locked,true);
+});
+
+
+test('key picker groups modes and Write accidentals toggle back to key-following',t=>{
+ const page=mount(t);openProperty(page,'key');
+ const groups=page.nodes().filter(node=>node.type==='optgroup');assert.deepEqual(groups.map(node=>node.props.label),['Major','Minor']);
+ assert.ok(flatten(groups[0]).filter(node=>node.type==='option').every(node=>!node.props.value.endsWith('m')));
+ assert.ok(flatten(groups[1]).filter(node=>node.type==='option').every(node=>node.props.value.endsWith('m')));
+ field(page,'Key signature').onChange({target:{value:'G'}});page.render();submitProperty(page);
+ page.staff().onPlace({tick:0,pitch:65});page.render();assert.ok(code(page).value.includes('"midi":66'));
+ page.button('Natural').onClick();page.render();assert.equal(page.button('Natural')['aria-pressed'],true);
+ page.staff().onPlace({tick:model.NOTE_TICKS.quarter,pitch:65});page.render();assert.ok(code(page).value.includes('"midi":65'));
+ page.button('Natural').onClick();page.render();assert.equal(page.button('Natural')['aria-pressed'],false);
+ page.staff().onPlace({tick:2*model.NOTE_TICKS.quarter,pitch:65});page.render();assert.equal(page.staff().events[2].midi,66);
 });

@@ -42,7 +42,7 @@ test('sheet entry advances through rests and extends the complete arrangement at
 });
 
 test('sheet input follows explicit accidentals even under a different key signature', () => {
- let state=s.scoreReducer(s.emptyScore(),{type:'key',value:'F'});state=write(state,71);assert.equal(events(state)[0].midi,71);
+ let state=s.scoreReducer(s.emptyScore(),{type:'key',value:'F'});state=write(state,71);assert.equal(events(state)[0].midi,70);
  state=s.scoreReducer(state,{type:'entry-accidental',value:-1});state=write(state,71);assert.equal(events(state)[1].midi,70);
  assert.equal(state.accidental,-1);state=s.scoreReducer(state,{type:'entry-accidental',value:0});state=write(state,60);assert.equal(events(state)[2].midi,60);
 });

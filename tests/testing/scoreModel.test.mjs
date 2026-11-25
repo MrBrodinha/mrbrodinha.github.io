@@ -63,7 +63,7 @@ test('tempo/keys/clefs preserve music and selection; explicit accidental entry a
  let state=edit(imported([part('a','treble',[chord([60,64])])]));state=select(state,0,0,1);const events=state.score.staffs[0].events,selection=state.selection;
  for(const action of [{type:'bpm',value:20},{type:'bpm',value:400},{type:'key',value:'F#'},{type:'clef',staffId:'a',value:'bass'}]){state=s.scoreReducer(state,action);assert.equal(state.score.staffs[0].events,events);assert.equal(state.selection,selection);}
  for(const bpm of [0,19,401,60.5,NaN])assert.equal(s.scoreReducer(state,{type:'bpm',value:bpm}).score,state.score);
- state=s.scoreReducer(s.emptyScore(),{type:'key',value:'G'});state=s.scoreReducer(state,{type:'part',action:{type:'fill',id:'f',tick:units(0),pitch:65}});assert.equal(state.score.staffs[0].events[0].midi,65);
+ state=s.scoreReducer(s.emptyScore(),{type:'key',value:'G'});state=s.scoreReducer(state,{type:'part',action:{type:'fill',id:'f',tick:units(0),pitch:65}});assert.equal(state.score.staffs[0].events[0].midi,66);
  state=s.scoreReducer(state,{type:'entry-accidental',value:0});state=s.scoreReducer(state,{type:'part',action:{type:'fill',id:'natural',tick:units(4),pitch:65}});assert.equal(state.score.staffs[0].events[1].midi,65);
  state={...state,pitch:0,accidental:-1};const next=s.scoreReducer(state,{type:'pitch-step',delta:-1});assert.equal(next.pitch,0);assert.equal(next.score,state.score);
 });
@@ -134,4 +134,25 @@ test('Place selects just the added chord member and clears editing selection whe
  state=s.scoreReducer(state,{type:'part',action:{type:'add-tone',id:'chord',toneId:'e',pitch:64}});assert.equal(s.primary(state).toneId,'e');state=s.scoreReducer(state,{type:'transpose',delta:1});assert.deepEqual(s.arrangement(state.score)[0][0].pitches,[60,65]);
  state=s.scoreReducer(state,{type:'part',action:{type:'duration',id:'chord',duration:'half'}});assert.equal(state.score.staffs[0].events[0].duration,'half');assert.deepEqual(s.arrangement(state.score)[0][0].pitches,[60,65]);
  state=s.scoreReducer(state,{type:'caret',tick:units(8),pitch:67});assert.equal(state.selection.length,0);const before=state.score;state=s.scoreReducer(state,{type:'pitch-step',delta:1});assert.equal(state.score,before);assert.equal(state.pitch,69);
+});
+
+
+test('new staff entries follow every major/minor key across octaves, with explicit overrides',()=>{
+ for(const key of MUSICAL_KEYS)for(const octave of [3,4,5])for(const letter of 'CDEFGAB'){
+  let state=s.scoreReducer(s.emptyScore(),{type:'key',value:key});const pitch=m.pitchMidi({letter,octave,accidental:0});
+  state=s.scoreReducer(state,{type:'part',action:{type:'fill',id:'key-note',tick:0,pitch}});
+  assert.equal(state.score.staffs[0].events[0].midi,pitch+(s.keyAccidentals(key)[letter]??0),`${key} ${letter}${octave}`);
+  assert.equal(state.accidental,'key');
+ }
+ let state=s.scoreReducer(s.emptyScore(),{type:'key',value:'G'});
+ state=s.scoreReducer(state,{type:'entry-accidental',value:0});
+ state=s.scoreReducer(state,{type:'part',action:{type:'fill',id:'natural-f',tick:0,pitch:65}});assert.equal(state.score.staffs[0].events[0].midi,65);
+ state=s.scoreReducer(state,{type:'entry-accidental',value:'key'});
+ state=s.scoreReducer(state,{type:'part',action:{type:'fill',id:'key-f',tick:m.NOTE_TICKS.quarter,pitch:65}});assert.equal(state.score.staffs[0].events[1].midi,66);
+});
+
+test('piano keeps exact sounding MIDI without overriding later staff key entry',()=>{
+ let state=s.scoreReducer(s.emptyScore(),{type:'key',value:'G'});
+ state=s.scoreReducer(state,{type:'piano-note',midi:65,id:'piano-f'});assert.equal(state.score.staffs[0].events[0].midi,65);assert.equal(state.accidental,'key');
+ state=s.scoreReducer(state,{type:'part',action:{type:'fill',tick:state.tick,pitch:65,id:'staff-f'}});assert.equal(state.score.staffs[0].events[1].midi,66);
 });

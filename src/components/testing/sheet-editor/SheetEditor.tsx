@@ -381,7 +381,7 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
   }
   function setAccidental(value: -1 | 0 | 1) {
     if (state.mode === 'edit' && selectedPitch) part({ type: 'accidental', value });
-    else interact({ type: 'entry-accidental', value });
+    else interact({ type: 'entry-accidental', value: state.accidental === value ? 'key' : value });
   }
   return (
     <main
@@ -479,7 +479,7 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
           <p>{property.kind === 'clef' ? `Staff ${score.staffs.findIndex(item => item.id === property.staffId) + 1}` : 'Applies to the whole score'}</p>
           {(property.kind === 'clef') && <ClefChoices aria-label="Staff clef" value={propertyDraft.clef as Clef} onChange={clef => setPropertyDraft({ ...propertyDraft, clef })} />}
           {property.kind === 'key' && <div className="studio-property-preview"><NotationPreview clef={score.staffs.find(part => part.id === property.staffId)?.clef ?? 'treble'} musicalKey={propertyDraft.key as MusicalKey} /><p>{keyDescription(propertyDraft.key as MusicalKey)}</p></div>}
-          {property.kind === 'key' && <label>Key signature<select aria-label="Key signature" value={propertyDraft.key} onChange={event => setPropertyDraft({ ...propertyDraft, key: event.target.value })}>{MUSICAL_KEYS.map(key => <option key={key} value={key}>{keyName(key)}</option>)}</select></label>}
+          {property.kind === 'key' && <label>Key signature<select aria-label="Key signature" value={propertyDraft.key} onChange={event => setPropertyDraft({ ...propertyDraft, key: event.target.value })}>{[false, true].map(minor => <optgroup key={String(minor)} label={minor ? 'Minor' : 'Major'}>{MUSICAL_KEYS.filter(key => key.endsWith('m') === minor).map(key => <option key={key} value={key}>{keyName(key)}</option>)}</optgroup>)}</select></label>}
           {property.kind === 'meter' && <div className="studio-property-preview studio-meter-preview" aria-hidden="true">{propertyDraft.numerator || '—'} / {propertyDraft.denominator}</div>}
           {property.kind === 'meter' && <div className="studio-meter-fields"><label>Numerator<input aria-label="Numerator" type="number" min="1" max="32" step="1" value={propertyDraft.numerator} onChange={event => setPropertyDraft({ ...propertyDraft, numerator: event.target.value })} /></label><span>/</span><label>Denominator<select aria-label="Denominator" value={propertyDraft.denominator} onChange={event => setPropertyDraft({ ...propertyDraft, denominator: event.target.value })}>{[1,2,4,8,16,32].map(value => <option key={value} value={value}>{value}</option>)}</select></label></div>}
           {property.kind === 'tempo' && <><div className="studio-property-preview studio-tempo-preview" aria-label="Tempo preview"><RhythmSymbol duration={propertyDraft.duration as TempoBeat['duration']} dotted={propertyDraft.dotted} /><span>= {Number.isInteger(Number(propertyDraft.bpm)) && Number(propertyDraft.bpm) >= 20 && Number(propertyDraft.bpm) <= 400 ? propertyDraft.bpm : '—'}</span></div><fieldset className="studio-tempo-beat-choices" aria-label="Tempo beat unit"><legend>Beat unit</legend>{NOTE_VALUES.map(value => <button key={value} type="button" data-tempo-beat={value} aria-label={`${labels[value]} beat`} aria-pressed={propertyDraft.duration === value} onClick={() => setPropertyDraft({ ...propertyDraft, duration: value })}><RhythmSymbol duration={value} dotted={propertyDraft.dotted} /></button>)}</fieldset><label className="studio-check"><input type="checkbox" aria-label="Dotted tempo beat" checked={propertyDraft.dotted} onChange={event => setPropertyDraft({ ...propertyDraft, dotted: event.target.checked })} />Dotted beat</label><label>BPM<input aria-label="BPM" id="score-bpm" type="number" min="20" max="400" step="1" value={propertyDraft.bpm} onChange={event => { setPropertyDraft({ ...propertyDraft, bpm: event.target.value }); setPropertyError(''); }} /></label></>}
@@ -534,7 +534,8 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
                 type="button"
                 key={label}
                 aria-label={label}
-                data-tooltip={label}
+                data-tooltip={state.mode === 'place' && state.accidental === value ? `${label} · click again to follow the key` : label}
+                aria-description="In Write, press again to follow the key signature."
                 disabled={locked || (state.mode === 'edit' && (!selectedPitch || group))}
                 aria-pressed={
                   state.mode === 'edit'
@@ -786,7 +787,7 @@ export default function SheetEditor({ initialSession, onSessionChange, readOnly 
             <h2>Compose together</h2>
             <p>
               {gameMelody ? 'Game melody uses one staff in Treble clef. Switch to Victory melody for additional staffs. ' : 'Use up to four staffs with independent Treble, Bass, Alto or Tenor clefs and shared tempo, key and measures. '}
-              Entry uses the selected Sharp, Flat or Natural accidental; Natural is the default.
+              New staff notes follow the key signature. Sharp, Flat and Natural override it; press the selected accidental again to follow the key.
               Existing pitches stay unchanged when key or clef changes. Reset score returns to one
               treble staff, C major and 120 BPM.
             </p>

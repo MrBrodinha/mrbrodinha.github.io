@@ -64,7 +64,7 @@ export type ScoreState = {
   duration: NoteValue;
   dotted: boolean;
   staccato: boolean;
-  accidental: Accidental;
+  accidental: Accidental | 'key';
   message: string;
 };
 export type ImportStaff = { id: string; clef: Clef; steps: ImportedStep[] };
@@ -91,7 +91,7 @@ export type Action = (
   | { type: 'select'; staffId: string; eventId: string; toneId?: string; toggle?: boolean }
   | { type: 'clear-selection' }
   | { type: 'tool'; duration: NoteValue }
-  | { type: 'entry-accidental'; value: Accidental }
+  | { type: 'entry-accidental'; value: Accidental | 'key' }
   | { type: 'caret'; tick: number; pitch: number; staffId?: string }
   | { type: 'pitch-step'; delta: -1 | 1 }
   | { type: 'part'; staffId?: string; action: EditorAction }
@@ -188,7 +188,7 @@ export function emptyScore(): ScoreState {
     duration: 'quarter',
     dotted: false,
     staccato: false,
-    accidental: 0,
+    accidental: 'key',
     message: 'Choose a value and fill a rest.',
   };
 }
@@ -436,7 +436,7 @@ export function scoreReducer(state: ScoreState, action: Action): ScoreState {
           type: 'part', staffId: state.active,
           action: { type: 'fill', id: action.id, tick: state.tick, pitch: pitchMidi({ ...spelling, accidental: 0 }) },
         });
-        return next.revision === state.revision ? { ...state, message: next.message } : next;
+        return next.revision === state.revision ? { ...state, message: next.message } : { ...next, accidental: state.accidental };
       }
       if (state.selection.length > 1) return reject(state, 'Select one note or rest to replace it from the piano.');
       const ref = primary(state), selected = ref ?? state.rest;
@@ -716,7 +716,7 @@ export function scoreReducer(state: ScoreState, action: Action): ScoreState {
     case 'tool':
       return state.mode !== 'place' ? state : { ...state, duration: action.duration };
     case 'entry-accidental':
-      return state.mode !== 'place' || ![-1, 0, 1].includes(action.value) ? state : { ...state, accidental: action.value };
+      return state.mode !== 'place' || ![-1, 0, 1, 'key'].includes(action.value) ? state : { ...state, accidental: action.value };
     case 'caret': {
       const staff = state.score.staffs.find((s) => s.id === (action.staffId ?? state.active));
       return state.mode !== 'place' ||
@@ -827,7 +827,7 @@ export function scoreReducer(state: ScoreState, action: Action): ScoreState {
     }
     case 'reset': {
       const next = commit(state, initialScore(), 'Reset to one treble staff, C major, 120 BPM.');
-      return next === state ? state : { ...next, tick: 0, pitch: 64, accidental: 0, duration: 'quarter', dotted: false, staccato: false, entryKind: 'note' };
+      return next === state ? state : { ...next, tick: 0, pitch: 64, accidental: 'key', duration: 'quarter', dotted: false, staccato: false, entryKind: 'note' };
     }
     case 'undo': {
       const score = state.past[state.past.length - 1];

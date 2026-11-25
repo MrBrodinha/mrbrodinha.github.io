@@ -117,7 +117,7 @@ Undo restores the original chord or rest. **Dotted** always shows a quarter note
 with an augmentation dot, independent of the selected value or Notes/Rests mode.
 Both the button and **.** change next-entry dots
 in Write, even with a recent note selected, and the selected event's dots in Edit.
-Accidentals expose only **Sharp, Flat, Natural**, with Natural selected by default.
+Accidentals expose only **Sharp, Flat, Natural**, with key-signature accidentals applied by default.
 
 **Play / Stop, Undo and Reset** share the mode-heading row. **Dotted, Staccato, Tie / Untie,
 Arpeggio and Tuplets** are grouped together beside the three accidental buttons. There is no
@@ -167,10 +167,11 @@ of its carried notes and added measures.
 Use up to four parts with independent Treble, Bass, Alto or Tenor clefs.
 All parts share measure
 capacity, meter, key signature and tempo (20–400 BPM in the selected beat unit). Changing key or clef preserves
-existing pitches. Entry always uses the explicit selected accidental, even in a
-sharp or flat key.
+existing pitches. New staff entries follow the key signature. Sharp, Flat and Natural
+override it; press the selected button again to follow the key. The key picker
+groups Major and Minor keys. Piano keys retain their exact sounding pitches.
 Reset score returns to one 4/4 treble measure in C major at quarter note = 120
-with Natural note entry. One Undo restores a complete score change, including parts and settings.
+with key-following note entry. One Undo restores a complete score change, including parts and settings.
 
 Dotted entry and selected-event toggles multiply the written value by 1.5;
 `.` toggles the applicable dot. Longer notes can use existing silence across
