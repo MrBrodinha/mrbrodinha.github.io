@@ -2,6 +2,7 @@ import { useAuth } from '../../auth/authContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import SheetMusic from './components/SheetMusic';
+import MelodyPitchNotice from './components/MelodyPitchNotice';
 import WinConfetti from './components/WinConfetti';
 import BrodleIcon from './components/BrodleIcon';
 import PianoKeyboard from './components/PianoKeyboard';
@@ -11,14 +12,13 @@ import MelodyDifficulty from './components/MelodyDifficulty';
 import AttemptHistory from './components/AttemptHistory';
 import { usePianoAudio } from './hooks/usePianoAudio';
 import { useBrodleProgress } from './hooks/useBrodleProgress';
-import { canSubmitGuess, copyAttemptToDraft, editProgressGuess, GAME_MODE_STORAGE_KEY, gameModeStorageKey, guessFeedback, guessRangeIssues, hintLimit, isFinished, modeIsLocked, modeWithProgress, noteConstraints, parseProgress, progressStorageKey, replaceGuessNote, revealNextHint, markSongHintUsed, winningAttempt } from './lib/gameProgress';
-import type { GameMode } from './lib/gameProgress';
+import { canSubmitGuess, copyAttemptToDraft, editProgressGuess, guessFeedback, guessRangeIssues, hintLimit, isFinished, noteConstraints, replaceGuessNote, revealNextHint, markSongHintUsed, winningAttempt } from './lib/gameProgress';
 import {
   noteName, scoreGuess, notationForGuess, melodyForGuess,
   buildShareText, getWinKind, challengePianoRange,
 } from './lib/musicGame';
 import type { Attempt, Feedback, MelodyStep, MusicalKey, NoteNaming } from './lib/musicGame';
-import { transposeVictory, victoryPianoRange } from './lib/victoryMusic';
+import { victoryPianoRange } from './lib/victoryMusic';
 import { useDailyChallenge } from './hooks/useDailyChallenge';
 import { displayDate, lisbonDate } from './lib/melodyLibrary';
 import type { GameChallenge } from './lib/melodyLibrary';
@@ -29,18 +29,6 @@ import './Brodle.css';
 import './library/MelodyLibrary.css';
 
 const EMPTY_PRESSED_NOTES = new Set<number>();
-
-function loadGameMode(challengeId: string, target: readonly number[], userId: string | null, preferred?: GameMode): GameMode {
-  try {
-    const saved = window.localStorage.getItem(gameModeStorageKey(challengeId, target, userId));
-    const preference = saved === 'guided' || saved === 'classic' ? saved : window.localStorage.getItem(GAME_MODE_STORAGE_KEY);
-    const choice = preferred ?? (preference === 'classic' ? 'classic' : 'guided');
-    return modeWithProgress(choice, {
-      guided: parseProgress(window.localStorage.getItem(progressStorageKey(challengeId, target, userId, 'guided')), target, 'guided'),
-      classic: parseProgress(window.localStorage.getItem(progressStorageKey(challengeId, target, userId, 'classic')), target, 'classic'),
-    });
-  } catch { return preferred ?? 'guided'; }
-}
 
 function notationLabel(notes: readonly number[], naming: NoteNaming, MELODY: readonly MelodyStep[], feedback: readonly (Feedback | undefined)[] | undefined, key: MusicalKey): string {
   if (!notes.length) return 'Empty staff. Use the piano to enter your guess.';
@@ -54,26 +42,20 @@ function notationLabel(notes: readonly number[], naming: NoteNaming, MELODY: rea
 }
 
 function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; notice: string; navigation: ChallengeNavigationProps }) {
-  const { user } = useAuth();
-  const userId = user?.id ?? null;
   const CHALLENGE = challenge;
   const { melody: MELODY, finalMelody: MELODY_FINAL, key: KEY, bpm, timeSignature } = challenge;
   const TARGET = useMemo(() => MELODY.flatMap((step) => step.midi === null ? [] : [step.midi]), [MELODY]);
   const audio = usePianoAudio(MELODY, bpm);
   const { soundStatus, playing, audioError, playNotes, stopAudio } = audio;
-  const modeKey = gameModeStorageKey(CHALLENGE.id, TARGET, userId);
-  const [gameMode, setGameMode] = useState<GameMode>(() => loadGameMode(CHALLENGE.id, TARGET, userId));
-  const casual = gameMode === 'guided';
-  const { progress, updateProgress, storageError, loading: progressLoading, status: progressStatus, accountProgress, retrySync } = useBrodleProgress(CHALLENGE.id, TARGET, gameMode, setGameMode);
+  const { progress, updateProgress, storageError, loading: progressLoading, status: progressStatus, accountProgress, retrySync } = useBrodleProgress(CHALLENGE.id, TARGET);
   const { guess, attempts, hintsUsed } = progress;
-  const modeLocked = modeIsLocked(progress);
-  const constraints = useMemo(() => noteConstraints(progress, TARGET, gameMode), [progress, TARGET, gameMode]);
-  const sheetFeedback = useMemo(() => guessFeedback(progress, TARGET, gameMode), [progress, TARGET, gameMode]);
-  const invalidNotes = useMemo(() => guessRangeIssues(progress, TARGET, gameMode), [progress, TARGET, gameMode]);
+  const constraints = useMemo(() => noteConstraints(progress, TARGET), [progress, TARGET]);
+  const sheetFeedback = useMemo(() => guessFeedback(progress, TARGET), [progress, TARGET]);
+  const invalidNotes = useMemo(() => guessRangeIssues(progress, TARGET), [progress, TARGET]);
   const challengeRange = useMemo(() => challengePianoRange(TARGET), [TARGET]);
   const maxHints = hintLimit(TARGET);
   const isSongHintPlaying = playing === 'hint-melody';
-  const [celebration, setCelebration] = useState<'exact' | 'octave' | 'melody' | null>(null);
+  const [celebration, setCelebration] = useState(false);
   const [winScrollRequest, setWinScrollRequest] = useState(0);
   const [noteNaming, setNoteNaming] = useState<NoteNaming>('letters');
   const [selectedGuessIndex, setSelectedGuessIndex] = useState<number | null>(null);
@@ -84,33 +66,14 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
   const shareRequest = useRef(0);
   const draft = useRef<HTMLElement>(null);
 
-  const win = winningAttempt(progress, TARGET, gameMode);
-  const exactWon = win?.kind === 'exact';
-  const octaveWon = win?.kind === 'octave';
+  const win = winningAttempt(progress, TARGET);
   const won = win !== null;
   const finished = won;
-  const winOffset = win?.offset ?? 0;
-  const victoryParts = useMemo(() => [MELODY_FINAL, challenge.finalBass ?? []].map((part) => transposeVictory(part, winOffset)), [MELODY_FINAL, challenge.finalBass, winOffset]);
+  const victoryParts = useMemo(() => [MELODY_FINAL, challenge.finalBass ?? []], [MELODY_FINAL, challenge.finalBass]);
   const finalRange = useMemo(() => victoryPianoRange(victoryParts), [victoryParts]);
   const finalPlaying = playing === 'final';
   const pianoRange = finalPlaying && finalRange ? finalRange : challengeRange;
   const finalBpm = challenge.finalBpm ?? bpm;
-
-  useEffect(() => {
-    if (!modeLocked) return;
-    try { window.localStorage.setItem(modeKey, gameMode); } catch { /* The current round stays locked in memory. */ }
-  }, [modeKey, gameMode, modeLocked]);
-
-  useEffect(() => {
-    const keys = ['guided', 'classic'].map((mode) => progressStorageKey(CHALLENGE.id, TARGET, userId, mode as GameMode));
-    const restoreMode = (event: StorageEvent) => {
-      if (event.storageArea === window.localStorage && event.key && keys.includes(event.key)) {
-        setGameMode((current) => loadGameMode(CHALLENGE.id, TARGET, userId, current));
-      }
-    };
-    window.addEventListener('storage', restoreMode);
-    return () => window.removeEventListener('storage', restoreMode);
-  }, [CHALLENGE.id, TARGET, userId]);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -136,25 +99,25 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
       if (freePlay) return;
       stopAudio();
       setSelectedGuessIndex(null);
-      updateProgress((previous) => editProgressGuess(previous, previous.guess.slice(0, -1), TARGET, gameMode));
+      updateProgress((previous) => editProgressGuess(previous, previous.guess.slice(0, -1), TARGET));
     }
     window.addEventListener('keydown', handleEditingKey);
     return () => window.removeEventListener('keydown', handleEditingKey);
-  }, [finished, gameMode, freePlay, stopAudio, updateProgress, TARGET]);
+  }, [finished, freePlay, stopAudio, updateProgress, TARGET]);
 
   function addNote(midi: number) {
     if (finished || freePlay) return;
     const editingIndex = selectedGuessIndex;
     const { previous, next } = updateProgress((previous) => {
-      if (isFinished(previous, gameMode)) return previous;
+      if (isFinished(previous)) return previous;
       if (selectedGuessIndex !== null && selectedGuessIndex < previous.guess.length) {
-        return replaceGuessNote(previous, selectedGuessIndex, midi, TARGET, gameMode);
+        return replaceGuessNote(previous, selectedGuessIndex, midi, TARGET);
       }
       return previous.guess.length >= TARGET.length ? previous
-        : editProgressGuess(previous, [...previous.guess, midi], TARGET, gameMode);
+        : editProgressGuess(previous, [...previous.guess, midi], TARGET);
     });
     if (editingIndex !== null && previous !== next) {
-      const nextIndex = noteConstraints(next, TARGET, gameMode).findIndex((constraint, index) =>
+      const nextIndex = noteConstraints(next, TARGET).findIndex((constraint, index) =>
         index > editingIndex && index < next.guess.length && constraint.lockedMidi === null);
       setSelectedGuessIndex(nextIndex === -1 ? null : nextIndex);
     }
@@ -170,32 +133,18 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
     setFreePlay((previous) => !previous);
   }
 
-  function changeGameMode(mode: GameMode) {
-    if (mode === gameMode || modeLocked || progressLoading) return;
-    const nextMode = loadGameMode(CHALLENGE.id, TARGET, userId, mode);
-    stopAudio();
-    setSelectedGuessIndex(null);
-    setFreePlay(false);
-    setCelebration(null);
-    setWinScrollRequest(0);
-    clearShare();
-    setGameMode(nextMode);
-    try { window.localStorage.setItem(GAME_MODE_STORAGE_KEY, nextMode); window.localStorage.setItem(modeKey, nextMode); }
-    catch { /* The round still works if the browser cannot remember a preference. */ }
-  }
-
   function editGuess(notes: number[]) {
     stopAudio();
     setSelectedGuessIndex(null);
-    updateProgress((previous) => editProgressGuess(previous, notes, TARGET, gameMode));
+    updateProgress((previous) => editProgressGuess(previous, notes, TARGET));
   }
 
   function copyAttempt(index: number) {
     stopAudio();
     setFreePlay(false);
-    const { next } = updateProgress((previous) => copyAttemptToDraft(previous, index, TARGET, gameMode));
-    const firstIssue = guessRangeIssues(next, TARGET, gameMode)[0];
-    const editableIndex = firstIssue ?? noteConstraints(next, TARGET, gameMode).findIndex((constraint, position) =>
+    const { next } = updateProgress((previous) => copyAttemptToDraft(previous, index, TARGET));
+    const firstIssue = guessRangeIssues(next, TARGET)[0];
+    const editableIndex = firstIssue ?? noteConstraints(next, TARGET).findIndex((constraint, position) =>
       position < next.guess.length && constraint.lockedMidi === null);
     setSelectedGuessIndex(editableIndex === -1 ? null : editableIndex);
     requestAnimationFrame(() => draft.current?.scrollIntoView({ block: 'nearest' }));
@@ -220,28 +169,28 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
   }
 
   function addNoteHint() {
-    if (!casual || finished || hintsUsed >= maxHints) return;
+    if (finished || hintsUsed >= maxHints) return;
     stopAudio();
     setSelectedGuessIndex(null);
     clearShare();
-    const { next } = updateProgress((previous) => revealNextHint(previous, TARGET, gameMode));
-    if (next.guess.length && !isFinished(next, gameMode)) {
-      const index = noteConstraints(next, TARGET, gameMode).findIndex((constraint) => constraint.lockedMidi === null);
+    const { next } = updateProgress((previous) => revealNextHint(previous, TARGET));
+    if (next.guess.length && !isFinished(next)) {
+      const index = noteConstraints(next, TARGET).findIndex((constraint) => constraint.lockedMidi === null);
       setSelectedGuessIndex(index === -1 || index >= next.guess.length ? null : index);
     }
   }
 
   function playSongHint() {
-    if (!casual || finished) return;
-    const { next } = updateProgress((previous) => markSongHintUsed(previous, gameMode));
-    if (next.songHintUsed && !isFinished(next, gameMode)) togglePlayback(TARGET, 'hint-melody', MELODY);
+    if (finished) return;
+    const { next } = updateProgress((previous) => markSongHintUsed(previous));
+    if (next.songHintUsed && !isFinished(next)) togglePlayback(TARGET, 'hint-melody', MELODY);
   }
 
   function submitGuess() {
-    if (!canSubmitGuess(progress, TARGET, gameMode)) return;
+    if (!canSubmitGuess(progress, TARGET)) return;
     const { previous, next } = updateProgress((saved) => {
-      if (!canSubmitGuess(saved, TARGET, gameMode)) return saved;
-      const attempt: Attempt = { id: crypto.randomUUID(), notes: [...saved.guess], feedback: scoreGuess(saved.guess, TARGET, !casual), hintsUsed: saved.hintsUsed };
+      if (!canSubmitGuess(saved, TARGET)) return saved;
+      const attempt: Attempt = { id: crypto.randomUUID(), notes: [...saved.guess], feedback: scoreGuess(saved.guess, TARGET), hintsUsed: saved.hintsUsed };
       return { ...saved, guess: TARGET.slice(0, saved.hintsUsed),
         attempts: [...saved.attempts, attempt], selectedAttempt: saved.attempts.length };
     });
@@ -249,12 +198,11 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
     setSelectedGuessIndex(null);
     const attempt = next.attempts[next.selectedAttempt];
     clearShare();
-    const kind = getWinKind(attempt.notes, TARGET, !casual);
+    const kind = getWinKind(attempt.notes, TARGET);
     if (kind) {
       setWinScrollRequest((request) => request + 1);
-      setCelebration(kind === 'shifted' ? 'melody' : kind);
-      const offset = attempt.notes[0] - TARGET[0];
-      void audio.playArrangement([MELODY_FINAL, challenge.finalBass ?? []].map((part) => transposeVictory(part, offset)), 'final', finalBpm);
+      setCelebration(true);
+      void audio.playArrangement(victoryParts, 'final', finalBpm);
     } else {
       void playNotes(attempt.notes, `attempt-${next.selectedAttempt}`);
     }
@@ -277,8 +225,8 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
     if (!won || sharing) return;
     const request = ++shareRequest.current;
     const current = () => request === shareRequest.current;
-    const text = buildShareText(attempts, TARGET, `${window.location.origin}/brodle${challenge.date ? '?date=' + challenge.date : ''}`, hintsUsed, !casual)
-      + `\nMode: ${casual ? 'Casual' : 'Hard'}` + (challenge.date ? `\nChallenge: ${challenge.date}` : '');
+    const text = buildShareText(attempts, TARGET, `${window.location.origin}/brodle${challenge.date ? '?date=' + challenge.date : ''}`, hintsUsed, progress.songHintUsed)
+      + (challenge.date ? `\nChallenge: ${challenge.date}` : '');
     const data = { title: 'Brodle', text };
     setSharing(true);
     setShareStatus('');
@@ -318,26 +266,22 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
   const selectedNoteIndex = selectedGuessIndex !== null && selectedGuessIndex < guess.length && constraints[selectedGuessIndex].lockedMidi === null ? selectedGuessIndex : null;
   const highlightedGuessNotes = useMemo(() => !finished && !freePlay && selectedNoteIndex !== null ? [guess[selectedNoteIndex]] : [], [finished, freePlay, guess, selectedNoteIndex]);
   const activeNoteIndex = selectedNoteIndex ?? (guess.length < TARGET.length ? guess.length : null);
-  const availableRange = finished || freePlay || !casual ? undefined : activeNoteIndex === null ? { minMidi: 1, maxMidi: 0 } : constraints[activeNoteIndex];
-  const submittable = canSubmitGuess(progress, TARGET, gameMode);
-  const unchangedGuess = casual && lastAttempt && guess.length === TARGET.length && guess.every((midi, index) => midi === lastAttempt.notes[index]);
+  const availableRange = finished || freePlay ? undefined : activeNoteIndex === null ? { minMidi: 1, maxMidi: 0 } : constraints[activeNoteIndex];
+  const submittable = canSubmitGuess(progress, TARGET);
+  const unchangedGuess = lastAttempt && guess.length === TARGET.length && guess.every((midi, index) => midi === lastAttempt.notes[index]);
   const winPlaybackId = 'final';
   const isWinPlaying = playing === winPlaybackId;
   const winCount = (win?.index ?? -1) + 1;
   const shareLabel = sharing ? 'Sharing…' : shareStatus === 'Copied!' || shareStatus === 'Shared!' ? shareStatus : 'Share';
-  const message = exactWon
+  const message = won
     ? 'You found the tune in ' + winCount + (winCount === 1 ? ' attempt!' : ' attempts!')
-    : octaveWon
-      ? 'You found the melody in a different octave.'
-    : won
-      ? 'You won in ' + winCount + (winCount === 1 ? ' attempt' : ' attempts') + ' with the correct melody at a shifted pitch!'
-      : 'Attempt ' + (attempts.length + 1) + '. Enter ' + TARGET.length + ' notes.';
+    : 'Attempt ' + (attempts.length + 1) + '. Enter ' + TARGET.length + ' notes.';
 
   if (progressLoading) return <main className="route-loading" role="status">Restoring your Brodle attempts…</main>;
 
   return (
     <div className="brodle-page">
-      {celebration && <WinConfetti key={celebration} variant={celebration === 'octave' ? 'melody' : celebration} />}
+      {celebration && <WinConfetti variant="exact" />}
       <main className="brodle-content brodle-main">
         <h1 className="sr-only">Brodle</h1>
 
@@ -358,20 +302,15 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
             </section>}
           </div>
           <p className="sr-only" role="status">{message}</p>
-          <div className="game-mode-picker">
-            {modeLocked ? <span className="game-mode-locked" role="status" data-tour="mode">{casual ? 'Casual' : 'Hard'}<span>Mode locked</span></span> : <div className="game-mode-options" data-tour="mode" role="group" aria-label="Game mode">
-              <button type="button" className="brodle-button" aria-pressed={casual} onClick={() => changeGameMode('guided')}>Casual</button>
-              <button type="button" className="brodle-button" aria-pressed={!casual} onClick={() => changeGameMode('classic')}>Hard</button>
-            </div>}
-            <BrodleTutorial maxHints={maxHints} onOpen={stopAudio} exactOnly={!casual} finished={finished} hasAttempts={attempts.length > 0} />
+          <div className="puzzle-help">
+            <BrodleTutorial maxHints={maxHints} onOpen={stopAudio} finished={finished} hasAttempts={attempts.length > 0} />
           </div>
         </div>
         <div className="brodle-workspace">
           {won ? (
-            <section className={'win-section' + (exactWon ? ' win-exact' : octaveWon ? ' win-octave' : '')} aria-labelledby="win-title" data-tour="result">
-              <div className="win-emblem"><BrodleIcon name={exactWon ? 'check' : 'sparkle'} size={28} /></div>
+            <section className="win-section win-exact" aria-labelledby="win-title" data-tour="result">
+              <div className="win-emblem"><BrodleIcon name="check" size={28} /></div>
               <div className="win-copy" data-tour="song">
-                {!exactWon && <p className="win-eyebrow">{octaveWon ? 'Correct melody. Different octave!' : 'Correct melody. Shifted pitch!'}</p>}
                 <h2 id="win-title">{CHALLENGE.title}</h2>
                 <p className="song-source">{[CHALLENGE.source, CHALLENGE.author && `Melody by ${CHALLENGE.author}`].filter(Boolean).join(' · ')}</p>
                 <MelodyDifficulty melody={MELODY} />
@@ -385,7 +324,7 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
                   onClick={toggleFinalMelody}>
                   <BrodleIcon name={isWinPlaying ? 'stop' : 'play'} />{isWinPlaying ? 'Stop melody' : 'Play melody'}
                 </button>
-                <button type="button" disabled={sharing} aria-label={exactWon ? 'Share exact-pitch result' : octaveWon ? 'Share different-octave result' : 'Share shifted-melody result'}
+                <button type="button" disabled={sharing} aria-label="Share result"
                   title="Share the latest four attempts" onClick={() => void shareResults()}>
                   <BrodleIcon name={shareStatus === 'Copied!' || shareStatus === 'Shared!' ? 'check' : 'share'} />{shareLabel}
                 </button>
@@ -411,7 +350,7 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
 
           {attempts.length > 0 && <AttemptHistory key={attempts.length} attempts={attempts} selectedIndex={progress.selectedAttempt}
             melody={MELODY} musicalKey={KEY} naming={noteNaming} timeSignature={timeSignature} bpm={bpm}
-            playing={playing} finished={finished} exactOnly={!casual} onSelect={selectAttempt}
+            playing={playing} finished={finished} onSelect={selectAttempt}
             onReplay={(index) => togglePlayback(attempts[index].notes, `attempt-${index}`)} onCopy={copyAttempt} />}
           <section className="play-panel brodle-panel" aria-label="Draft and piano">
             {!finished ? <section ref={draft} className="current-guess" aria-label="Your guess" data-empty={guess.length === 0}>
@@ -428,20 +367,21 @@ function Brodle({ challenge, notice, navigation }: { challenge: GameChallenge; n
                   <span className="sr-only" aria-live="polite">{guess.length} of {TARGET.length} notes entered</span>
                 </div>
               </div>
-              {casual && <div className="casual-hints" data-tour="hints" role="group" aria-label="Casual hints">
-                <span className="casual-hints-label">Hints</span>
+              <div className="game-hints" data-tour="hints" role="group" aria-label="Hints">
+                <span className="game-hints-label">Hints</span>
                 <button type="button" className="brodle-button" disabled={hintsUsed >= maxHints} onClick={addNoteHint}
-                  title="Add the next correct note. Revealed notes stay correct in every attempt. Locks this puzzle to Casual mode.">
+                  title="Add the next correct note. Revealed notes stay correct in every attempt.">
                   <BrodleIcon name="plus" />Add note
                   <span className="hint-count" aria-label={`${hintsUsed} of ${maxHints} note hints used`}>{hintsUsed} / {maxHints}</span>
                 </button>
                 <button type="button" className={'brodle-button' + (isSongHintPlaying ? ' is-playing' : '')}
                   aria-pressed={isSongHintPlaying} onClick={playSongHint}
-                  title="Listen to the challenge melody without adding notes or using a note hint. Locks this puzzle to Casual mode.">
+                  title="Listen to the challenge melody without adding notes or using a note hint. Song hint use appears in your shared result.">
                   <BrodleIcon name={isSongHintPlaying ? 'stop' : 'play'} />{isSongHintPlaying ? 'Stop song' : 'Play song'}
                 </button>
-              </div>}
+              </div>
               <div data-tour="staff">
+                <MelodyPitchNotice notes={guess} target={TARGET} />
                 <SheetMusic abc={guessNotation.abc} musicalKey={guessKey} naming={noteNaming} bpm={bpm} timeSignature={timeSignature}
                   compact minWidth={guess.length ? Math.max(320, TARGET.length * 34 + 120) : undefined} invalidNotes={invalidNotes}
                   feedback={sheetFeedback} feedbackIndices={guessNotation.noteIndices}

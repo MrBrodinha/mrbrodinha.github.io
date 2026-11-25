@@ -36,7 +36,7 @@ type HeldNote = {
   holdTimer?: ReturnType<typeof setTimeout>;
 };
 
-export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>[] = MELODY, defaultBpm = BPM) {
+export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>[] = MELODY, defaultBpm = BPM, fixedSound?: PianoSound) {
   const audioContext = useRef<AudioContext | null>(null);
   const masterGain = useRef<GainNode | null>(null);
   const reverbEnabled = useRef(false);
@@ -53,7 +53,7 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
   const nextVoiceId = useRef(0);
   const instruments = useRef(new Map<SampledPianoSound, InstrumentEntry>());
   const unavailableSounds = useRef(new Set<SampledPianoSound>());
-  const [sound, setSoundState] = useState<PianoSound>(() => defaultPianoSound());
+  const [sound, setSoundState] = useState<PianoSound>(() => fixedSound ?? defaultPianoSound());
   const selectedSound = useRef<PianoSound>(sound);
   const [soundStatus, setSoundStatus] = useState<'loading' | 'ready' | 'error'>(() => sound === 'synth' ? 'ready' : 'loading');
   const [soundProgress, setSoundProgress] = useState(0);
@@ -439,7 +439,7 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
   }, []);
 
   const setSound = useCallback((choice: PianoSound) => {
-    if (choice === selectedSound.current) return;
+    if ((fixedSound && choice !== fixedSound) || choice === selectedSound.current) return;
     stopAudio();
     selectedSound.current = choice;
     setSoundState(choice);
@@ -447,7 +447,11 @@ export function usePianoAudio(defaultMelody: readonly Pick<MelodyStep, 'midi' | 
     setUsingSynthFallback(false);
     setAudioError('');
     setSoundStatus(choice === 'synth' || instruments.current.get(choice)?.ready ? 'ready' : 'loading');
-  }, [stopAudio]);
+  }, [stopAudio, fixedSound]);
+
+  useEffect(() => {
+    if (fixedSound && selectedSound.current !== fixedSound) setSound(fixedSound);
+  }, [fixedSound, setSound]);
 
   const retrySound = useCallback(() => {
     const choice = selectedSound.current;

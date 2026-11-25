@@ -13,13 +13,13 @@ const AccountPage = lazy(() => import('./auth/AccountPage'));
 const Mvg = lazy(() => import('./components/mvg/Mvg'));
 const CrazyWildlife = lazy(() => import('./components/wildlife/CrazyWildlife'));
 const Brodle = lazy(() => import('./components/brodle/Brodle'));
-const BrodlePractice = lazy(() => import('./components/brodle/BrodlePractice'));
 const MyMelodies = lazy(() => import('./components/brodle/library/MyMelodies'));
 const BrodleAdmin = lazy(() => import('./components/brodle/admin/BrodleAdmin'));
 const MelodyCreator = lazy(() => import('./components/brodle/creator/MelodyCreator'));
+const OfficialMelodyStudio = lazy(() => import('./components/brodle/creator/MelodyStudioPage'));
 const Testing = lazy(() => import('./components/testing/Testing'));
 const TestingNotFound = lazy(() => import('./components/testing/TestingNotFound'));
-const SheetEditor = lazy(() => import('./components/testing/sheet-editor/SheetEditor'));
+const MelodyStudio = lazy(() => import('./components/testing/sheet-editor/MelodyStudio'));
 
 function App() {
   return (
@@ -39,14 +39,15 @@ function App() {
           <Route path="/redbull/*" element={<Redbull />} />
           <Route path="/testing" element={<TestingAccess />}>
             <Route index element={<Testing />} />
-            <Route path="sheet-editor" element={<SheetEditor />} />
+            <Route path="sheet-editor" element={<MelodyStudio />} />
             <Route path="*" element={<TestingNotFound />} />
           </Route>
           <Route path="/brodle" element={<Brodle />} />
-          <Route path="/brodle/tutorial" element={<BrodlePractice />} />
+          <Route path="/brodle/tutorial" element={<Navigate to="/brodle?tour=1" replace />} />
           <Route path="/brodle/melodies" element={<MyMelodies />} />
           <Route path="/brodle/admin" element={<BrodleAdmin />} />
-          <Route path="/brodle/create" element={<MelodyCreator />} />
+          <Route path="/brodle/create" element={<OfficialMelodyStudio />} />
+          <Route path="/brodle/create/classic" element={<MelodyCreator />} />
           <Route path="/piano" element={<Navigate to="/brodle" replace />} />
         </Routes>
       </Suspense>

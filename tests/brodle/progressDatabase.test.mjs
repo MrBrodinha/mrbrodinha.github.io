@@ -66,6 +66,17 @@ test('Brodle progress is private to its account, resumes after login, and merges
     assert.deepEqual(won.attemptIds,['first','other-device','win']);
     assert.deepEqual((await save(alice,first)).attempts,won.attempts,'stale tabs never erase a win');
     assert.deepEqual((await load(alice)).guess,[]);
+    const shifted = progress([[62,66]], [], ['shifted']);
+    const octave = progress([[72,76]], [], ['octave']);
+    await save(alice, shifted, 'unified-exact');
+    const stillPlaying = await save(alice, octave, 'unified-exact');
+    assert.deepEqual(stillPlaying.attemptIds, ['shifted', 'octave'], 'pitch and octave shifts never truncate database history');
+    const exact = await save(alice, { ...progress([target], [], ['exact']), hintsUsed: 1, attemptHints: [1], songHintUsed: true }, 'unified-exact');
+    assert.deepEqual(exact.attemptIds, ['shifted', 'octave', 'exact']);
+    const staleExact = await save(alice, progress(), 'unified-exact');
+    assert.deepEqual(staleExact.attemptIds, exact.attemptIds, 'stale saves keep the exact solution and its earlier shifted attempts');
+    assert.equal(staleExact.hintsUsed, 1);
+    assert.equal(staleExact.songHintUsed, true);
     const casualSaved=await load(alice);
     assert.equal(await load(alice,'hard:day-a'),null,'a Casual win does not solve Hard');
     const hardFirst=progress([[61,63]],[62],['hard-first']);

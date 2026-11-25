@@ -5,7 +5,8 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createRoutesFromElements, Routes, StaticRouter, useRoutes } from 'react-router-dom';
 import ts from 'typescript';
-import { previewUrl,expressionsUrl,playbackUrl,rhythmUrl,codeUrl as expressionCodeUrl,scoreUrl, musicUrl, modelUrl, codeUrl, parserUrl, codeEditorUrl } from './sheetEditorModules.mjs';
+import { libraryUrl, studioUrl, studio } from './studioModules.mjs';
+import { composerUrl, previewUrl,expressionsUrl,playbackUrl,rhythmUrl,codeUrl as expressionCodeUrl,scoreUrl, musicUrl, modelUrl, codeUrl, parserUrl, codeEditorUrl, studioPianoUrl } from './sheetEditorModules.mjs';
 
 async function sourceUrl(path, imports = {}) {
   const source = await readFile(new URL('../../' + path, import.meta.url), 'utf8');
@@ -26,6 +27,7 @@ const stateUrl = moduleUrl(`
   export const useAuth = () => state.auth;
   export const useBrodleAdmin = () => state.admin;
   export const usePianoAudio = () => ({});
+  export const useMelodyStudio = () => ({ draft: ${JSON.stringify(studio.emptyStudioDraft())}, revision: 0, loading: false, locked: false, submitting: false, saving: false, dirty: false, record: null, error: '', localError: '', issue: 'Add a title before submitting.', updateDraft() {}, newDraft() {}, save() {}, submit() {}, makeCopy() {}, reload() {} });
   export function AuthProvider({children}) { return children; }
   export default function Passthrough({children}) { return children ?? null; }
   export function listMelodies() { throw new Error('Unexpected data request'); }
@@ -41,7 +43,7 @@ const accessUrl = await sourceUrl('src/components/testing/TestingAccess.tsx', {
 const { default: TestingAccess } = await import(accessUrl);
 const { default: Testing } = await import(await sourceUrl('src/components/testing/Testing.tsx'));
 const { default: TestingNotFound } = await import(await sourceUrl('src/components/testing/TestingNotFound.tsx'));
-const { default: SheetEditor } = await import(await sourceUrl('src/components/testing/sheet-editor/SheetEditor.tsx', {
+const editorUrl = await sourceUrl('src/components/testing/sheet-editor/SheetEditor.tsx', {
   '../../brodle/components/RhythmSymbol': stateUrl,
   '../../brodle/components/BrodleIcon': stateUrl,
   '../../brodle/hooks/usePianoAudio': stateUrl,
@@ -49,7 +51,25 @@ const { default: SheetEditor } = await import(await sourceUrl('src/components/te
   './sheetEditorModel': modelUrl, './scoreModel':scoreUrl, './sheetEditorRhythm':rhythmUrl, './sheetEditorPlayback':playbackUrl, '../../brodle/lib/musicGame':musicUrl,
   './sheetEditorCode': codeUrl,
   './sheetEditorCodeParser': parserUrl,
-  './SheetCodeEditor': codeEditorUrl,
+  './SheetCodeEditor': codeEditorUrl, './StudioPiano': studioPianoUrl, './StudioTutorial': stateUrl,
+});
+const { default: MelodyStudio } = await import(await sourceUrl('src/components/testing/sheet-editor/MelodyStudio.tsx', {
+  '../../../auth/authContext': stateUrl, './SheetEditor': editorUrl, './sheetEditorCode': codeUrl, './studioDocument': studioUrl, './useMelodyStudio': stateUrl,
+}));
+const officialUrl = await sourceUrl('src/components/brodle/creator/MelodyStudioPage.tsx', {
+  '../../testing/sheet-editor/MelodyStudio': await sourceUrl('src/components/testing/sheet-editor/MelodyStudio.tsx', {
+    '../../../auth/authContext': stateUrl, './SheetEditor': editorUrl, './studioDocument': studioUrl, './useMelodyStudio': stateUrl,
+  }), './melodyComposer': composerUrl,
+});
+const { default: OfficialMelodyStudio } = await import(officialUrl);
+const accountUrl = await sourceUrl('src/auth/AccountControls.tsx', { './authContext': stateUrl });
+const brodleHeaderUrl = await sourceUrl('src/components/brodle/components/BrodleSiteHeader.tsx', { '../../../auth/AccountControls': accountUrl, './BrodleIcon': stateUrl });
+const headerUrl = await sourceUrl('src/components/layout/SiteHeader.tsx', { '../../auth/AccountControls': accountUrl, '../brodle/components/BrodleSiteHeader': brodleHeaderUrl });
+const navigationUrl = await sourceUrl('src/components/brodle/components/BrodleNavigation.tsx', { '../../../auth/authContext': stateUrl, '../hooks/useBrodleAdmin': stateUrl });
+const sidebarUrl = await sourceUrl('src/components/brodle/components/BrodleSideMenu.tsx', { './BrodleIcon': stateUrl, './BrodleNavigation': navigationUrl });
+const { default: SiteLayout } = await import(await sourceUrl('src/components/layout/SiteLayout.tsx', {
+  './SiteHeader': headerUrl, './SiteFooter': stateUrl, './navigation': await sourceUrl('src/components/layout/navigation.ts'),
+  '../home/homeBackgrounds': moduleUrl("export const HOME_BACKGROUNDS = ['#000'];"), '../brodle/components/BrodleSideMenu': sidebarUrl,
 }));
 const { default: App } = await import(await sourceUrl('src/App.tsx', {
   './components/home/Home': stateUrl,
@@ -71,11 +91,16 @@ function find(node, type) {
 const routes = createRoutesFromElements(find(App(), Routes).props.children);
 const testingRoute = routes.find(route => route.path === '/testing');
 assert.equal(testingRoute?.element.type, TestingAccess);
+test('the retired hands-on route opens the game tour', () => {
+  const legacy = routes.find(route => route.path === '/brodle/tutorial');
+  assert.equal(legacy.element.props.to, '/brodle?tour=1');
+  assert.equal(legacy.element.props.replace, true);
+});
 let protectedRenders = 0;
 function ProtectedHub() { protectedRenders++; return React.createElement(Testing); }
 function ProtectedFallback() { protectedRenders++; return React.createElement(TestingNotFound); }
 function ProtectedProbe() { protectedRenders++; return React.createElement('p', null, 'Protected experiment'); }
-function ProtectedEditor() { protectedRenders++; return React.createElement(SheetEditor); }
+function ProtectedEditor() { protectedRenders++; return React.createElement(MelodyStudio); }
 const guardedRoutes = [{ ...testingRoute, children: [
   ...testingRoute.children.map(route => ({ ...route, element: React.createElement(route.index ? ProtectedHub : route.path === 'sheet-editor' ? ProtectedEditor : ProtectedFallback) })),
   { path: 'probe', element: React.createElement(ProtectedProbe) },
@@ -97,7 +122,7 @@ test('the real testing routes expose the experiment hub only to authorized accou
     const html = render(path);
     assert.match(html, /<h1>Testing<\/h1>/);
     assert.match(html, /Try new features and experiments here/);
-    assert.match(html, /Melody editor/);
+    assert.match(html, /Melody Studio/);
     assert.match(html, /href="\/testing\/sheet-editor"/);
     assert.doesNotMatch(html, /http-equiv|Administrator access required|No experiments are available yet/);
     assert.equal(protectedRenders, 1);
@@ -141,7 +166,7 @@ test('auth restoration, pending access, and errors cannot mount protected childr
 
 test('sign-out removes access even if an old admin flag remains in flight', () => {
   access(confirmedAdmin, true);
-  assert.match(render(), /Melody editor/);
+  assert.match(render(), /Melody Studio/);
   access(null, true);
   assert.match(render(), /Log in/);
   assert.equal(protectedRenders, 0);
@@ -151,7 +176,11 @@ test('the real sheet-editor child is authorized before the editor mounts', () =>
   assert.ok(testingRoute.children.some(route => route.path === 'sheet-editor'));
   access(confirmedAdmin, true);
   const html = render('/testing/sheet-editor');
-  assert.match(html, /<h1>Melody editor<\/h1>/);
+  assert.match(html, /<h1>Melody Studio<\/h1>/);
+  assert.match(html, /role="tablist"/);
+  assert.match(html, /role="tab"[^>]*aria-selected="true"[^>]*>Game melody/);
+  assert.match(html, /role="tab"[^>]*>Victory melody/);
+  assert.match(html, /role="tabpanel" aria-labelledby="studio-track-main"/);
   assert.match(html, /href="\/testing"/);
   assert.equal(protectedRenders, 1);
   for (const [user, admin, loading, error] of [
@@ -172,11 +201,46 @@ test('unknown testing URLs show a protected fallback with a hub link for admins'
   assert.equal(protectedRenders, 1);
 });
 
+test('official Create renders Studio for guests and ordinary authors inside the unchanged Brodle shell', () => {
+  const officialRoute = routes.find(route => route.path === '/brodle/create');
+  const classicRoute = routes.find(route => route.path === '/brodle/create/classic');
+  assert.ok(officialRoute && classicRoute);
+  assert.notEqual(officialRoute.element.type, classicRoute.element.type);
+  function OfficialRoute() { return useRoutes([{ ...officialRoute, element: React.createElement(OfficialMelodyStudio) }]); }
+  for (const user of [null, { id: 'ordinary' }]) {
+    access(user);
+    const html = renderToStaticMarkup(React.createElement(StaticRouter, { location: '/brodle/create' },
+      React.createElement(SiteLayout, null, React.createElement(OfficialRoute))));
+    assert.match(html, /official-melody-studio/);
+    assert.match(html, /<h1>Melody Studio<\/h1>/);
+    assert.match(html, /role="tablist"/);
+    assert.match(html, /aria-label="Brodle navigation"/);
+    assert.match(html, /brodle-site-header/);
+    assert.doesNotMatch(html, /href="\/brodle\?tour=1"/);
+    assert.doesNotMatch(html, /href="\/brodle\/tutorial"|hands-on example/);
+    assert.equal((html.match(/aria-label="Account"/g) ?? []).length, 1);
+    assert.doesNotMatch(html, /Administrator access required/);
+    if (user) { assert.match(html, />Log out<\/button>/); assert.match(html, /href="\/account"[^>]*>Profile/); }
+    else assert.match(html, /href="\/login\?next=%2Fbrodle%2Fcreate"/);
+  }
+});
+
+test('the official Studio offers existing previous-editor browser work without overwriting it', t => {
+  const prior = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => JSON.stringify({ melody: [{ midi: 60, beats: 1, length: 'Quarter', rhythm: '♩' }], bpm: 120, key: 'C', timeSignature: '4/4' }) } });
+  t.after(() => { if (prior) Object.defineProperty(globalThis, 'localStorage', prior); else delete globalThis.localStorage; });
+  access(null);
+  const renderOfficial = location => renderToStaticMarkup(React.createElement(StaticRouter, { location }, React.createElement(OfficialMelodyStudio)));
+  assert.match(renderOfficial('/brodle/create'), /href="\/brodle\/create\/classic"/);
+  assert.doesNotMatch(renderOfficial('/brodle/create?id=cloud'), /Open your draft from the previous editor/);
+});
+
 const { default: BrodleAdmin } = await import(await sourceUrl('src/components/brodle/admin/BrodleAdmin.tsx', {
   '../../../auth/authContext': stateUrl,
   '../hooks/useBrodleAdmin': stateUrl,
   '../hooks/usePianoAudio': stateUrl,
   '../services/melodyService': stateUrl,
+  '../lib/melodyLibrary': libraryUrl,
   '../library/LibraryShell': stateUrl,
   '../library/MelodyCard': stateUrl,
   '../components/PianoControls': stateUrl,

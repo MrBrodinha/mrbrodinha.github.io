@@ -13,7 +13,7 @@ async function moduleUrl(path, imports = {}) {
 const musicUrl = await moduleUrl('../../src/components/brodle/lib/musicGame.ts');
 const { scoreGuess } = await import(musicUrl);
 const progressUrl = await moduleUrl('../../src/components/brodle/lib/gameProgress.ts', { './musicGame': musicUrl });
-const { emptyProgress, parseProgress, serializeProgress, mergeProgress, progressStorageKey, progressRoundId, gameModeStorageKey, modeIsLocked, modeWithProgress, winningAttempt, isFinished, hintLimit, editProgressGuess, revealNextHint, noteConstraints, replaceGuessNote, markSongHintUsed, canSubmitGuess, guessFeedback, copyLastAttempt, copyAttemptToDraft, guessRangeIssues } = await import(progressUrl);
+const { emptyProgress, parseProgress, serializeProgress, mergeProgress, progressStorageKey, legacyHardStorageKey, hasProgress, winningAttempt, isFinished, hintLimit, editProgressGuess, revealNextHint, noteConstraints, replaceGuessNote, markSongHintUsed, canSubmitGuess, guessFeedback, copyLastAttempt, copyAttemptToDraft, guessRangeIssues } = await import(progressUrl);
 const syncUrl = await moduleUrl('../../src/components/brodle/lib/progressSync.ts', { './gameProgress': progressUrl });
 const { ProgressSync, readProgressCache, serializeProgressCache } = await import(syncUrl);
 const target = [60,64];
@@ -21,56 +21,50 @@ const progress = (attempts = [], guess = [], attemptIds = attempts.map((_,index)
 const initial = (value = emptyProgress(), pending = false) => ({ progress: value, pending });
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 
-test('either Casual hint locks the mode before any submission, while an unsubmitted draft stays switchable', () => {
+test('optional note and song hints work independently before a submission', () => {
   const tune = [60, 64, 67, 65];
-  const empty = emptyProgress();
-  const draft = editProgressGuess(empty, [59, 63], tune);
-  assert.equal(modeIsLocked(draft), false);
-  assert.equal(modeWithProgress('classic', { guided: draft, classic: empty }), 'classic');
+  const draft = editProgressGuess(emptyProgress(), [59, 63], tune);
+  assert.equal(hasProgress(draft), true);
   for (const assisted of [revealNextHint(draft, tune), markSongHintUsed(draft)]) {
     assert.equal(assisted.attempts.length, 0);
-    assert.equal(modeIsLocked(assisted), true);
-    const restored = parseProgress(serializeProgress(assisted), tune);
-    assert.equal(modeIsLocked(restored), true, 'reload preserves the lock');
-    assert.equal(modeWithProgress('classic', { guided: restored, classic: empty }), 'guided', 'a Hard preference cannot bypass the Casual hint lock');
+    assert.equal(hasProgress(assisted), true);
+    assert.deepEqual(parseProgress(serializeProgress(assisted), tune), assisted);
   }
   const heard = markSongHintUsed(draft);
-  assert.deepEqual(heard.guess, draft.guess, 'hearing the song never edits the draft');
-  assert.equal(heard.hintsUsed, 0, 'hearing the song uses no note hints');
-  assert.equal(markSongHintUsed(heard), heard, 'replays keep the same lock');
-  assert.equal(markSongHintUsed(empty, 'classic'), empty, 'Hard cannot use song hints');
+  assert.deepEqual(heard.guess, draft.guess);
+  assert.equal(heard.hintsUsed, 0);
+  assert.equal(markSongHintUsed(heard), heard);
   const solved = progress([target]);
-  assert.equal(markSongHintUsed(solved), solved, 'completed rounds cannot use song hints');
+  assert.equal(markSongHintUsed(solved), solved);
 });
 
-test('stale tabs and devices cannot erase song hint usage or unlock Hard', async () => {
+test('stale tabs and devices cannot erase song hint usage', async () => {
   const heard = markSongHintUsed(emptyProgress());
   const stale = emptyProgress();
   for (const merged of [mergeProgress(heard, stale, target), mergeProgress(stale, heard, target), mergeProgress(heard, stale, target, false)]) {
     assert.equal(merged.songHintUsed, true);
-    assert.equal(modeIsLocked(merged), true);
+    assert.equal(hasProgress(merged), true);
   }
   let remote = emptyProgress();
   const transport = { load: async () => remote, save: async next => (remote = mergeProgress(remote, next, target)) };
   const first = new ProgressSync(target, initial(), transport, () => {});
   await first.sync();
   first.update(markSongHintUsed);
-  assert.equal(modeIsLocked(first.state.progress), true, 'lock is immediate, before the save finishes');
+  assert.equal(hasProgress(first.state.progress), true, 'lock is immediate, before the save finishes');
   await setImmediate();
   first.dispose();
   const returning = new ProgressSync(target, initial(), transport, () => {});
   await returning.sync();
   assert.equal(returning.state.progress.songHintUsed, true);
-  assert.equal(modeWithProgress('classic', { guided: returning.state.progress, classic: stale }), 'guided');
   returning.dispose();
 });
 
 test('legacy progress remains compatible and only a boolean true restores song usage', () => {
   assert.equal(parseProgress(serializeProgress(emptyProgress()), target).songHintUsed, undefined);
   for (const songHintUsed of [false, null, 0, 1, 'true', [], {}]) {
-    assert.equal(modeIsLocked(parseProgress(JSON.stringify({ attempts: [], guess: [], songHintUsed }), target)), false);
+    assert.equal(hasProgress(parseProgress(JSON.stringify({ attempts: [], guess: [], songHintUsed }), target)), false);
   }
-  assert.equal(modeIsLocked(parseProgress(JSON.stringify({ attempts: [], guess: [], songHintUsed: true }), target)), true);
+  assert.equal(hasProgress(parseProgress(JSON.stringify({ attempts: [], guess: [], songHintUsed: true }), target)), true);
 });
 
 test('older attempts copy to the draft with current hints and confirmed notes, while exposing each blocked position', () => {
@@ -90,10 +84,6 @@ test('older attempts copy to the draft with current hints and confirmed notes, w
   assert.equal(copied.hintsUsed, 1);
   assert.equal(copied.selectedAttempt, 0);
   for (const index of [-1, 2, 0.5]) assert.equal(copyAttemptToDraft(saved, index, tune), saved);
-  const classic = copyAttemptToDraft(saved, 0, tune, 'classic');
-  assert.deepEqual(classic.guess, [60, 62, 69, 64]);
-  assert.deepEqual(guessRangeIssues(classic, tune, 'classic'), []);
-  assert.equal(canSubmitGuess(classic, tune, 'classic'), true);
   const solved = parseProgress(JSON.stringify({ attempts: [tune] }), tune);
   assert.equal(copyAttemptToDraft(solved, 0, tune), solved, 'a finished round stays finished');
 });
@@ -132,7 +122,7 @@ test('note hints keep half the melody at most, survive editing and retain a snap
 test('each note accumulates independent pitch limits and locks correct pitches', () => {
   const tune = [64, 67, 60, 72];
   let round = parseProgress(JSON.stringify({ attempts: [[68, 62, 60, 71]], guess: [] }), tune);
-  assert.deepEqual(round.guess, [], 'a submitted guided melody leaves a fresh draft');
+  assert.deepEqual(round.guess, [], 'a submitted melody leaves a fresh draft');
   assert.equal(editProgressGuess(round, [68], tune), round, 'new input respects learned limits');
   round = copyLastAttempt(round, tune);
   assert.deepEqual(round.guess, [68, 62, 60, 71]);
@@ -191,104 +181,62 @@ test('partial drafts stay partial and stale devices cannot replace confirmed pit
   assert.deepEqual(completed.guess, [65, 64, 60, 72]);
 });
 
-test('Casual shifted and octave guesses finish the round and survive reloads and stale saves', () => {
+test('legacy shifted completions reopen, keep their history and can be corrected to an exact win', () => {
   const tune = [60, 64, 67];
   for (const offset of [-24, -12, -2, 2, 12, 24]) {
-    const round = parseProgress(JSON.stringify({ attempts: [tune.map(midi => midi + offset)], guess: tune }), tune);
-    assert.ok(round.attempts[0].feedback.every(value => value === (offset % 12 === 0 ? 'octave' : 'shifted')));
-    assert.equal(isFinished(round), true);
-    assert.deepEqual(winningAttempt(round, tune), { index: 0, kind: offset % 12 === 0 ? 'octave' : 'shifted', offset });
-    assert.deepEqual(round.guess, [], 'a winning melody has no editable draft');
-    assert.equal(copyLastAttempt(round, tune), round);
-    assert.equal(editProgressGuess(round, tune, tune), round);
-    assert.equal(replaceGuessNote(round, 0, tune[0], tune), round);
-    assert.equal(revealNextHint(round, tune), round);
-    assert.equal(canSubmitGuess(round, tune), false);
-    assert.deepEqual(guessFeedback(round, tune), round.attempts[0].feedback);
-    assert.deepEqual(parseProgress(serializeProgress(round), tune), round);
-    const stale = parseProgress(JSON.stringify({ attempts: [[59, 62, 66]], guess: [60] }), tune);
-    assert.deepEqual(mergeProgress(round, stale, tune), round, 'a stale tab cannot reopen a Casual win');
+    const notes = tune.map(midi => midi + offset);
+    const round = parseProgress(JSON.stringify({ attempts: [notes], attemptIds: ['old-win'], guess: [], songHintUsed: true }), tune);
+    assert.deepEqual(round.attempts[0].feedback, tune.map(() => offset < 0 ? 'low' : 'high'));
+    assert.equal(isFinished(round), false);
+    assert.equal(winningAttempt(round, tune), null);
+    const copied = copyLastAttempt(round, tune);
+    assert.deepEqual(copied.guess, notes);
+    assert.deepEqual(guessRangeIssues(copied, tune), [0, 1, 2]);
+    const repaired = editProgressGuess(copied, tune, tune);
+    assert.equal(canSubmitGuess(repaired, tune), true);
+    const solved = parseProgress(serializeProgress({ ...repaired, attempts: [...round.attempts, { id: 'exact', notes: tune, feedback: scoreGuess(tune, tune) }] }), tune);
+    assert.equal(isFinished(solved), true);
+    assert.equal(solved.attempts.length, 2);
+    assert.equal(solved.attempts[0].id, 'old-win');
+    assert.equal(solved.songHintUsed, true);
+    assert.deepEqual(winningAttempt(solved, tune), { index: 1, kind: 'exact', offset: 0 });
+    assert.deepEqual(parseProgress(serializeProgress(solved), tune), solved);
   }
 });
 
-test('Hard restores shifted and octave guesses as normal feedback and requires an exact win', () => {
+test('restored shifted and octave guesses receive normal feedback and require an exact win', () => {
   const tune = [60, 64, 67];
   for (const offset of [-24, -12, -2, 2, 12, 24]) {
     const notes = tune.map((midi) => midi + offset);
-    let round = parseProgress(JSON.stringify({ attempts: [notes], guess: tune }), tune, 'classic');
+    let round = parseProgress(JSON.stringify({ attempts: [notes], guess: tune }), tune);
     assert.deepEqual(round.attempts[0].feedback, tune.map(() => offset < 0 ? 'low' : 'high'));
-    assert.equal(isFinished(round, 'classic'), false);
-    assert.equal(winningAttempt(round, tune, 'classic'), null);
-    assert.equal(canSubmitGuess(round, tune, 'classic'), true);
-    round = parseProgress(serializeProgress({ ...round, attempts: [...round.attempts, { id: 'exact', notes: tune, feedback: scoreGuess(tune, tune) }] }), tune, 'classic');
-    assert.equal(isFinished(round, 'classic'), true);
-    assert.deepEqual(winningAttempt(round, tune, 'classic'), { index: 1, kind: 'exact', offset: 0 });
-    assert.equal(canSubmitGuess(round, tune, 'classic'), false);
-    assert.deepEqual(parseProgress(serializeProgress(round), tune, 'classic'), round);
+    assert.equal(isFinished(round), false);
+    assert.equal(winningAttempt(round, tune), null);
+    assert.equal(canSubmitGuess(round, tune), true);
+    round = parseProgress(serializeProgress({ ...round, attempts: [...round.attempts, { id: 'exact', notes: tune, feedback: scoreGuess(tune, tune) }] }), tune);
+    assert.equal(isFinished(round), true);
+    assert.deepEqual(winningAttempt(round, tune), { index: 1, kind: 'exact', offset: 0 });
+    assert.equal(canSubmitGuess(round, tune), false);
+    assert.deepEqual(parseProgress(serializeProgress(round), tune), round);
   }
 });
 
-test('mode selection restores an already-started puzzle and keeps accounts, days and targets separate', () => {
-  const empty = emptyProgress();
-  const started = progress([[59,64]]);
-  assert.equal(modeWithProgress('guided', { guided: empty, classic: empty }), 'guided');
-  assert.equal(modeWithProgress('classic', { guided: empty, classic: empty }), 'classic');
-  assert.equal(modeWithProgress('guided', { guided: empty, classic: started }), 'classic');
-  assert.equal(modeWithProgress('classic', { guided: started, classic: empty }), 'guided');
-  // Existing users with two historical rounds keep the round they selected.
-  for (const mode of ['guided', 'classic']) assert.equal(modeWithProgress(mode, { guided: started, classic: started }), mode);
-  const keys = [
-    gameModeStorageKey('day-a', target, null), gameModeStorageKey('day-a', target, 'alice'),
-    gameModeStorageKey('day-a', target, 'bob'), gameModeStorageKey('day-b', target, 'alice'),
-    gameModeStorageKey('day-a', [61,65], 'alice'),
-  ];
-  assert.equal(new Set(keys).size, keys.length);
-});
-
-test('classic mode accepts complete new melodies without guided locks or pitch elimination', () => {
+test('partial drafts and revealed notes survive account sync and reloads', async () => {
   const tune = [60,64,67,65];
-  const previous = [60,63,69,64];
-  let round = parseProgress(JSON.stringify({ attempts: [previous], guess: [] }), tune, 'classic');
-  assert.deepEqual(round.guess, [], 'a submitted classic melody leaves a fresh draft');
-  assert.ok(noteConstraints(round,tune,'classic').every(({minMidi,maxMidi,lockedMidi}) => minMidi===31 && maxMidi===103 && lockedMidi===null));
-  round = editProgressGuess(round,[59,65,70,63],tune,'classic');
-  assert.deepEqual(round.guess,[59,65,70,63], 'classic permits pitches ruled out by guided feedback and replacing previously correct notes');
-  assert.equal(canSubmitGuess(round,tune,'classic'),true);
-  assert.deepEqual(guessFeedback(round,tune,'classic'),[undefined,undefined,undefined,undefined]);
-  assert.deepEqual(editProgressGuess(round,[],tune,'classic').guess,[]);
-  assert.deepEqual(editProgressGuess(round,round.guess.slice(0,-1),tune,'classic').guess,[59,65,70]);
-  round = replaceGuessNote(round,1,66,tune,'classic');
-  assert.deepEqual(round.guess,[59,66,70,63]);
-  const repeated = editProgressGuess(round,previous,tune,'classic');
-  assert.equal(canSubmitGuess(repeated,tune,'classic'),true,'classic still counts repeated complete submissions');
-  assert.equal(revealNextHint(round,tune,'classic'),round,'Hard cannot reveal note hints');
-  assert.deepEqual(round.guess,[59,66,70,63]);
-  assert.deepEqual(editProgressGuess(round,[],tune,'classic').guess,[]);
-  assert.deepEqual(replaceGuessNote(round,0,60,tune,'classic').guess,[60,66,70,63]);
-  assert.deepEqual(guessFeedback(round,tune,'classic'),[undefined,undefined,undefined,undefined]);
-  assert.deepEqual(parseProgress(serializeProgress(round),tune,'classic'),round);
-  const winning = {id:'classic-win',notes:tune,feedback:scoreGuess(tune,tune),hintsUsed:round.hintsUsed};
-  const solved = parseProgress(serializeProgress({...round,attempts:[...round.attempts,winning]}),tune,'classic');
-  assert.equal(isFinished(solved),true);
-  assert.deepEqual(guessFeedback(solved,tune,'classic'),['correct','correct','correct','correct']);
-});
-
-test('legacy Hard partial drafts and revealed notes survive account sync and reloads', async () => {
-  const tune = [60,64,67,65];
-  let remote = parseProgress(JSON.stringify({attempts:[[60,63,69,64]],guess:[],hintsUsed:1}),tune,'classic');
+  let remote = parseProgress(JSON.stringify({attempts:[[60,63,69,64]],guess:[],hintsUsed:1}),tune);
   let cached = serializeProgressCache(remote,false);
   const transport = {
-    load: async()=>parseProgress(serializeProgress(remote),tune,'classic'),
-    save: async next => (remote = mergeProgress(remote,next,tune,true,'classic')),
+    load: async()=>parseProgress(serializeProgress(remote),tune),
+    save: async next => (remote = mergeProgress(remote,next,tune,true)),
   };
-  const session = new ProgressSync(tune,readProgressCache(cached,tune,'classic'),transport,state=>{cached=serializeProgressCache(state.progress,state.pending);},'classic');
+  const session = new ProgressSync(tune,readProgressCache(cached,tune),transport,state=>{cached=serializeProgressCache(state.progress,state.pending);});
   await session.sync();
   assert.deepEqual(session.state.progress.guess,[60]);
-  session.update(previous=>editProgressGuess(previous,[60,66],tune,'classic'));
+  session.update(previous=>editProgressGuess(previous,[60,66],tune));
   await setImmediate();
-  assert.deepEqual(remote.guess,[60,66], 'sync does not fill a classic draft from the previous attempt');
+  assert.deepEqual(remote.guess,[60,66], 'sync does not fill a partial draft from the previous attempt');
   session.dispose();
-  const returning = new ProgressSync(tune,readProgressCache(cached,tune,'classic'),transport,()=>{},'classic');
+  const returning = new ProgressSync(tune,readProgressCache(cached,tune),transport,()=>{});
   await returning.sync();
   assert.deepEqual(returning.state.progress.guess,[60,66]);
   assert.equal(returning.state.progress.hintsUsed,1);
@@ -324,37 +272,14 @@ test('old progress has no hints and malformed hint metadata cannot spend extra h
   assert.equal(damaged.hintsUsed, 0, 'an incorrect note cannot be restored as a revealed correct note');
 });
 
-test('account and challenge storage keys isolate users, guests, modes, archive days and changed targets', () => {
-  const keys = [progressStorageKey('day-a',target,'alice'),progressStorageKey('day-a',target,'bob'),progressStorageKey('day-a',target),progressStorageKey('day-b',target,'alice'),progressStorageKey('day-a',[61,65],'alice'),progressStorageKey('day-a',target,'alice','classic'),progressStorageKey('day-a',target,null,'classic')];
-  assert.equal(new Set(keys).size,keys.length);
-  assert.equal(progressStorageKey('day-a',target), 'brodle:progress:v1:day-a:60-64', 'old unowned rounds remain guest rounds');
+test('canonical and legacy browser keys isolate users, guests, days and changed targets', () => {
+  const keys = [progressStorageKey('day-a',target,'alice'),progressStorageKey('day-a',target,'bob'),progressStorageKey('day-a',target),progressStorageKey('day-b',target,'alice'),progressStorageKey('day-a',[61,65],'alice'),legacyHardStorageKey('day-a',target,'alice'),legacyHardStorageKey('day-a',target,null)];
+  assert.equal(new Set(keys).size, keys.length);
+  assert.equal(keys[2], 'brodle:progress:v1:day-a:60-64');
+  assert.equal(keys[5], 'brodle:progress:v2:user:alice:hard:day-a:60-64');
   const cache = new Map([[keys[0], serializeProgressCache(progress([[59,64]],[60]),true)]]);
   assert.deepEqual(readProgressCache(cache.get(keys[0]),target).progress.guess,[60]);
-  assert.deepEqual(readProgressCache(cache.get(keys[1]) ?? null,target).progress,emptyProgress());
-  assert.deepEqual(readProgressCache(cache.get(keys[2]) ?? null,target).progress,emptyProgress());
-  assert.deepEqual(readProgressCache(cache.get(keys[5]) ?? null,target,'classic').progress,emptyProgress(), 'old shared progress is not copied into Hard');
-  assert.equal(progressRoundId('day-a','guided'),'day-a', 'existing account history stays in Casual');
-  assert.equal(progressRoundId('day-a','classic'),'hard:day-a');
-});
-
-test('Casual and Hard browser rounds retain separate attempts, drafts, hints and wins', () => {
-  const tune = [60,64,67,65];
-  for (const userId of [null, 'alice']) {
-    const casualKey = progressStorageKey('mode-round',tune,userId,'guided');
-    const hardKey = progressStorageKey('mode-round',tune,userId,'classic');
-    const casual = parseProgress(JSON.stringify({attempts:[[60,63,69,64]],guess:[60,64],hintsUsed:1}),tune,'guided');
-    const hard = parseProgress(JSON.stringify({attempts:[[59,63,66,66]],guess:[62,66]}),tune,'classic');
-    const cache = new Map([[casualKey,serializeProgressCache(casual,false)], [hardKey,serializeProgressCache(hard,false)]]);
-    const restore = mode => readProgressCache(cache.get(progressStorageKey('mode-round',tune,userId,mode)),tune,mode).progress;
-    assert.deepEqual(restore('guided'),casual);
-    assert.deepEqual(restore('classic'),hard);
-    const solved = parseProgress(serializeProgress({...casual,attempts:[...casual.attempts,{id:'casual-win',notes:tune,feedback:scoreGuess(tune,tune)}]}),tune,'guided');
-    cache.set(casualKey,serializeProgressCache(solved,false));
-    assert.equal(isFinished(restore('guided')),true);
-    assert.equal(isFinished(restore('classic')),false);
-    assert.equal(restore('classic').hintsUsed,0);
-    assert.deepEqual(restore('classic'),hard,'solving Casual leaves the Hard round unchanged');
-  }
+  for (const key of keys.slice(1)) assert.deepEqual(readProgressCache(cache.get(key) ?? null,target).progress,emptyProgress());
 });
 
 test('attempt identities preserve repeated guesses and make stale retries idempotent', () => {

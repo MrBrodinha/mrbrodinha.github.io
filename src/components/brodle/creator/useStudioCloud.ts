@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../auth/authContext';
 import { useBrodleAdmin } from '../hooks/useBrodleAdmin';
 import { melodyPayload, recordDraft, MAX_MELODY_STEPS, MAX_FINAL_STEPS } from '../lib/melodyLibrary';
@@ -16,6 +16,7 @@ export function useStudioCloud(draft: ComposerDraft, setDraft: Dispatch<SetState
   const id = params.get('id'); const copy = params.get('copy');
   const fresh = params.get('new') === '1';
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [record, setRecord] = useState<MelodyRecord | null>(null);
   const [saved, setSaved] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,8 +38,8 @@ export function useStudioCloud(draft: ComposerDraft, setDraft: Dispatch<SetState
     setRecord(null); setSaved(''); loaded.current = '';
     setLoading(false); setBusy(false); setError(''); setMessage('');
     // Consume the new-melody action: a subsequent refresh restores this draft.
-    navigate('/brodle/create', { replace: true });
-  }, [fresh, navigate, setDraft, stopAudio]);
+    navigate(pathname, { replace: true });
+  }, [fresh, navigate, pathname, setDraft, stopAudio]);
   const userId = user?.id;
   useEffect(() => {
     const pending = loadRequest;
@@ -66,7 +67,7 @@ export function useStudioCloud(draft: ComposerDraft, setDraft: Dispatch<SetState
     const row = await saveMelody(draft, user.id, record?.id);
     if (current !== request.current) throw new Error('Cancelled');
     setRecord(row); setSaved(version); loaded.current = row.id;
-    navigate('/brodle/create?id=' + row.id, { replace: true });
+    navigate(pathname+'?id=' + row.id, { replace: true });
     return row;
   }
   async function run(action: 'save' | 'submit' | 'schedule', date?: string) {
@@ -91,8 +92,8 @@ export function useStudioCloud(draft: ComposerDraft, setDraft: Dispatch<SetState
   }
   function newDraft() {
     if (busy || loading) return;
-    navigate('/brodle/create?new=1');
+    navigate(pathname+'?new=1');
   }
   return { newDraft, draftVersion, user, admin, record, loading, busy, locked, dirty, error, message, run,
-    makeCopy: () => { if (record) navigate('/brodle/create?copy=' + record.id); } };
+    makeCopy: () => { if (record) navigate(pathname+'?copy=' + record.id); } };
 }

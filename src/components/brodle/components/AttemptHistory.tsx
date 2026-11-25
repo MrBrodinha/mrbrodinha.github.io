@@ -1,10 +1,11 @@
 import { useId, useMemo, useState } from 'react';
 import { attemptSummary, feedbackLabels } from '../lib/feedback';
-import { melodyForGuess, notationForGuess, notationKey, noteName } from '../lib/musicGame';
+import { melodyForGuess, notationForGuess, noteName } from '../lib/musicGame';
 import type { Attempt, MelodyStep, MusicalKey, NoteNaming, TimeSignature } from '../lib/musicGame';
 import BrodleIcon from './BrodleIcon';
 import FeedbackLegend from './FeedbackLegend';
 import SheetMusic from './SheetMusic';
+import MelodyPitchNotice from './MelodyPitchNotice';
 
 type ScoreProps = {
   attempt: Attempt;
@@ -13,7 +14,6 @@ type ScoreProps = {
   naming: NoteNaming;
   timeSignature: TimeSignature;
   bpm: number;
-  exactOnly?: boolean;
 };
 
 type Props = Omit<ScoreProps, 'attempt'> & {
@@ -26,8 +26,8 @@ type Props = Omit<ScoreProps, 'attempt'> & {
   onCopy: (index: number) => void;
 };
 
-function AttemptScore({ attempt, melody, musicalKey, naming, timeSignature, bpm, exactOnly }: ScoreProps) {
-  const key = exactOnly ? musicalKey : notationKey(attempt.notes, melody, musicalKey);
+function AttemptScore({ attempt, melody, musicalKey, naming, timeSignature, bpm }: ScoreProps) {
+  const key = musicalKey;
   const notation = useMemo(() => notationForGuess(attempt.notes, naming, melody, key, timeSignature, bpm),
     [attempt, naming, melody, key, timeSignature, bpm]);
   let position = 0;
@@ -42,7 +42,7 @@ function AttemptScore({ attempt, melody, musicalKey, naming, timeSignature, bpm,
 }
 
 export default function AttemptHistory({ attempts, selectedIndex, melody, musicalKey, naming, timeSignature, bpm,
-  playing, finished, exactOnly = false, onSelect, onReplay, onCopy }: Props) {
+  playing, finished, onSelect, onReplay, onCopy }: Props) {
   const [expanded, setExpanded] = useState(true);
   const detailsId = useId();
   const latestIndex = attempts.length - 1;
@@ -85,7 +85,8 @@ export default function AttemptHistory({ attempts, selectedIndex, melody, musica
             if (next >= 0 && next <= latestIndex) onSelect(next);
           }}>
           {index !== latestIndex && <p className="attempt-summary">{attemptSummary(attempts[index])}</p>}
-          <AttemptScore attempt={attempts[index]} melody={melody} musicalKey={musicalKey} naming={naming} timeSignature={timeSignature} bpm={bpm} exactOnly={exactOnly} />
+          <MelodyPitchNotice notes={attempts[index].notes} target={melody.flatMap(step => step.midi === null ? [] : [step.midi])} />
+          <AttemptScore attempt={attempts[index]} melody={melody} musicalKey={musicalKey} naming={naming} timeSignature={timeSignature} bpm={bpm} />
         </div>
         {index !== latestIndex && <div className="attempt-result-actions">
           <button type="button" className="brodle-button" onClick={() => onReplay(index)} aria-label={`${playing === `attempt-${index}` ? 'Stop' : 'Replay'} attempt ${index + 1}`}>
@@ -95,7 +96,7 @@ export default function AttemptHistory({ attempts, selectedIndex, melody, musica
             <BrodleIcon name="copy" />Copy attempt {index + 1} to draft
           </button>}
         </div>}
-        <FeedbackLegend exactOnly={exactOnly} />
+        <FeedbackLegend />
       </>}
     </div>
   </section>;

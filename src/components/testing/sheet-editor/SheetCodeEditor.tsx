@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import type { CodeRange } from './sheetEditorCode';
 
 type Props = {
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
   blocked?: boolean;
   value: string;
   dirty: boolean;
@@ -14,6 +16,8 @@ type Props = {
   onReset: () => void;
 };
 export default function SheetCodeEditor({
+  expanded,
+  onExpandedChange,
   blocked = false,
   value,
   dirty,
@@ -37,6 +41,7 @@ export default function SheetCodeEditor({
     if (band.current) band.current.style.transform = `translateY(-${top}px)`;
   }
   useEffect(() => {
+    if (!expanded) return;
     const node = field.current;
     if (node && startLine && endLine && !node.matches(':focus')) {
       const top = 12 + (startLine - 1) * 20,
@@ -46,10 +51,15 @@ export default function SheetCodeEditor({
         node.scrollTop = Math.max(0, bottom - node.clientHeight + 12);
     }
     syncScroll();
-  }, [value, startLine, endLine, selectionVersion]);
+  }, [value, startLine, endLine, selectionVersion, expanded]);
   return (
-    <section className="sheet-editor-code" aria-labelledby="sheet-code-title">
-      <h2 id="sheet-code-title">Melody code</h2>
+    <details id="melody-code-panel" className="sheet-editor-code studio-support" open={expanded}
+      onToggle={event => { if (event.currentTarget.open !== expanded) onExpandedChange(event.currentTarget.open); }}>
+      <summary id="sheet-code-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18" /></svg>
+        <span>Melody code</span><small>{dirty ? 'Unapplied draft' : 'Linked to your score'}</small>
+      </summary>
+      <div className="studio-support-body">
       <p>
         Edit the code, then Apply to update your sketch. Select a note or rest to find its line.
       </p>
@@ -127,6 +137,7 @@ export default function SheetCodeEditor({
           {error} The score has not changed.
         </p>
       )}
-    </section>
+      </div>
+    </details>
   );
 }

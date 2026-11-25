@@ -70,6 +70,7 @@ export type ScoreState = {
 export type ImportStaff = { id: string; clef: Clef; steps: ImportedStep[] };
 export type ImportedScore = { meter?: Meter; tempoBeat?: TempoBeat; bpm: number; key: MusicalKey; staffs: ImportStaff[] };
 export type Action = (
+  | { type: 'piano-note'; midi: number; id: string }
   | { type: 'entry-kind'; value: 'note' | 'rest' }
   | { type: 'meter'; value: Meter }
   | { type: 'tempo'; bpm: number; beat: TempoBeat }
@@ -427,6 +428,24 @@ export function scoreReducer(state: ScoreState, action: Action): ScoreState {
     return state;
   const active = state.score.staffs.find((s) => s.id === state.active)!;
   switch (action.type) {
+    case 'piano-note': {
+      if (!validMidi(action.midi)) return state;
+      const spelling = spellMidi(action.midi, state.accidental === -1 ? -1 : 1);
+      if (state.mode === 'place') {
+        const next = scoreReducer({ ...state, accidental: spelling.accidental, entryKind: 'note' }, {
+          type: 'part', staffId: state.active,
+          action: { type: 'fill', id: action.id, tick: state.tick, pitch: pitchMidi({ ...spelling, accidental: 0 }) },
+        });
+        return next.revision === state.revision ? { ...state, message: next.message } : next;
+      }
+      if (state.selection.length > 1) return reject(state, 'Select one note or rest to replace it from the piano.');
+      const ref = primary(state), selected = ref ?? state.rest;
+      const staff = state.score.staffs.find(part => part.id === selected?.staffId);
+      const event = staff?.events.find(item => item.id === selected?.eventId);
+      if (!staff || !event) return reject(state, 'Select a note or rest in Edit melody before using the piano.');
+      return scoreReducer(state, { type: 'part', staffId: staff.id,
+        action: { type: 'update', id: event.id, midi: action.midi, spelling, duration: event.duration } });
+    }
     case 'apply-tuplet': {
       if (state.mode !== 'edit') return reject(state, 'Switch to Edit melody to apply tuplets to a rest.');
       const score = scoreWithTuplet(state.score, action.staffId, action.eventId, action.count, action.duration, action.id);

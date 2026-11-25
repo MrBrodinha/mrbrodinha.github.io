@@ -4,7 +4,7 @@ type TestingDestination = { label: string; description: string; path: string };
 
 // Add experimental routes beneath TestingAccess in App.tsx before linking them here.
 const destinations: TestingDestination[] = [
-  { label: 'Melody editor', description: 'Write a musical sketch with interactive notation, clefs and tuplets.', path: '/testing/sheet-editor' },
+  { label: 'Melody Studio', description: 'Write a musical sketch with interactive notation, clefs and tuplets.', path: '/testing/sheet-editor' },
 ];
 
 export default function Testing() {

@@ -7,6 +7,8 @@ function client() { if (!supabase) throw { code: 'not_configured' }; return supa
 export function melodyError(error: unknown): string {
   const issue = error as { code?: string; message?: string } | null;
   const messages: Record<string, string> = {
+    brodle_studio_conflict: 'This melody changed in another tab or device. Your browser draft is safe. Reload the account version or save an editable copy.',
+    brodle_studio_unapplied: 'Apply or reset the code draft in both melodies before submitting.',
     brodle_admin_required: 'Only a Brodle administrator can do that.', brodle_not_editable: 'This melody is no longer editable. Make a copy to continue.',
     brodle_not_reviewable: 'This melody can no longer be reviewed. Refresh the list and try again.',
     brodle_invalid_review: 'Unable to apply this review. Use a review note of up to 1,000 characters.',

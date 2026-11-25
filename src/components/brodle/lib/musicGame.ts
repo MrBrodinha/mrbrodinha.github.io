@@ -1,5 +1,5 @@
 export type Feedback = 'correct' | 'octave' | 'shifted' | 'low' | 'high';
-export type WinKind = 'exact' | 'octave' | 'shifted';
+export type WinKind = 'exact';
 export type Attempt = { id?: string; notes: number[]; feedback: Feedback[]; hintsUsed?: number };
 export type NoteNaming = 'letters' | 'solfege';
 export type TripletPosition = 1 | 2 | 3;
@@ -185,22 +185,20 @@ export function melodyPitchHint(guess: readonly number[], target: readonly numbe
   const high = offset > 0;
   const direction = high ? 'down' : 'up';
   const movement = high ? 'lower' : 'higher';
-  return { direction, text: `Too ${high ? 'high' : 'low'}. ${offset % 12 === 0 ? `Try a ${movement} octave.` : `Play the whole melody ${movement}.`}` };
+  const octaves = Math.abs(offset) / 12;
+  return { direction, text: offset % 12 === 0
+    ? `Right melody, different octave. Play the whole melody ${octaves === 1 ? 'one octave' : `${octaves} octaves`} ${movement}.`
+    : `Right melody, shifted pitch. Play the whole melody ${movement}.` };
 }
 
-export function getWinKind(guess: readonly number[], target: readonly number[], exactOnly = false): WinKind | null {
+export function getWinKind(guess: readonly number[], target: readonly number[]): WinKind | null {
   if (!guess.length || guess.length !== target.length) return null;
   if (guess.every((note, index) => note === target[index])) return 'exact';
-  if (exactOnly) return null;
-  const offset = transpositionOffset(guess, target);
-  return offset === null ? null : offset % 12 === 0 ? 'octave' : 'shifted';
+  return null;
 }
 
-export function scoreGuess(guess: readonly number[], target: readonly number[], exactOnly = false): Feedback[] {
+export function scoreGuess(guess: readonly number[], target: readonly number[]): Feedback[] {
   if (guess.length !== target.length) throw new Error('A guess must match the target length.');
-  // A consistent transposition is a correct melody in a different pitch.
-  const kind = getWinKind(guess, target, exactOnly);
-  if (kind === 'octave' || kind === 'shifted') return guess.map(() => kind);
   return guess.map((note, i) => {
     if (note === target[i]) return 'correct';
     return note < target[i] ? 'low' : 'high';
@@ -208,35 +206,26 @@ export function scoreGuess(guess: readonly number[], target: readonly number[], 
 }
 
 export function buildShareText(attempts: readonly Attempt[], target: readonly number[], url: string,
-  hintsUsed = attempts.reduce((total, attempt) => Math.max(total, attempt.hintsUsed ?? 0), 0), exactOnly = false): string {
-  // Re-evaluate old cached feedback too: Hard never shares shifted/octave wins.
-  attempts = attempts.map((attempt) => ({ ...attempt, feedback: scoreGuess(attempt.notes, target, exactOnly) }));
+  hintsUsed = attempts.reduce((total, attempt) => Math.max(total, attempt.hintsUsed ?? 0), 0), songHintUsed = false): string {
+  // Re-evaluate legacy feedback: only the original pitches finish a round.
+  attempts = attempts.map((attempt) => ({ ...attempt, feedback: scoreGuess(attempt.notes, target) }));
   const symbols: Record<Feedback, string> = { correct: '✓', octave: '↕', shifted: '♪', low: '↑', high: '↓' };
   const recent = attempts.slice(-4);
   const start = attempts.length - recent.length;
   const exactWin = attempts.findIndex((attempt) => attempt.feedback.every((value) => value === 'correct'));
-  const octaveWin = attempts.findIndex((attempt) => getWinKind(attempt.notes, target, exactOnly) === 'octave');
-  const melodyWin = attempts.findIndex((attempt) => getWinKind(attempt.notes, target, exactOnly) === 'shifted');
   const count = (value: number) => `${value} ${value === 1 ? 'attempt' : 'attempts'}`;
   const summary = exactWin !== -1
     ? `Exact pitch found in ${count(exactWin + 1)}!`
-    : octaveWin !== -1
-      ? `Melody found in ${count(octaveWin + 1)} — different octave!`
-      : melodyWin !== -1
-        ? `Melody found in ${count(melodyWin + 1)} — shifted pitch!`
-        : `${count(attempts.length)} so far`;
-  const shifted = recent.some((attempt) => getWinKind(attempt.notes, target, exactOnly) === 'shifted');
-  const octave = recent.some((attempt) => getWinKind(attempt.notes, target, exactOnly) === 'octave');
+    : `${count(attempts.length)} so far`;
 
   return [
-    `Brodle${exactWin !== -1 ? ' 🎉' : octaveWin !== -1 ? ' ↕' : melodyWin !== -1 ? ' ♪' : ''}`,
-    summary, ...(hintsUsed > 0 ? [`Hints used: ${hintsUsed}`] : []), `Latest ${recent.length} of ${count(attempts.length)}:`,
+    `Brodle${exactWin !== -1 ? ' 🎉' : ''}`,
+    summary, ...(hintsUsed > 0 ? [`Note hints used: ${hintsUsed}`] : []),
+    ...(songHintUsed ? ['Song hint used: Yes'] : []), `Latest ${recent.length} of ${count(attempts.length)}:`,
     ...recent.map((attempt, index) =>
       `${start + index + 1}. ${attempt.feedback.map((value) => symbols[value]).join('')}`,
     ),
     '', '✓ exact pitch · ↑ play higher · ↓ play lower',
-    ...(shifted ? ['♪ correct melody, shifted pitch'] : []),
-    ...(octave ? ['↕ correct melody, different octave'] : []),
     url,
   ].join('\n');
 }

@@ -12,7 +12,7 @@ test('usernames accept only 3–30 ASCII letters, numbers and underscores', () =
   for (const value of ['', 'ab', 'a'.repeat(31), 'alice-b', 'a b', 'élise', 'abc\n', 'a@b', null, 123]) assert.equal(validUsername(value), false);
 });
 test('login return paths cannot redirect to another origin or an auth loop', () => {
-  for (const path of ['/brodle', '/brodle/create', '/brodle/melodies', '/brodle/admin', '/redbull', '/testing']) assert.equal(safeReturnPath(path), path);
+  for (const path of ['/brodle', '/brodle/create', '/brodle/create/classic', '/brodle/melodies', '/brodle/admin', '/redbull', '/testing']) assert.equal(safeReturnPath(path), path);
   for (const path of ['https://evil.test', '//evil.test', '/\\evil.test', '/login', '/auth/reset-password', 'https://example.test/testing', '//example.test/testing', '/testing-other', '/testing/unknown', '/testing?next=https://example.test', null]) assert.equal(safeReturnPath(path), '/account');
 });
 test('raw Auth errors never expose credentials or internal details', () => {

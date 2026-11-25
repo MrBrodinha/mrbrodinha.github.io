@@ -9,11 +9,12 @@ type Props = {
   audio: ReturnType<typeof usePianoAudio>;
   naming: NoteNaming;
   onNaming: (value: NoteNaming) => void;
-  freePlay?: { enabled: boolean; onToggle: () => void };
+  freePlay?: { enabled: boolean; onToggle: () => void; description?: string };
   compact?: boolean;
+  allowInstrumentChange?: boolean;
 };
 
-export default function PianoControls({ audio, naming, onNaming, freePlay, compact = false }: Props) {
+export default function PianoControls({ audio, naming, onNaming, freePlay, compact = false, allowInstrumentChange = true }: Props) {
   const id = useId();
   const namingControl = <div className="note-naming-control" role="group" aria-label="Note names">
     <button type="button" aria-label="Use A–G note names" aria-pressed={naming === 'letters'} onClick={() => onNaming('letters')}>A–G</button>
@@ -25,17 +26,17 @@ export default function PianoControls({ audio, naming, onNaming, freePlay, compa
   </div> : audio.soundStatus === 'error' ? <div className="sound-status sound-error" role="alert">
     <span>{audio.usingSynthFallback
       ? `${PIANO_SOUNDS[audio.sound]} couldn’t load. Using Synth so you can keep playing.`
-      : 'This sound couldn’t load. Try again or choose Synth.'}</span>
+      : allowInstrumentChange ? 'This sound couldn’t load. Try again or choose Synth.' : 'This sound couldn’t load. Try loading Grand piano again.'}</span>
     <button type="button" className="brodle-button" onClick={audio.retrySound}>Retry sound</button>
-    <button type="button" className="brodle-button" onClick={() => audio.setSound('synth')}>Use Synth</button>
+    {allowInstrumentChange && <button type="button" className="brodle-button" onClick={() => audio.setSound('synth')}>Use Synth</button>}
   </div> : null;
   const settings = <div className="piano-settings-controls">
       {namingControl}
       <div className="piano-sound">
-        <label htmlFor={`${id}-sound`}>Instrument</label>
+        {allowInstrumentChange ? <><label htmlFor={`${id}-sound`}>Instrument</label>
         <select id={`${id}-sound`} value={audio.sound} onChange={(event) => audio.setSound(event.currentTarget.value as PianoSound)}>
           {Object.entries(PIANO_SOUNDS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
+        </select></> : <><span>Instrument</span><strong>{audio.usingSynthFallback ? 'Synth (backup)' : PIANO_SOUNDS[audio.sound]}</strong></>}
       </div>
       <div className="piano-volume">
         <label htmlFor={`${id}-volume`} title="Volume"><BrodleIcon name="volume" size={17} /><span className="sr-only">Volume</span></label>
@@ -49,7 +50,7 @@ export default function PianoControls({ audio, naming, onNaming, freePlay, compa
       {freePlay && <div className="piano-note-controls">
         <button type="button" className="brodle-button piano-free-play" aria-pressed={freePlay.enabled}
           aria-describedby="piano-mode-status" onClick={freePlay.onToggle}
-          title="Try piano notes without changing your guess.">
+          title={freePlay.description ?? 'Try piano notes without changing your guess.'}>
           <BrodleIcon name={freePlay.enabled ? 'check' : 'music'} />Free play{freePlay.enabled && <span>On</span>}
         </button>
       </div>}

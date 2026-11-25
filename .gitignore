@@ -11,6 +11,17 @@ node_modules
 dist
 dist-ssr
 *.local
+.local/
+
+# Generated compiler, test and tool artifacts
+*.tsbuildinfo
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+.cache/
+.vite/
+.eslintcache
 .env
 .env.*
 !.env.example

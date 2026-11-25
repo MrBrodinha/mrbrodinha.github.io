@@ -22,7 +22,7 @@ export default function MelodyCard({ row, audio, children, dangerAction, reviewF
   return <article className="brodle-panel melody-card" data-melody-id={row.id}>
     <div className="melody-card-header"><div><h2>{row.title || 'Untitled melody'}</h2><p className="melody-author">By {row.author_username}</p></div><span className={'melody-status status-' + row.status}>{row.status === 'rejected' ? 'Returned' : row.status}</span></div>
     <div className="melody-metadata" aria-label="Music settings"><span>{keyName(draft.key, naming)}</span><span>{draft.timeSignature}</span><span>{draft.bpm} BPM</span></div>
-    <MelodyDifficulty melody={draft.melody} />
+    <MelodyDifficulty melody={draft.melody} showDetails />
     {row.source && <p className="library-muted">{row.source}</p>}
     <details className="melody-preview" onToggle={(event) => setOpen(event.currentTarget.open)}><summary>View sheet music</summary>
       {open && <SheetMusic abc={melodyToAbc(draft.melody, naming, draft.key, draft.bpm, draft.timeSignature)} musicalKey={draft.key} naming={naming} bpm={draft.bpm} timeSignature={draft.timeSignature} wrap />}

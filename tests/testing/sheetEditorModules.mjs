@@ -16,7 +16,7 @@ export async function sourceUrl(path, imports = {}) {
 }
 export const musicUrl = await sourceUrl('src/components/brodle/lib/musicGame.ts');
 export const victoryUrl = await sourceUrl('src/components/brodle/lib/victoryMusic.ts', { './musicGame': musicUrl });
-const composerUrl = await sourceUrl('src/components/brodle/creator/melodyComposer.ts', {
+export const composerUrl = await sourceUrl('src/components/brodle/creator/melodyComposer.ts', {
   '../lib/musicGame': musicUrl, '../lib/victoryMusic': victoryUrl,
 });
 export const rhythmUrl=await sourceUrl('src/components/testing/sheet-editor/sheetEditorRhythm.ts');
@@ -51,6 +51,7 @@ export function hookHostUrl(name) {
     export function begin() { cursor = 0; effects = []; dirty = false; }
     export function flush() { effects.splice(0).forEach(effect => effect()); }
     export function reset() { slots.forEach(slot => slot?.cleanup?.()); slots = []; begin(); }
+    export function replayEffects() { const cells = slots.filter(slot => slot?.effect); cells.forEach(cell => cell.cleanup?.()); cells.forEach(cell => { cell.cleanup = cell.effect(); }); }
     export function useState(initial) {
       const index = cursor++, cell = slots[index] ??= { value: typeof initial === 'function' ? initial() : initial };
       return [cell.value, next => { const value = typeof next === 'function' ? next(cell.value) : next; if (!Object.is(cell.value, value)) { cell.value = value; dirty = true; } }];
@@ -68,10 +69,18 @@ export function hookHostUrl(name) {
     export const useCallback = (fn, deps) => useMemo(() => fn, deps);
     export function useEffect(effect, deps) {
       const index = cursor++, previous = slots[index];
-      if (!previous || deps.some((value, i) => !Object.is(value, previous.deps[i]))) effects.push(() => { previous?.cleanup?.(); slots[index] = { deps, cleanup: effect() }; });
+      if (!previous || deps.some((value, i) => !Object.is(value, previous.deps[i]))) effects.push(() => { previous?.cleanup?.(); slots[index] = { deps, effect, cleanup: effect() }; });
     }
   `);
 }
 export function flatten(node) {
   return Array.isArray(node) ? node.flatMap(flatten) : node && typeof node === 'object' ? [node, ...flatten(node.props?.children)] : [];
 }
+
+export const studioPianoUrl = await sourceUrl('src/components/testing/sheet-editor/StudioPiano.tsx', {
+  '../../brodle/components/PianoControls': await sourceUrl('src/components/brodle/components/PianoControls.tsx', {
+    './BrodleIcon': await sourceUrl('src/components/brodle/components/BrodleIcon.tsx'),
+    '../lib/pianoSounds': await sourceUrl('src/components/brodle/lib/pianoSounds.ts', { './musicGame': musicUrl }),
+  }),
+  '../../brodle/components/PianoKeyboard': await sourceUrl('src/components/brodle/components/PianoKeyboard.tsx', { '../lib/musicGame': musicUrl }),
+});

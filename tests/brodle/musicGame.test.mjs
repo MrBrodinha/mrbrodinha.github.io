@@ -32,7 +32,8 @@ test('shifted and octave hints direct the whole melody back toward the target pi
   for (const offset of [-24, -12, -5, -1, 1, 5, 12, 24]) {
     const hint = melodyPitchHint(target.map((note) => note + offset), target);
     assert.equal(hint.direction, offset > 0 ? 'down' : 'up');
-    assert.match(hint.text, offset > 0 ? /Too high.*lower/ : /Too low.*higher/);
+    assert.match(hint.text, offset > 0 ? /Right melody.*lower/ : /Right melody.*higher/);
+    if (Math.abs(offset) === 24) assert.match(hint.text, /2 octaves/);
     assert.equal(hint.text.includes('octave'), offset % 12 === 0);
   }
   for (const notes of [[], [60], [60, 64], target, [61, 64, 68]]) assert.equal(melodyPitchHint(notes, target), null);
@@ -81,73 +82,42 @@ test('a submitted shifted melody can be written in its transposed key', () => {
   assert.equal(notationKey([65, 69, 71], melody, 'F'), 'F');
 });
 
-test('consistent octave offsets are a distinct win, while exact and other shifts stay separate', () => {
+test('only the original pitches and octaves win; transpositions retain directional feedback', () => {
   const target = [60, 64, 67];
-  for (const offset of [-24, -12, 12, 24]) {
-    const notes = target.map((note) => note + offset);
-    assert.equal(getWinKind(notes, target), 'octave');
-    assert.deepEqual(scoreGuess(notes, target), ['octave', 'octave', 'octave']);
-    assert.equal(notationKey(notes, pattern(target), 'F'), 'F');
+  for (const offset of [-24, -12, -5, -1, 1, 5, 12, 24]) {
+    const notes = target.map(midi => midi + offset);
+    assert.equal(getWinKind(notes, target), null);
+    assert.deepEqual(scoreGuess(notes, target), target.map(() => offset < 0 ? 'low' : 'high'));
   }
   assert.equal(getWinKind(target, target), 'exact');
   assert.deepEqual(scoreGuess(target, target), ['correct', 'correct', 'correct']);
-  assert.equal(getWinKind([61, 65, 68], target), 'shifted');
-  assert.deepEqual(scoreGuess([61, 65, 68], target), ['shifted', 'shifted', 'shifted']);
+  assert.deepEqual(scoreGuess([60, 76, 66], target), ['correct', 'high', 'low']);
+  for (const notes of [[48, 64, 79], [48, 52, 56], [48, 52], []]) assert.equal(getWinKind(notes, target), null);
+  assert.equal(getWinKind([60], [60]), 'exact');
+  assert.equal(getWinKind([72], [60]), null);
 });
 
-test('mixed octave offsets, wrong intervals, and incomplete guesses do not win', () => {
+test('sharing re-scores legacy shifted feedback and reports independent assistance without modes', () => {
   const target = [60, 64, 67];
-  for (const notes of [[48, 64, 79], [48, 52, 56], [48, 52], []]) {
-    assert.equal(getWinKind(notes, target), null);
+  const url = 'https://example.com/brodle?date=2026-11-24';
+  const attempts = [2, -12].map(offset => ({ notes: target.map(midi => midi + offset), feedback: target.map(() => offset === 2 ? 'shifted' : 'octave') }));
+  const unfinished = buildShareText(attempts, target, url);
+  assert.match(unfinished, /2 attempts so far/);
+  assert.match(unfinished, /1\. ↓↓↓\n2\. ↑↑↑/);
+  assert.doesNotMatch(unfinished, /shifted|octave|♪|↕|found/);
+  const history = [...attempts, ...attempts, { notes: target, feedback: scoreGuess(target, target) }];
+  for (const [notes, song] of [[0, false], [1, false], [0, true], [1, true]]) {
+    const share = buildShareText(history, target, url, notes, song);
+    assert.match(share, /^Brodle 🎉\nExact pitch found in 5 attempts!/);
+    assert.match(share, /Latest 4 of 5 attempts:/);
+    assert.match(share, /2\. ↑↑↑\n3\. ↓↓↓\n4\. ↑↑↑\n5\. ✓✓✓/);
+    assert.equal(share.includes('Note hints used: 1'), notes === 1);
+    assert.equal(share.includes('Song hint used: Yes'), song);
+    assert.ok(share.endsWith(url));
+    assert.doesNotMatch(share, /Mode:|Casual|Hard|60|64|67|C4|E4|G4/);
   }
-});
-
-test('Hard scores a consistent pitch or octave shift as higher/lower notes instead of a win', () => {
-  const target = [60, 64, 67];
-  for (const offset of [-24, -12, -5, -1, 1, 5, 12, 24]) {
-    const notes = target.map((midi) => midi + offset);
-    assert.equal(getWinKind(notes, target, true), null);
-    assert.deepEqual(scoreGuess(notes, target, true), target.map(() => offset < 0 ? 'low' : 'high'));
-  }
-  assert.equal(getWinKind(target, target, true), 'exact');
-  assert.deepEqual(scoreGuess(target, target, true), ['correct', 'correct', 'correct']);
-  assert.deepEqual(scoreGuess([60, 76, 66], target, true), ['correct', 'high', 'low']);
-});
-
-test('Hard share results cannot report shifted or octave wins from legacy feedback', () => {
-  const target = [60, 64, 67];
-  const attempts = [2, -12].map((offset) => {
-    const notes = target.map((midi) => midi + offset);
-    return { notes, feedback: scoreGuess(notes, target) };
-  });
-  const share = buildShareText(attempts, target, 'https://example.com/brodle', 0, true);
-  assert.match(share, /2 attempts so far/);
-  assert.match(share, /1\. ↓↓↓\n2\. ↑↑↑/);
-  assert.doesNotMatch(share, /shifted|octave|♪|↕|Melody found/);
-  const won = buildShareText([...attempts, { notes: target, feedback: scoreGuess(target, target) }], target, 'https://example.com/brodle', 0, true);
-  assert.match(won, /Exact pitch found in 3 attempts!/);
-});
-
-test('octave results have their own share, and exact wins upgrade them', () => {
-  const target = [60, 64, 67];
-  const attempt = (notes) => ({ notes, feedback: scoreGuess(notes, target) });
-  const shifted = attempt([61, 65, 68]);
-  const octave = attempt([48, 52, 55]);
-  const url = 'https://example.com/brodle';
-  const share = buildShareText([shifted, octave], target, url);
-  assert.match(share, /^Brodle ↕\nMelody found in 2 attempts — different octave!/);
-  assert.match(share, /1\. ♪♪♪\n2\. ↕↕↕/);
-  assert.match(share, /↕ correct melody, different octave/);
-  assert.doesNotMatch(share, /Hints used:/, 'new rounds share no hint counter');
-  const exact = buildShareText([shifted, octave, attempt(target)], target, url);
-  assert.match(exact, /^Brodle 🎉\nExact pitch found in 3 attempts!/);
-  assert.match(exact, /3\. ✓✓✓/);
-  const hinted = buildShareText([
-    { ...attempt([60, 63, 66]), hintsUsed: 1 },
-    { ...attempt(target), hintsUsed: 1 },
-  ], target, url);
-  assert.match(hinted, /\nHints used: 1\n/, 'a persistent hint is counted once across attempts');
-  assert.match(buildShareText([shifted], target, url, 1), /\nHints used: 1\n/, 'include hints revealed after the latest attempt');
+  const hinted = buildShareText([{ notes: target, feedback: [], hintsUsed: 1 }], target, url);
+  assert.match(hinted, /Note hints used: 1/);
 });
 
 test('every composer duration and dotted variant produces valid notes and rests', () => {
@@ -530,7 +500,7 @@ test('victory playback fits both parts and every chord pitch, rounding only blac
   assert.equal(victoryPianoRange([[],[{midi:null,beats:4}]]), null, 'all-rest arrangements have no pitch range');
 });
 
-test('Casual victory transposition keeps both parts, chords, rests and timing at the winning pitch', async () => {
+test('general arrangement transposition keeps both parts, chords, rests and timing', async () => {
   const { keyboardKeys } = await import(musicModuleUrl);
   const target = [90, 94, 97];
   const main = [makeVictoryStep([60,64,67], 'quarter', true), makeStep(null, 'eighth', false), makeStep(72, 'half', false)];
@@ -540,7 +510,7 @@ test('Casual victory transposition keeps both parts, chords, rests and timing at
   const authored = arrangementTimeline(parts, 144);
   for (const offset of [-48, -24, -12, -2, 0, 2, 6]) {
     const guess = target.map((midi) => midi + offset);
-    assert.ok(getWinKind(guess, target));
+    assert.equal(getWinKind(guess, target), offset === 0 ? 'exact' : null);
     const victory = parts.map((part) => transposeVictory(part, guess[0] - target[0]));
     const played = arrangementTimeline(victory, 144);
     assert.equal(played.totalDuration, authored.totalDuration);

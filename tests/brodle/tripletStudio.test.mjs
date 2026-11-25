@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import ts from 'typescript';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 const source = path => readFile(new URL('../../src/components/brodle/' + path, import.meta.url), 'utf8');
 function moduleUrl(source, imports = {}) {
@@ -14,6 +16,11 @@ const victoryUrl = moduleUrl(await source('lib/victoryMusic.ts'), { './musicGame
 const composerUrl = moduleUrl(await source('creator/melodyComposer.ts'), { '../lib/musicGame': musicUrl, '../lib/victoryMusic': victoryUrl });
 const codeUrl = moduleUrl(await source('creator/melodyCode.ts'), { '../lib/musicGame': musicUrl, '../lib/victoryMusic': victoryUrl });
 const { makeStep, emptyComposerDraft, COMPOSER_STORAGE_KEY } = await import(composerUrl);
+const ratingUrl = moduleUrl(await source('lib/melodyDifficulty.ts'));
+const difficultyUrl = moduleUrl(await source('components/MelodyDifficulty.tsx'), {
+  '../lib/melodyDifficulty': ratingUrl, 'react/jsx-runtime': import.meta.resolve('react/jsx-runtime'),
+});
+const { default: MelodyDifficulty } = await import(difficultyUrl);
 // Run the studio's real handlers across renders; child notation/audio have their
 // own integration checks. This keeps entry, selection and autosave tests DOM-free.
 const hostUrl = moduleUrl(`
@@ -54,7 +61,7 @@ const imports = Object.fromEntries([
   '../components/PianoControls', '../components/SheetMusic', '../components/RhythmSymbol', '../hooks/usePianoAudio',
   './StudioCloudPanel', './useStudioCloud', '../lib/melodyLibrary',
 ].map(name => [name, hostUrl]));
-Object.assign(imports, { 'react/jsx-runtime': import.meta.resolve('react/jsx-runtime'), '../lib/musicGame': musicUrl, '../lib/victoryMusic': victoryUrl, './melodyComposer': composerUrl, './melodyCode': codeUrl });
+Object.assign(imports, { 'react/jsx-runtime': import.meta.resolve('react/jsx-runtime'), '../components/MelodyDifficulty': difficultyUrl, '../lib/musicGame': musicUrl, '../lib/victoryMusic': victoryUrl, './melodyComposer': composerUrl, './melodyCode': codeUrl });
 const studioSource = (await source('creator/MelodyCreator.tsx')).replace(/^import ['"].*\.css['"];$/gm, '') + '\nexport { MelodyCreator };';
 const { MelodyCreator } = await import(moduleUrl(studioSource, imports));
 const flatten = node => Array.isArray(node) ? node.flatMap(flatten) : node && typeof node === 'object' ? [node, ...flatten(node.props?.children)] : [];
@@ -169,4 +176,36 @@ test('editing an earlier note cannot shift an existing triplet onto unsupported 
   assert.equal(ui.all().find(node => node.type === 'button' && label(node) === '•Dotted').props['aria-pressed'], false);
   assert.match(ui.text(), /Complete the dotted 32nd subdivision.*Your score has not changed/);
   assert.equal(ui.all().find(node => node.props?.cloud)?.props.valid, true);
+});
+
+test('studio rating follows applied challenge edits, undo and rests, independent of victory settings', t => {
+  const short = [64, 69, 71, 72, 72, 74, 76, 77];
+  const long = [74, 78, 74, 76, 74, 71, 74, 73, 69, 73, 71, 67, 69, 69, 69, 66, 66, 66];
+  const ui = mount(t, { ...emptyComposerDraft(), melody: short.map(midi => makeStep(midi, 'quarter', false)) });
+  const badge = () => {
+    const node = ui.all().find(node => node.type === MelodyDifficulty);
+    assert.equal(node.props.showDetails, true);
+    return renderToStaticMarkup(createElement(MelodyDifficulty, node.props));
+  };
+  const initial = badge();
+  assert.match(initial, /Difficulty: <strong>Easy<\/strong>/);
+  ui.click('Victory melody · optional'); ui.note(40); ui.note(90);
+  ui.all().find(node => node.props?.id === 'composer-final').props.onBpm('200'); ui.render();
+  ui.all().find(node => node.props?.id === 'composer-final').props.onKey('F#'); ui.render();
+  assert.equal(badge(), initial, 'victory notes, tempo and key do not change the challenge estimate');
+  const code = ui.all().find(node => node.type === 'textarea');
+  code.props.onChange({ target: { value: `export const BPM = 126; export const KEY = 'D'; export const TIME_SIGNATURE = '4/4'; export const MELODY = ${JSON.stringify(long.map(midi => ({ midi, beats: .5 })))};` } });
+  ui.render();
+  assert.equal(badge(), initial, 'unapplied code does not change the estimate');
+  ui.click('Apply code');
+  assert.match(badge(), /Difficulty: <strong>Medium<\/strong>/);
+  assert.match(badge(), /18 sounding notes/);
+  ui.click('Challenge melody');
+  ui.click('Undo last note');
+  assert.match(badge(), /17 sounding notes/);
+  ui.select(0, 0); ui.click('Delete → rest');
+  assert.match(badge(), /16 sounding notes/);
+  ui.click('Clear melody');
+  assert.equal(badge(), '');
+  assert.match(ui.text(), /Add a note to see the estimated difficulty/);
 });

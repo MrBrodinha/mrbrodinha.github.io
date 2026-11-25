@@ -4,6 +4,8 @@ import { keyDescription } from './sheetEditorPreview';
 import { tieChoice } from './sheetEditorExpressions';
 import { performanceTimeline, auditionTimeline } from './sheetEditorPlayback';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { StudioSession } from './studioDocument';
 import { Link } from 'react-router-dom';
 import { MUSICAL_KEYS, keyName } from '../../brodle/lib/musicGame';
 import { usePianoAudio } from '../../brodle/hooks/usePianoAudio';
@@ -11,15 +13,15 @@ import RhythmSymbol from '../../brodle/components/RhythmSymbol';
 import BrodleIcon from '../../brodle/components/BrodleIcon';
 import EditableStaff from './EditableStaff';
 import SheetCodeEditor from './SheetCodeEditor';
+import StudioPiano from './StudioPiano';
+import StudioTutorial from './StudioTutorial';
 import { scoreCodeSnapshot, sourceKey } from './sheetEditorCode';
 import { parseSheetCode, linkedScoreRange } from './sheetEditorCodeParser';
 import {
-  activeTargets,
   emptyScore,
   inputPitch,
   isDefaultScore,
   primary,
-  refKey,
   scoreReducer,
   scoreWithTuplet,
   tupletValueForRest,
@@ -28,28 +30,20 @@ import {
 } from './scoreModel';
 import type { Action, Clef } from './scoreModel';
 import {
-  eventLabel,
-  CLEFS,
   NOTE_TICKS,
   TUPLET_RATIOS,
   TUPLET_NAMES,
   eventTones,
-  NATURAL_PITCHES,
   NOTE_VALUES,
-  pitchKey,
-  pitchLabel,
   pitchMidi,
-  positionLabel,
   scoreSteps,
-  timedEvents,
   totalTicks,
-  validPitch,
   meterBeatTicks,
   measureTicks, meterName, validMeter, validTempoBeat, DEFAULT_TEMPO_BEAT,
 } from './sheetEditorModel';
 import type { Meter, TempoBeat } from './sheetEditorRhythm';
 import type { MusicalKey } from '../../brodle/lib/musicGame';
-import type { Caret, EditorAction, NoteValue, PlacementCommand } from './sheetEditorModel';
+import type { Caret, EditorAction, NoteValue } from './sheetEditorModel';
 import './SheetEditor.css';
 const labels: Record<NoteValue, string> = {
   'thirty-second': 'Thirty-second',
@@ -59,49 +53,38 @@ const labels: Record<NoteValue, string> = {
   half: 'Half',
   whole: 'Whole',
 };
-const fractions: Record<NoteValue, string> = {
-  'thirty-second': '1/32',
-  sixteenth: '1/16',
-  eighth: '1/8',
-  quarter: '1/4',
-  half: '1/2',
-  whole: '1',
-};
-export default function SheetEditor() {
-  const [state, dispatch] = useReducer(scoreReducer, undefined, emptyScore),
+type Props = { initialSession?: StudioSession; onSessionChange?: (session: StudioSession) => void; readOnly?: boolean; gameMelody?: boolean; labelledBy?: string; children?: ReactNode; backTo?: string; backLabel?: string };
+export default function SheetEditor({ initialSession, onSessionChange, readOnly = false, gameMelody = false, labelledBy, children, backTo = '/testing', backLabel = 'Testing' }: Props = {}) {
+  const [state, dispatch] = useReducer(scoreReducer, initialSession?.state, value => value ?? emptyScore()),
     now = useRef(state);
   now.current = state;
+  const readOnlyNow = useRef(readOnly); readOnlyNow.current = readOnly;
   const [zoom, setZoom] = useState(1),
     [tipsDismissed, setTipsDismissed] = useState(false),
     [panel, setPanel] = useState<'add-staff' | 'arpeggio' | 'tuplets' | null>(null),
     panelTrigger = useRef<HTMLButtonElement | null>(null),
     dismissedPointer = useRef<number | null>(null);
-  const [codeText, setCodeText] = useState<string | null>(null),
+  const [codeText, setCodeText] = useState<string | null>(initialSession?.codeDraft ?? null),
+    [codeExpanded, setCodeExpanded] = useState(false),
     [codeError, setCodeError] = useState(''),
-    codeBase = useRef(0);
+    codeBase = useRef(initialSession?.state.revision ?? 0);
   const [property, setProperty] = useState<{ kind: 'clef' | 'key' | 'tempo' | 'meter'; staffId: string; revision: number; context: number } | null>(null);
   const propertyNow = useRef(property); propertyNow.current = property;
   const propertyDialog = useRef<HTMLDialogElement>(null), addStaffDialog = useRef<HTMLDialogElement>(null), propertyAnchor = useRef<HTMLElement | null>(null);
+  const toolsPopup = useRef<HTMLDivElement>(null);
   const [propertyError, setPropertyError] = useState('');
   const [propertyDraft, setPropertyDraft] = useState({ clef: 'treble', key: 'C', numerator: '4', denominator: '4', bpm: '120', duration: 'quarter', dotted: false });
   const propertyDraftNow = useRef(propertyDraft);
   propertyDraftNow.current = propertyDraft;
-  const [newClef, setNewClef] = useState<Clef>('bass'),
-    [addition, setAddition] = useState('E4');
+  const [newClef, setNewClef] = useState<Clef>('bass');
   const [epoch, setEpoch] = useState(0),
     epochNow = useRef(0),
     root = useRef<HTMLElement>(null);
-  const [request, setRequest] = useState<{
-    token: number;
-    modeVersion: number;
-    revision: number;
-    interactionVersion: number;
-    command: PlacementCommand & { staffId?: string };
-  } | null>(null);
   const score = state.score,
     staff = score.staffs.find((s) => s.id === state.active)!,
     events = staff.events,
     ref = primary(state);
+  const invalidGameLayout = gameMelody && (score.staffs.length !== 1 || score.staffs[0].clef !== 'treble');
   const selectedStaff = score.staffs.find((s) => s.id === (ref?.staffId ?? state.rest?.staffId));
   const selected = selectedStaff?.events.find(
     (e) => e.id === (ref?.eventId ?? state.rest?.eventId),
@@ -111,13 +94,11 @@ export default function SheetEditor() {
     tones = selected ? eventTones(selected) : [];
   const tie = selectedStaff && state.selection.every(note => note.staffId === selectedStaff.id)
     ? tieChoice(selectedStaff.events, state.selection) : null;
-  const targetStaff = score.staffs.find((s) => s.id === state.target?.staffId),
-    target = targetStaff?.events.find((e) => e.id === state.target?.eventId);
   const snapshot = useMemo(() => scoreCodeSnapshot(score), [score]),
     displayed = codeText ?? snapshot.code,
     dirty = displayed !== snapshot.code;
   const propertyOpen = property !== null;
-  const locked = dirty || propertyOpen, lockedNow = useRef(locked);
+  const locked = dirty || propertyOpen || readOnly, lockedNow = useRef(locked);
   lockedNow.current = locked;
   const barTicks = measureTicks(score.meter);
   const rhythmDuration = state.mode === 'edit' && selected ? selected.duration : state.duration;
@@ -138,26 +119,16 @@ export default function SheetEditor() {
       : (snapshot.ranges[sourceKey(linked.staffId, linked.eventId)] ?? null)
     : null;
   const steps = useMemo(() => scoreSteps(events), [events]),
-    audio = usePianoAudio(steps, score.bpm),
+    audio = usePianoAudio(steps, score.bpm, 'grand'),
     stopAudio = audio.stopAudio;
   const group = state.selection.length > 1;
-  const options = (clef: Clef) =>
-    NATURAL_PITCHES.filter((m) => m >= CLEFS[clef].minimum && m <= 89).flatMap((m) =>
-      ([-1, 0, 1] as const).map((a) => ({ ...inputPitch(m, a, score.key) })).filter(validPitch),
-    );
-  const partOptions = options(selectedStaff?.clef ?? staff.clef),
-    editOptions =
-      selectedPitch && !partOptions.some((p) => pitchKey(p) === pitchKey(selectedPitch))
-        ? [...partOptions, selectedPitch]
-        : partOptions;
-  const additions = options(targetStaff?.clef ?? staff.clef),
-    additionValue = additions.some((p) => pitchKey(p) === addition) ? addition : 'E4';
-  const targets = activeTargets(state),
-    hasNotes = score.staffs.some((s) => s.events.some((e) => eventTones(e).length));
+  const hasNotes = score.staffs.some((s) => s.events.some((e) => eventTones(e).length));
   useEffect(() => stopAudio, [stopAudio]);
+  useEffect(() => { onSessionChange?.({ state, codeDraft: codeText }); }, [state, codeText, onSessionChange]);
+  useEffect(() => { if (readOnly) stopAudio(); }, [readOnly, stopAudio]);
   useEffect(() => {
     const before = document.title;
-    document.title = 'Melody Studio · Testing';
+    document.title = 'Melody Studio · Brodle';
     return () => {
       document.title = before;
     };
@@ -178,10 +149,29 @@ export default function SheetEditor() {
       else editor?.querySelector<HTMLElement>('.sheet-editor-scroll')?.focus({ preventScroll: true });
     };
   }, [panel]);
+  useEffect(() => {
+    if (panel !== 'arpeggio' && panel !== 'tuplets') return;
+    const popup = toolsPopup.current, trigger = panelTrigger.current;
+    const view = popup?.ownerDocument.defaultView;
+    if (!popup || !trigger || !view) return;
+    const place = () => {
+      if (!popup.isConnected || !trigger.isConnected) return;
+      popup.style.position = 'fixed';
+      popup.style.transform = 'none';
+      const anchor = trigger.getBoundingClientRect(), bounds = popup.getBoundingClientRect();
+      const below = anchor.bottom + 8, above = anchor.top - bounds.height - 8;
+      const preferred = below + bounds.height <= view.innerHeight - 12 ? below : above >= 12 ? above : below;
+      popup.style.left = Math.max(12, Math.min(view.innerWidth - bounds.width - 12, anchor.left + anchor.width / 2 - bounds.width / 2)) + 'px';
+      popup.style.top = Math.max(12, Math.min(view.innerHeight - bounds.height - 12, preferred)) + 'px';
+    };
+    place();
+    view.addEventListener('resize', place);
+    view.addEventListener('scroll', place, true);
+    return () => { view.removeEventListener('resize', place); view.removeEventListener('scroll', place, true); };
+  }, [panel]);
   function invalidate() {
     epochNow.current++;
     setEpoch(epochNow.current);
-    setRequest(null);
   }
   function interact(action: Action) {
     if (epochNow.current !== epoch || propertyNow.current || (lockedNow.current && !['mode','select','clear-selection','caret','target'].includes(action.type))) return;
@@ -230,16 +220,17 @@ export default function SheetEditor() {
         'testing-sheet-editor-entry',
       );
   }
-  function change(action: Action) {
-    if (epochNow.current !== epoch || dirty || propertyNow.current) return;
+  function change(action: Action, playFeedback = true) {
+    if (epochNow.current !== epoch || dirty || propertyNow.current || readOnlyNow.current) return;
     const previous = now.current,
       command = { ...action, revision: state.revision, context: state.context },
       next = scoreReducer(previous, command);
+    if (gameMelody && (next.score.staffs.length !== 1 || next.score.staffs[0].clef !== 'treble')) return;
     now.current = next;
     dispatch(command);
-    setRequest(null);
     const caretMoved = action.type === 'pitch-step' && next.pitch !== previous.pitch;
     if (next.revision === previous.revision && !caretMoved) return;
+    if (!playFeedback) return;
     audio.stopAudio();
     if (caretMoved) {
       audition([pitchMidi(inputPitch(next.pitch, next.accidental, next.score.key))], 1, next.score.bpm, undefined, next.staccato);
@@ -288,7 +279,7 @@ export default function SheetEditor() {
     if (
       recover &&
       document.activeElement?.closest(
-        '.sheet-editor-toolbar,.sheet-editor-selection,.sheet-editor-slots,.sheet-editor-members',
+        '.sheet-editor-toolbar',
       )
     )
       root.current
@@ -299,7 +290,7 @@ export default function SheetEditor() {
     if (state.selection.length) change({ type: 'delete-selection' });
   }
   function editCode(text: string) {
-    if (propertyNow.current) return;
+    if (propertyNow.current || readOnlyNow.current) return;
     setPanel(null);
     if (!dirty) codeBase.current = state.revision;
     invalidate();
@@ -309,19 +300,20 @@ export default function SheetEditor() {
     lockedNow.current = text !== snapshot.code;
   }
   function resetCode() {
-    if (propertyNow.current) return;
+    if (propertyNow.current || readOnlyNow.current) return;
     invalidate();
     setCodeText(null);
     setCodeError('');
     lockedNow.current = propertyOpen;
   }
   function applyCode() {
-    if (epoch !== epochNow.current || !dirty || propertyNow.current) return;
+    if (epoch !== epochNow.current || !dirty || propertyNow.current || readOnlyNow.current) return;
     try {
       if (codeBase.current !== now.current.revision)
         throw new Error('The score changed. Reset the draft before applying.');
-      const parsed = parseSheetCode(displayed),
-        action: Action = {
+      const parsed = parseSheetCode(displayed);
+      if (gameMelody && (parsed.staffs.length !== 1 || parsed.staffs[0].clef !== 'treble')) throw new Error('Game melody must have exactly one staff in Treble clef.');
+      const action: Action = {
           type: 'apply',
           value: parsed,
           seed: crypto.randomUUID(),
@@ -338,11 +330,12 @@ export default function SheetEditor() {
       setCodeError('');
       lockedNow.current = false;
     } catch (error) {
+      setCodeExpanded(true);
       setCodeError(error instanceof Error ? error.message : 'Unable to read score.');
     }
   }
   function openProperty(kind: 'clef' | 'key' | 'tempo' | 'meter', staffId = state.active, anchor?: HTMLElement) {
-    if (lockedNow.current || epochNow.current !== epoch) return;
+    if (lockedNow.current || epochNow.current !== epoch || (gameMelody && kind === 'clef')) return;
     const part = now.current.score.staffs.find(item => item.id === staffId);
     if (!part) return;
     audio.stopAudio(); invalidate(); setPanel(null); setPropertyError('');
@@ -358,7 +351,7 @@ export default function SheetEditor() {
     setProperty(null); setPropertyError(''); lockedNow.current = dirty;
   }
   function applyProperty(remove = false) {
-    if (propertyNow.current !== property || propertyDraftNow.current !== propertyDraft) return;
+    if (propertyNow.current !== property || propertyDraftNow.current !== propertyDraft || (gameMelody && property?.kind === 'clef')) return;
     if (!property || dirty || property.revision !== now.current.revision || property.context !== now.current.context) { setPropertyError('The score changed. Close and reopen this setting.'); return; }
     const meter = { numerator: Number(propertyDraft.numerator), denominator: Number(propertyDraft.denominator) } as Meter;
     const beat = { duration: propertyDraft.duration, dotted: propertyDraft.dotted } as TempoBeat;
@@ -390,7 +383,6 @@ export default function SheetEditor() {
     if (state.mode === 'edit' && selectedPitch) part({ type: 'accidental', value });
     else interact({ type: 'entry-accidental', value });
   }
-  const selectedKeys = new Set(state.selection.map(refKey));
   return (
     <main
       ref={root}
@@ -475,10 +467,15 @@ export default function SheetEditor() {
         }
       }}
     >
-      <header className="sheet-editor-heading"><h1>Melody editor</h1><span className="sheet-editor-eyebrow">Testing · Unsaved</span></header>
+      <header className="sheet-editor-heading">
+        <div className="studio-title"><Link to={backTo} className="sheet-editor-back"><BrodleIcon name="home" />{backLabel}</Link><h1>Melody Studio</h1></div>
+        {!onSessionChange && <span className="sheet-editor-eyebrow"><span aria-hidden="true" />Session only</span>}
+        <StudioTutorial gameMelody={gameMelody} readOnly={readOnly} onOpen={() => { closePanel(false); audio.stopAudio(); }} />
+      </header>
       {property && <dialog ref={propertyDialog} className="studio-property-dialog" aria-labelledby="score-property-title" onCancel={event => { event.preventDefault(); closeProperty(); }} onClick={event => { if (event.target === event.currentTarget) closeProperty(); }} onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape') { event.preventDefault(); closeProperty(); } else if (event.key === 'Enter' && (event.target as HTMLElement).tagName !== 'BUTTON') { event.preventDefault(); applyProperty(); } }}>
         <form onSubmit={event => { event.preventDefault(); applyProperty(); }}>
           <h2 id="score-property-title">{property.kind === 'clef' ? 'Clef' : property.kind === 'key' ? 'Key signature' : property.kind === 'tempo' ? 'Tempo' : 'Time signature'}</h2>
+          <button type="button" className="studio-dialog-close studio-icon-button" aria-label="Close score properties" onClick={closeProperty}><BrodleIcon name="close" /></button>
           <p>{property.kind === 'clef' ? `Staff ${score.staffs.findIndex(item => item.id === property.staffId) + 1}` : 'Applies to the whole score'}</p>
           {(property.kind === 'clef') && <ClefChoices aria-label="Staff clef" value={propertyDraft.clef as Clef} onChange={clef => setPropertyDraft({ ...propertyDraft, clef })} />}
           {property.kind === 'key' && <div className="studio-property-preview"><NotationPreview clef={score.staffs.find(part => part.id === property.staffId)?.clef ?? 'treble'} musicalKey={propertyDraft.key as MusicalKey} /><p>{keyDescription(propertyDraft.key as MusicalKey)}</p></div>}
@@ -487,29 +484,35 @@ export default function SheetEditor() {
           {property.kind === 'meter' && <div className="studio-meter-fields"><label>Numerator<input aria-label="Numerator" type="number" min="1" max="32" step="1" value={propertyDraft.numerator} onChange={event => setPropertyDraft({ ...propertyDraft, numerator: event.target.value })} /></label><span>/</span><label>Denominator<select aria-label="Denominator" value={propertyDraft.denominator} onChange={event => setPropertyDraft({ ...propertyDraft, denominator: event.target.value })}>{[1,2,4,8,16,32].map(value => <option key={value} value={value}>{value}</option>)}</select></label></div>}
           {property.kind === 'tempo' && <><div className="studio-property-preview studio-tempo-preview" aria-label="Tempo preview"><RhythmSymbol duration={propertyDraft.duration as TempoBeat['duration']} dotted={propertyDraft.dotted} /><span>= {Number.isInteger(Number(propertyDraft.bpm)) && Number(propertyDraft.bpm) >= 20 && Number(propertyDraft.bpm) <= 400 ? propertyDraft.bpm : '—'}</span></div><fieldset className="studio-tempo-beat-choices" aria-label="Tempo beat unit"><legend>Beat unit</legend>{NOTE_VALUES.map(value => <button key={value} type="button" data-tempo-beat={value} aria-label={`${labels[value]} beat`} aria-pressed={propertyDraft.duration === value} onClick={() => setPropertyDraft({ ...propertyDraft, duration: value })}><RhythmSymbol duration={value} dotted={propertyDraft.dotted} /></button>)}</fieldset><label className="studio-check"><input type="checkbox" aria-label="Dotted tempo beat" checked={propertyDraft.dotted} onChange={event => setPropertyDraft({ ...propertyDraft, dotted: event.target.checked })} />Dotted beat</label><label>BPM<input aria-label="BPM" id="score-bpm" type="number" min="20" max="400" step="1" value={propertyDraft.bpm} onChange={event => { setPropertyDraft({ ...propertyDraft, bpm: event.target.value }); setPropertyError(''); }} /></label></>}
           {propertyError && <p role="alert">{propertyError}</p>}
-          <div className="studio-dialog-actions"><button type="submit">Apply</button><button type="button" onClick={closeProperty}>Cancel</button>{property.kind === 'clef' && <button type="button" disabled={score.staffs.length === 1} onClick={() => applyProperty(true)}>Remove staff</button>}</div>
+          <div className="studio-dialog-actions"><button type="submit">Apply</button><button type="button" onClick={closeProperty}>Cancel</button>{property.kind === 'clef' && <button type="button" className="studio-danger" disabled={score.staffs.length === 1} onClick={() => applyProperty(true)}>Remove staff</button>}</div>
         </form>
       </dialog>}
       {panel === 'add-staff' && <dialog ref={addStaffDialog} className="studio-property-dialog" data-studio-panel aria-label="Add a staff" onCancel={event => { event.preventDefault(); closePanel(); }} onClick={event => { if (event.target === event.currentTarget) closePanel(); }} onKeyDown={event => event.stopPropagation()}>
+        <button type="button" className="studio-dialog-close studio-icon-button" aria-label="Close add staff" onClick={() => closePanel()}><BrodleIcon name="close" /></button>
         <h2>Add a staff</h2><p>Choose a clef for the new staff.</p><ClefChoices aria-label="New staff clef" value={newClef} onChange={clef => { invalidate(); setNewClef(clef); }} /><div className="studio-dialog-actions"><button type="button" disabled={locked || score.staffs.length >= 4} onClick={() => { change({ type: 'add-staff', id: crypto.randomUUID(), clef: newClef }); closePanel(); }}>Create staff</button><button type="button" onClick={() => closePanel()}>Cancel</button></div>
       </dialog>}
-      <div className="sheet-editor-panel">
+      {children}
+      <div className="sheet-editor-panel" id={labelledBy ? 'studio-score-panel' : undefined} role={labelledBy ? 'tabpanel' : undefined} aria-labelledby={labelledBy}>
+        {invalidGameLayout && <p role="alert" className="studio-save-error">This saved Game melody has an unsupported staff layout. Your music is preserved in Melody code. Keep exactly one Treble staff there before continuing, or reset the score.</p>}
         <div className="studio-command-row">
           <div className="sheet-editor-tools studio-mode" role="group" aria-label="Editor mode">
-            <button type="button" aria-label="Write" aria-keyshortcuts="N" aria-pressed={state.mode === 'place'} disabled={locked} onClick={() => switchMode('place')}>Write melody</button>
-            <button type="button" aria-label="Edit" aria-keyshortcuts="E" aria-pressed={state.mode === 'edit'} disabled={locked} onClick={() => switchMode('edit')}>Edit melody</button>
+            <button type="button" aria-label="Write" aria-keyshortcuts="N" aria-pressed={state.mode === 'place'} disabled={locked} onClick={() => switchMode('place')}><BrodleIcon name="music" />Write</button>
+            <button type="button" aria-label="Edit" aria-keyshortcuts="E" aria-pressed={state.mode === 'edit'} disabled={locked} onClick={() => switchMode('edit')}><BrodleIcon name="edit" />Edit</button>
           </div>
-          <select className="studio-mobile-mode" aria-label="Editor mode" disabled={locked} value={state.mode} onChange={event => switchMode(event.target.value as 'place' | 'edit')}><option value="place">Write melody</option><option value="edit">Edit melody</option></select>
           <div className="sheet-editor-history studio-primary-actions" role="group" aria-label="Playback and history">
             <button type="button" aria-label={audio.playing ? 'Stop audio' : 'Play score'} data-tooltip={audio.playing ? 'Stop audio' : 'Play score'} disabled={locked || (!hasNotes && !audio.playing)} onClick={() => { if (audio.playing) audio.stopAudio(); else if (!lockedNow.current && now.current.revision === state.revision && epochNow.current === epoch) void audio.playTimeline(performanceTimeline(score), 'testing-sheet-editor'); }}><BrodleIcon name={audio.playing ? 'stop' : 'play'} /><span>{audio.playing ? 'Stop' : 'Play'}</span></button>
             <button type="button" aria-label="Undo" data-tooltip="Undo" disabled={locked || !state.past.length} onClick={() => change({ type: 'undo' })}><BrodleIcon name="undo" /><span>Undo</span></button>
             <button type="button" aria-label="Reset score" data-tooltip="Reset score" disabled={locked || isDefaultScore(score)} onClick={() => change({ type: 'reset' })}><BrodleIcon name="restart" /><span>Reset</span></button>
           </div>
         </div>
+        {dirty && <div className="studio-draft-notice" role="status">
+          <BrodleIcon name="edit" /><div><strong>Unapplied code</strong><span>Apply or reset your draft to continue editing or playing the score.</span></div>
+          <button type="button" onClick={() => setCodeExpanded(true)}>Review code</button>
+        </div>}
         <div className="sheet-editor-toolbar" aria-label="Editing tools">
           <div className="studio-entry-kind" role="group" aria-label="Notes or rests">
-            <button type="button" aria-label="Notes" aria-pressed={!rhythmRest} disabled={locked || (state.mode === 'edit' && (!selected || group))} onClick={() => chooseKind('note')}>Notes</button>
-            <button type="button" aria-label="Rests" aria-pressed={rhythmRest} disabled={locked || (state.mode === 'edit' && (!selected || group))} onClick={() => chooseKind('rest')}>Rests</button>
+            <button type="button" aria-label="Notes" data-tooltip="Notes" aria-pressed={!rhythmRest} disabled={locked || (state.mode === 'edit' && (!selected || group))} onClick={() => chooseKind('note')}><RhythmSymbol duration="quarter" /></button>
+            <button type="button" aria-label="Rests" data-tooltip="Rests" aria-pressed={rhythmRest} disabled={locked || (state.mode === 'edit' && (!selected || group))} onClick={() => chooseKind('rest')}><RhythmSymbol duration="quarter" rest /></button>
           </div>
           <fieldset className="studio-duration-buttons" aria-label="Note value" disabled={locked || (state.mode === 'edit' && (!selected || group || Boolean(selected.tuplet)))}>
             {NOTE_VALUES.map(value => <button key={value} type="button" aria-label={`${labels[value]}${rhythmRest ? ' rest' : ''}`} data-tooltip={`${labels[value]}${rhythmRest ? ' rest' : ''}`} aria-pressed={rhythmDuration === value} onClick={() => chooseValue(value)}><RhythmSymbol duration={value} rest={rhythmRest} /></button>)}
@@ -556,7 +559,7 @@ export default function SheetEditor() {
                     selected.duration === 'thirty-second'))
               }
               aria-label={state.mode === 'edit' ? 'Selected dotted' : 'Dotted entry'}
-              data-tooltip="Dotted · ×1.5 (.)"
+              data-tooltip="Dotted (.)"
               aria-keyshortcuts="."
               aria-pressed={state.mode === 'edit' ? Boolean(selected?.dotted) : state.dotted}
               onClick={() =>
@@ -565,30 +568,29 @@ export default function SheetEditor() {
                   : interact({ type: 'entry-dot', value: !state.dotted })
               }
             >
-              <RhythmSymbol duration="quarter" rest={false} dotted /> Dotted
+              <RhythmSymbol duration="quarter" rest={false} dotted />
             </button>
             <button type="button" aria-label="Staccato" aria-pressed={state.mode === 'edit' ? Boolean(selected?.staccato) : state.staccato}
               disabled={locked || (state.mode === 'edit' ? !selected || group || !tones.length : rhythmRest)}
-              data-tooltip={state.mode === 'edit' ? 'Staccato · shorten the selected note or chord' : 'Staccato · short, detached notes for the next entries'} onClick={() => state.mode === 'edit'
+              data-tooltip="Staccato" onClick={() => state.mode === 'edit'
                 ? change({ type: 'staccato', value: !selected?.staccato })
                 : interact({ type: 'entry-staccato', value: !state.staccato })}>
-              <RhythmSymbol duration="quarter" staccato /> Staccato
+              <RhythmSymbol duration="quarter" staccato />
             </button>
             <button type="button" aria-label={tie?.tone.tieToNext ? 'Untie' : 'Tie'} aria-keyshortcuts="T"
               disabled={locked || !tie} aria-pressed={Boolean(tie?.tone.tieToNext)}
-              data-tooltip="Sustain matching pitches in touching notes (T)" onClick={() => change({ type: 'tie' })}>
+              data-tooltip={tie?.tone.tieToNext ? 'Untie (T)' : 'Tie (T)'} onClick={() => change({ type: 'tie' })}>
               <svg width="24" height="18" viewBox="0 0 24 18" aria-hidden="true"><path d="M2 14 Q12 0 22 14" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
-              {tie?.tone.tieToNext ? 'Untie' : 'Tie'}
             </button>
             <button type="button" data-studio-panel aria-label="Arpeggio" aria-haspopup="dialog" aria-expanded={panel === 'arpeggio'}
               aria-controls="studio-arpeggio" disabled={locked || group || tones.length < 2}
-              data-tooltip="Roll the notes of the selected chord" onClick={event => togglePanel('arpeggio', event.currentTarget)}>
+              data-tooltip="Arpeggio" onClick={event => togglePanel('arpeggio', event.currentTarget)}>
               <svg width="18" height="30" viewBox="0 0 18 32" aria-hidden="true" focusable="false">
                 <path d="M9 3C5 5 5 7 9 9S13 13 9 15S5 19 9 21S13 25 9 27" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>Arpeggio
+              </svg>
             </button>
             <button type="button" data-studio-panel aria-label="Tuplets" aria-haspopup="dialog" aria-controls="studio-tuplet-menu" aria-expanded={panel === 'tuplets'}
-              disabled={locked || !tupletRest} data-tooltip="Select a rest, then choose a tuplet" onClick={event => { if (!tupletRest) return; togglePanel('tuplets', event.currentTarget); }}>
+              disabled={locked || !tupletRest} data-tooltip="Tuplets · select a rest in Edit" onClick={event => { if (!tupletRest) return; togglePanel('tuplets', event.currentTarget); }}>
               <svg width="32" height="30" viewBox="0 0 42 34" aria-hidden="true" focusable="false">
                 <path d="M4 10V5H14M28 5H38V10" fill="none" stroke="currentColor" strokeWidth="1.2" />
                 <text x="21" y="11" textAnchor="middle" fontFamily="serif" fontSize="13" fontStyle="italic" fill="currentColor">?</text>
@@ -597,11 +599,11 @@ export default function SheetEditor() {
                   <path d={`M${x + 2.7} 28V16`} stroke="currentColor" strokeWidth="1.3" />
                 </g>)}
                 <path d="M10.7 16H34.7" stroke="currentColor" strokeWidth="2.8" />
-              </svg>Tuplets
+              </svg>
             </button>
             {panel === 'tuplets' && (
-              <div id="studio-tuplet-menu" data-studio-panel role="dialog" className="studio-tools-popup studio-tuplet-popup" aria-label="Choose a tuplet" aria-describedby="sheet-editor-tuplet-hint">
-                <h3>Tuplets</h3>
+              <div ref={toolsPopup} id="studio-tuplet-menu" data-studio-panel role="dialog" className="studio-tools-popup studio-tuplet-popup" aria-label="Choose a tuplet" aria-describedby="sheet-editor-tuplet-hint">
+                <div className="studio-popup-heading"><h3>Tuplets</h3><button type="button" className="studio-icon-button" aria-label="Close tuplets" onClick={() => closePanel()}><BrodleIcon name="close" /></button></div>
                 <div className="studio-tuplet-presets">
                   {Object.entries(TUPLET_RATIOS).map(([value, ratio]) => {
                     const count = Number(value);
@@ -634,17 +636,15 @@ export default function SheetEditor() {
                   {selected?.tuplet && !tones.length && selectedStaff && <button type="button" disabled={locked || !tupletRest || selectedStaff.events.some(event => event.tuplet?.id === selected.tuplet?.id && eventTones(event).length)} onClick={() => { change({ type: 'remove-tuplet' }); closePanel(); }}>Remove tuplet</button>}
                 </div>
                 <p id="sheet-editor-tuplet-hint">Note values are chosen automatically to fill the selected rest. Choices that cannot fit exactly are disabled.</p>
-                <div className="studio-dialog-actions"><button type="button" onClick={() => closePanel()}>Close tuplets</button></div>
               </div>
             )}
-            {panel === 'arpeggio' && <div id="studio-arpeggio" data-studio-panel role="dialog" aria-label="Arpeggio direction" className="studio-tools-popup">
-              <h3>Arpeggio</h3><p>Roll the selected chord without changing its written duration.</p>
+            {panel === 'arpeggio' && <div ref={toolsPopup} id="studio-arpeggio" data-studio-panel role="dialog" aria-label="Arpeggio direction" className="studio-tools-popup">
+              <div className="studio-popup-heading"><h3>Arpeggio</h3><button type="button" className="studio-icon-button" aria-label="Close arpeggio" onClick={() => closePanel()}><BrodleIcon name="close" /></button></div><p>Roll the selected chord without changing its written duration.</p>
               <div className="studio-choice-row">{(['off', 'up', 'down'] as const).map(value => <button key={value} type="button" disabled={locked || group || tones.length < 2}
                 aria-pressed={(selected?.arpeggio ?? 'off') === value}
                 onClick={() => { change({ type: 'arpeggio', value: value === 'off' ? null : value }); closePanel(); }}>
                 {value === 'off' ? 'Off' : value === 'up' ? 'Ascending' : 'Descending'}
               </button>)}</div>
-              <div className="studio-dialog-actions"><button type="button" onClick={() => closePanel()}>Close arpeggio</button></div>
             </div>}
           </div>
 
@@ -657,11 +657,11 @@ export default function SheetEditor() {
           )}
         </div>
         <div className="sheet-editor-score-heading">
-          <div className="studio-score-summary"><strong>{meterName(score.meter)}</strong><span>{totalTicks(events) / barTicks} measures · {score.staffs.length} {score.staffs.length === 1 ? 'staff' : 'staffs'}</span></div>
+          <div className="studio-score-summary"><strong>{meterName(score.meter)}</strong><span>{totalTicks(events) / barTicks} {totalTicks(events) === barTicks ? 'measure' : 'measures'} · {score.staffs.length} {score.staffs.length === 1 ? 'staff' : 'staffs'}</span></div>
           <div className="studio-score-actions">
-            <button type="button" className="studio-reverb-toggle" aria-label="Light reverb" aria-pressed={audio.reverb}
-              data-tooltip="A subtle room effect with a short, soft tail" onClick={() => audio.setReverb(!audio.reverb)}>
-              Reverb {audio.reverb ? 'On' : 'Off'}
+            <button type="button" className="studio-icon-button studio-reverb-toggle" aria-label="Light reverb" aria-pressed={audio.reverb}
+              data-tooltip={audio.reverb ? 'Light reverb · on' : 'Light reverb · off'} onClick={() => audio.setReverb(!audio.reverb)}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d="M5 4H2v16h3m14-16h3v16h-3M8 9a4 4 0 0 1 0 6m4-9a8 8 0 0 1 0 12" /></svg>
             </button>
             <div className="studio-zoom" role="group" aria-label="Score zoom">
               <button type="button" aria-label="Zoom out" disabled={zoom <= .75} onClick={() => changeZoom(zoom - .25)}>−</button>
@@ -671,10 +671,11 @@ export default function SheetEditor() {
 
           </div>
         </div>
-        <EditableStaff
+        {!invalidGameLayout && <EditableStaff
           zoom={zoom}
+          fixedClef={gameMelody}
           entryKind={state.entryKind}
-          staffActions={<div className="studio-add-staff"><button type="button" className="studio-add-staff-button" data-studio-panel data-add-staff aria-label="Add staff" aria-haspopup="dialog" aria-expanded={panel === 'add-staff'} disabled={locked || score.staffs.length >= 4} onClick={event => togglePanel('add-staff', event.currentTarget)}>
+          staffActions={gameMelody ? undefined : <div className="studio-add-staff"><button type="button" className="studio-add-staff-button" data-studio-panel data-add-staff aria-label="Add staff" aria-haspopup="dialog" aria-expanded={panel === 'add-staff'} disabled={locked || score.staffs.length >= 4} onClick={event => togglePanel('add-staff', event.currentTarget)}>
             <svg width="26" height="24" viewBox="0 0 26 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden="true">
               <path d="M2 5h18M2 9h18M2 13h11M2 17h11M2 21h11M20 13v10M15 18h10" />
             </svg>
@@ -700,7 +701,6 @@ export default function SheetEditor() {
           dotted={state.dotted}
           staccato={state.staccato}
           accidental={inputPitch(state.pitch, state.accidental, score.key).accidental}
-          requestedOperation={request}
           onSelect={select}
           onClearSelection={() => interact({ type: 'clear-selection' })}
           onTranspose={(delta) => change({ type: 'transpose', delta })}
@@ -731,7 +731,7 @@ export default function SheetEditor() {
               command.staffId ?? staff.id,
             )
           }
-        />
+        />}
         <footer className="studio-score-footer">
           <span>
             {totalTicks(events) / barTicks}{' '}
@@ -752,350 +752,41 @@ export default function SheetEditor() {
               </>
             )}
           </span>
-          <Link to="/testing" className="sheet-editor-back">
-            ← Testing
-          </Link>
         </footer>
       </div>
       <div role="status" className="sheet-editor-status" aria-live="polite">
         <span>{state.message}</span>
-        <span>
-          {state.mode === 'edit'
-            ? `${state.selection.length} notes selected in ${new Set(state.selection.map((r) => r.staffId)).size} staffs${selectedPitch ? ' · Primary: ' + pitchLabel(selectedPitch) : ''}.`
-            : `Staff ${score.staffs.indexOf(staff) + 1}${selectedPitch ? ' · Selected: ' + pitchLabel(selectedPitch) : ''} · Next ${pitchLabel(inputPitch(state.pitch, state.accidental, score.key))} · ${positionLabel(state.tick, score.meter)}`}
-        </span>
+
       </div>
-      {audio.sound !== 'synth' && <div className="studio-audio-fallback"><button type="button" onClick={() => { audio.stopAudio(); audio.setSound('synth'); }}>Use Synth</button><span>Use the built-in instrument.</span></div>}
       {audio.audioError && (
         <p role="alert" className="sheet-editor-audio-error">
-          {audio.audioError} You can keep editing the score.
+          {audio.usingSynthFallback ? 'Grand piano couldn’t load. Using Synth as a backup.' : audio.audioError} You can keep editing the score.
         </p>
       )}
-      {(selected || target || group) && (
-        <section className="studio-inspector" aria-label="Selection inspector">
-          {state.mode === 'place' && target && (
-            <details className="studio-chord-options">
-              <summary>Add chord tones</summary>
-              <fieldset
-                disabled={locked}
-                className="sheet-editor-selection sheet-editor-add-tone"
-                aria-label="Add to chord"
-              >
-                <span>Target: {eventLabel(target)}</span>
-                <label>
-                  Pitch to add
-                  <select value={additionValue} onChange={(e) => setAddition(e.target.value)}>
-                    {additions.map((p) => (
-                      <option key={pitchKey(p)} value={pitchKey(p)}>
-                        {pitchLabel(p)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (lockedNow.current || epochNow.current !== epoch) return;
-                    const spelling = additions.find((p) => pitchKey(p) === additionValue)!;
-                    setRequest({
-                      token: Date.now(),
-                      modeVersion: state.context,
-                      revision: state.revision,
-                      interactionVersion: epoch + state.context,
-                      command: {
-                        kind: 'add-tone',
-                        eventId: target.id,
-                        staffId: targetStaff!.id,
-                        pitch: pitchMidi({ ...spelling, accidental: 0 }),
-                        spelling,
-                      },
-                    });
-                  }}
-                >
-                  Add tone
-                </button>
-                <button type="button" onClick={() => interact({ type: 'clear-selection' })}>
-                  Clear target
-                </button>
-              </fieldset>
-            </details>
-          )}
-          {state.mode === 'edit' && selected && tones.length > 0 && (
-            <div role="group" aria-label="Chord tones" className="sheet-editor-members">
-              {tones.map((tone) => {
-                const note = {
-                    staffId: selectedStaff!.id,
-                    eventId: selected.id,
-                    toneId: tone.id,
-                  },
-                  chosen = selectedKeys.has(refKey(note));
-                return (
-                  <span key={tone.id}>
-                    <button
-                      type="button"
-                      aria-pressed={chosen}
-                      onClick={(event) =>
-                        select(selected.id, tone.id, selectedStaff!.id, event.shiftKey)
-                      }
-                    >
-                      {pitchLabel(tone.spelling)}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`${chosen ? 'Remove' : 'Add'} ${pitchLabel(tone.spelling)} ${chosen ? 'from' : 'to'} selection`}
-                      onClick={() => select(selected.id, tone.id, selectedStaff!.id, true)}
-                    >
-                      {chosen ? '−' : '+'}
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-          )}
-          {state.mode === 'place' && selected && selectedPitch && (
-            <fieldset
-              disabled={locked}
-              className="sheet-editor-selection"
-              aria-label="Placed note controls"
-            >
-              <legend>Selected note · {pitchLabel(selectedPitch)}</legend>
-              <button
-                type="button"
-                disabled={pitchMidi(selectedPitch) <= 0}
-                onClick={() => change({ type: 'transpose', delta: -1 })}
-              >
-                ↓ Down semitone
-              </button>
-              <button
-                type="button"
-                disabled={pitchMidi(selectedPitch) >= 127}
-                onClick={() => change({ type: 'transpose', delta: 1 })}
-              >
-                ↑ Up semitone
-              </button>
-              <label>
-                Selected note duration
-                <select
-                  aria-label="Selected note duration"
-                  value={selected.duration}
-                  disabled={Boolean(selected.tuplet)}
-                  onChange={(event) =>
-                    part({
-                      type: 'duration',
-                      id: selected.id,
-                      duration: event.target.value as NoteValue,
-                    })
-                  }
-                >
-                  {NOTE_VALUES.map((value) => (
-                    <option key={value} value={value}>
-                      {labels[value]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" onClick={() => interact({ type: 'clear-selection' })}>
-                Continue placing
-              </button>
-              <span>
-                Duration applies to the whole chord. The visible value buttons set the next entry.
-              </span>
-            </fieldset>
-          )}
-          {group ? (
-            <fieldset disabled={locked} className="sheet-editor-selection">
-              <legend>{state.selection.length} selected notes</legend>
-              <button type="button" onClick={() => change({ type: 'transpose', delta: -1 })}>
-                ↓ Down semitone
-              </button>
-              <button type="button" onClick={() => change({ type: 'transpose', delta: 1 })}>
-                ↑ Up semitone
-              </button>
-              <button type="button" onClick={erase}>
-                Delete selected notes
-              </button>
-            </fieldset>
-          ) : (
-            state.mode === 'edit' &&
-            selected && (
-              <fieldset disabled={locked} className="sheet-editor-selection">
-                <legend>Edit event {selectedStaff!.events.indexOf(selected) + 1}</legend>
-                <label>
-                  {tones.length > 1 ? 'Tone pitch' : 'Pitch or rest'}
-                  <select
-                    value={selectedPitch ? pitchKey(selectedPitch) : 'rest'}
-                    onChange={(event) => {
-                      const spelling = editOptions.find((p) => pitchKey(p) === event.target.value);
-                      if (event.target.value === 'rest')
-                        part({
-                          type: 'update',
-                          id: selected.id,
-                          midi: null,
-                          duration: selected.duration,
-                        });
-                      else if (spelling)
-                        part({
-                          type: 'update',
-                          id: selected.id,
-                          midi: pitchMidi(spelling),
-                          spelling,
-                          duration: selected.duration,
-                        });
-                    }}
-                  >
-                    {tones.length <= 1 && <option value="rest">Rest</option>}
-                    {editOptions.map((p) => (
-                      <option key={pitchKey(p)} value={pitchKey(p)}>
-                        {pitchLabel(p)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  disabled={!selectedPitch || pitchMidi(selectedPitch) <= 0}
-                  onClick={() => change({ type: 'transpose', delta: -1 })}
-                >
-                  ↓ Down semitone
-                </button>
-                <button
-                  type="button"
-                  disabled={!selectedPitch || pitchMidi(selectedPitch) >= 127}
-                  onClick={() => change({ type: 'transpose', delta: 1 })}
-                >
-                  ↑ Up semitone
-                </button>
-                {selectedPitch && (
-                  <button type="button" onClick={erase}>
-                    Delete tone
-                  </button>
-                )}
-                <button type="button" onClick={() => part({ type: 'delete', id: selected.id })}>
-                  Delete event
-                </button>
-                {selectedPitch && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      part({
-                        type: 'update',
-                        id: selected.id,
-                        midi: null,
-                        duration: selected.duration,
-                      })
-                    }
-                  >
-                    Convert event to rest
-                  </button>
-                )}
-                <button type="button" onClick={() => switchMode('place')}>
-                  Return to note entry
-                </button>
-              </fieldset>
-            )
-          )}
-        </section>
-      )}
+      <StudioPiano audio={audio} locked={locked || invalidGameLayout} mode={state.mode} selectedPitches={selectedPitches(state)}
+        onNote={midi => { if (!lockedNow.current) change({ type: 'piano-note', midi, id: crypto.randomUUID() }, false); }} />
       <SheetCodeEditor
+        expanded={codeExpanded}
+        onExpandedChange={setCodeExpanded}
         value={displayed}
         dirty={dirty}
         error={codeError}
         range={range}
         selectionVersion={state.context}
         linkMissing={Boolean(linked && !range)}
-        blocked={propertyOpen}
+        blocked={propertyOpen || readOnly}
         onChange={editCode}
         onApply={applyCode}
         onReset={resetCode}
       />
-      {state.mode === 'place' && (
-        <details className="sheet-editor-slots studio-support">
-          <summary>Positions</summary>
-          <section aria-label="Rhythmic positions">
-            <h2>Choose a position</h2>
-            <p>Choose a beat or subdivision, focus the staff and press Enter. The end position adds a measure when you enter a note.</p>
-            <div>
-              {targets.map((tick) => (
-                <button
-                  type="button"
-                  key={tick}
-                  aria-label={tick === totalTicks(events) ? `End of score · ${positionLabel(tick, score.meter)}` : positionLabel(tick, score.meter)}
-                  aria-pressed={state.tick === tick}
-                  onClick={() => interact({ type: 'caret', tick, pitch: state.pitch })}
-                >
-                  {tick === totalTicks(events) ? `End of score · ${positionLabel(tick, score.meter)}` : positionLabel(tick, score.meter)}
-                </button>
-              ))}
-            </div>
-          </section>
-        </details>
-      )}
       <details className="studio-support">
-        <summary>Sequence</summary>
-        <section className="sheet-editor-events" aria-label="Score events">
-          <h2>Your sequence</h2>
-          <p>
-            {state.mode === 'place' ? 'Switch to Edit melody to select existing notes. Rest entries can set the writing position.' : 'Choose one event. Shift-click or use its +/− button to toggle its first tone in the selection.'}
-          </p>
-          {score.staffs.map((s, index) => (
-            <div key={s.id}>
-              <h3>
-                Staff {index + 1} · {s.clef}
-              </h3>
-              <ol>
-                {timedEvents(s.events).map(({ event, start }) => {
-                  const first = eventTones(event)[0],
-                    chosen = state.selection.some(
-                      (r) => r.staffId === s.id && r.eventId === event.id,
-                    );
-                  return (
-                    <li key={event.id}>
-                      <button
-                        type="button"
-                        disabled={state.mode === 'place' && Boolean(first)}
-                        aria-pressed={
-                          state.mode === 'place'
-                            ? state.target?.staffId === s.id && state.target.eventId === event.id
-                            : chosen ||
-                              (state.rest?.staffId === s.id && state.rest.eventId === event.id)
-                        }
-                        aria-label={`${state.mode === 'place' ? 'Target' : 'Select'} staff ${index + 1}, ${positionLabel(start, score.meter)}: ${eventLabel(event)}, ${labels[event.duration]}`}
-                        onClick={(e) => select(event.id, undefined, s.id, e.shiftKey)}
-                      >
-                        <small>{positionLabel(start, score.meter)}</small>
-                        {eventLabel(event)}{' '}
-                        <span>
-                          {fractions[event.duration]}
-                          {event.dotted ? ' · dotted' : ''}
-                          {event.staccato ? ' · staccato' : ''}
-                          {event.tuplet ? ` · ${TUPLET_NAMES[event.tuplet.count]}` : ''}
-                        </span>
-                      </button>
-                      {state.mode === 'edit' && first && (
-                        <button
-                          type="button"
-                          aria-label={`Toggle ${pitchLabel(first.spelling)} in staff ${index + 1}, ${positionLabel(start, score.meter)}`}
-                          onClick={() => select(event.id, first.id, s.id, true)}
-                        >
-                          ±
-                        </button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          ))}
-        </section>
-      </details>
-      <details className="studio-support">
-        <summary>Help and shortcuts</summary>
+        <summary><BrodleIcon name="help" /><span>Help and shortcuts</span></summary>
         <aside className="sheet-editor-help">
           <div>
             <h2>Compose together</h2>
             <p>
-              Use up to four staffs with independent Treble, Bass, Alto or Tenor clefs and shared tempo, key and
-              measures. Entry uses the selected Sharp, Flat or Natural accidental; Natural is the default.
+              {gameMelody ? 'Game melody uses one staff in Treble clef. Switch to Victory melody for additional staffs. ' : 'Use up to four staffs with independent Treble, Bass, Alto or Tenor clefs and shared tempo, key and measures. '}
+              Entry uses the selected Sharp, Flat or Natural accidental; Natural is the default.
               Existing pitches stay unchanged when key or clef changes. Reset score returns to one
               treble staff, C major and 120 BPM.
             </p>
@@ -1108,21 +799,19 @@ export default function SheetEditor() {
               tie. In Edit, select a rest first, then open Tuplets and choose Duplet, Triplet or another preset to apply it. Clicking a rest only selects it. Write fills the resulting fixed slots.
               Arpeggios roll chords up or down. Write: Left/Right chooses time, Up/Down edits and
               auditions the selected note; with no selection it auditions the next pitch. Enter
-              fills a rest and selects it; at the end it adds a measure automatically. Escape or Left/Right clears the selection; the
-              selected-note duration control edits its event while the visible note-value buttons
-              set the next entry. Edit: the top note values, Notes/Rests, Dotted and accidental tools change
+              fills a rest and selects it; at the end it adds a measure automatically. Escape or Left/Right clears the selection.
+              The visible note-value buttons set the next entry. Edit: the top note values, Notes/Rests, Dotted and accidental tools change
               the selection. New notes and duration edits consume rests, then carry later notes into new measures
               as needed; notes crossing barlines display tied segments. Click a head; Shift-click
               toggles more notes across staffs. Up/Down auditions a semitone move for the selection;
-              Delete removes those tones without moving time. The +/− member buttons and sequence ±
-              buttons toggle notes by keyboard. Escape clears selection. Ctrl/⌘ Z on the staff
+              Delete removes those tones without moving time. Escape clears selection. Ctrl/⌘ Z on the staff
               undoes a score edit.
             </p>
           </div>
           <p className="sheet-editor-limit">
             Pointer entry: Treble F3–F6, Bass F1–F6, Alto G2–F6, Tenor E2–F6. Code/arrows: MIDI 0–127. Four staffs, 64 events
             per staff including rests, eight tones per chord. The score wraps into rows with normal
-            page scrolling. Leaving/reloading resets this transient sketch.
+            page scrolling. {onSessionChange ? 'Both melodies are backed up by Studio; reloading starts a fresh Undo history.' : 'Leaving/reloading resets this transient sketch.'}
           </p>
         </aside>
       </details>

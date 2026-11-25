@@ -1,29 +1,26 @@
-export type TutorialContext = { exactOnly: boolean; maxHints: number; finished: boolean; hasAttempts: boolean };
-export type TutorialStep = { id: string; title: string; description: string };
+export type TutorialContext = { maxHints: number; finished: boolean; hasAttempts: boolean };
+export type TutorialStep = { id: string; title: string; description: string; selector?: string; reveal?: string };
 
-export function tutorialSteps({ exactOnly, maxHints, finished, hasAttempts }: TutorialContext): TutorialStep[] {
+export function tutorialSteps({ maxHints, finished, hasAttempts }: TutorialContext): TutorialStep[] {
   return [
-    { id: 'song', title: 'The melody to rebuild', description: 'The title and artist tell you which song to reconstruct. Use the piano to find its notes and octaves. Rhythm and rests are already filled in.' },
-    { id: 'difficulty', title: 'How challenging is this melody?', description: 'Easy, Medium, and Hard estimate the melody’s complexity from its note count, unique pitches, octave range, and interval jumps. This rating is separate from your game mode.' },
-    { id: 'mode', title: 'Your game mode', description: exactOnly
-      ? 'You’re playing Hard: every note must match the exact pitch and octave. All keys in the melody’s range stay available. Submitting a guess locks your mode for this puzzle.'
-      : 'Casual remembers higher/lower feedback and keeps confirmed notes correct. A matching melody at a consistently shifted pitch or octave also wins. Submitting a guess or using a hint locks your mode for this puzzle.' },
-    ...(!finished ? [{ id: 'staff', title: 'Build and edit your guess', description: 'Your piano notes appear on this staff. Select a note, then press a piano key to replace it. Listen, just above the staff, plays your current guess without submitting it.' }] : []),
+    { id: 'song', title: 'The melody to rebuild', description: 'The title and source identify the melody to reconstruct. Enter its notes in order on the piano, including the original octaves. Rhythm and rests are already filled in. There is one set of rules; using optional help is recorded in your shared result.' },
+    { id: 'difficulty', title: 'How challenging is this melody?', description: 'Very Easy, Easy, Medium, Hard, and Very Hard estimate how challenging the pitches are to reconstruct. Note count and pitch variety matter most; pitch span and interval jumps also contribute. Rhythm and rests are already filled in. Difficulty does not change the rules or available hints.' },
+    ...(!finished ? [{ id: 'staff', title: 'Build and edit your guess', description: 'Your piano notes appear on this staff. Select a note, then press a piano key to replace it. Every note must match the original pitch and octave to win. A notice above the sheet helps when your whole melody is shifted. Listen plays your current guess without submitting it.' }] : []),
     { id: 'keyboard', title: 'Play the notes here', description: finished
       ? 'The piano is now yours to play freely. Replay the victory arrangement from the result panel to see and hear the complete melody.'
       : 'Tap a key to add a note, or hold it to sustain the sound. The keyboard shows only the complete C-to-C octaves needed for this melody. On phones, the Lower octave and Higher octave buttons above the keys switch pages when needed.' },
     { id: 'settings', title: 'Make the piano yours', description: finished
       ? 'Switch between A–G and Dó–Si note names, choose an instrument, and adjust the volume here.'
       : 'Free play lets you try keys without changing your guess; turn it off to continue entering notes. You can also switch between A–G and Dó–Si note names, choose an instrument, and adjust the volume.' },
-    ...(!finished && !exactOnly ? [{ id: 'hints', title: 'Two separate ways to get help', description: (maxHints > 0
+    ...(!finished ? [{ id: 'hints', title: 'Two separate ways to get help', description: (maxHints > 0
       ? `Add note permanently reveals the next correct note, up to ${maxHints} ${maxHints === 1 ? 'note' : 'notes'} in this puzzle. `
       : 'This short melody has no note reveals. ')
-      + 'Play song lets you hear the challenge without adding notes or spending a note hint. Using a hint immediately locks this puzzle to Casual, even before your first guess.' }] : []),
-    ...(!finished ? [{ id: 'submit', title: 'Check your melody', description: 'Fill every note, then press Submit. Green means correct, ↑ means try higher, and ↓ means try lower. Remove last note (or Backspace) undoes the last entry; Clear resets the draft while keeping revealed notes and Casual’s learned limits.' }] : []),
+      + 'Play song lets you hear the challenge without adding notes or spending a note hint. Note hints and song listening are recorded in your shared result.' }] : []),
+    ...(!finished ? [{ id: 'submit', title: 'Check your melody', description: 'Fill every note, then press Submit. Green means correct, ↑ means try higher, and ↓ means try lower. Correct notes stay fixed, and later guesses must respect the pitch limits learned from earlier attempts. Remove last note (or Backspace) removes the last entry; Clear resets the draft while keeping revealed notes and learned pitch limits. Change at least one note before resubmitting the same guess.' }] : []),
     ...(hasAttempts ? [{ id: 'attempts', title: 'Learn from your attempts', description: finished
       ? 'Review your latest result and previous guesses here. View details to see each note’s feedback, browse earlier attempts, or use Replay to hear a guess again.'
-      : 'Your latest result and previous guesses live here. View details to see each note’s feedback. Replay a guess to hear it, or copy it to your draft to improve it. In Casual, copied notes outside their allowed range must be corrected before submitting.' }] : []),
-    ...(finished ? [{ id: 'result', title: 'Your result', description: 'You found the melody! Play melody replays the full victory arrangement. Share copies or sends your result, including your mode and any note hints used.' }] : []),
+      : 'Your latest result and previous guesses live here. View details to see each note’s feedback. Replay a guess to hear it, or copy it to your draft to improve it. Copied notes outside their allowed range must be corrected before submitting.' }] : []),
+    ...(finished ? [{ id: 'result', title: 'Your result', description: 'You found the melody! Play melody replays the full victory arrangement. Share copies or sends your result, including any note hints or song listening used.' }] : []),
   ];
 }
 

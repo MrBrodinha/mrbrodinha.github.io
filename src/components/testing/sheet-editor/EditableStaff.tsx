@@ -41,6 +41,7 @@ import type { Score, NoteRef } from './scoreModel';
 type Command = PlacementCommand & { staffId?: string };
 type Props = EntryTool & {
   zoom?: number;
+  fixedClef?: boolean;
   onProperty?: (kind: 'clef' | 'key' | 'meter' | 'tempo', staffId: string, anchor?: HTMLElement) => void;
   onAddMeasure?: () => void;
   staffActions?: ReactNode;
@@ -355,8 +356,8 @@ function engrave(element: HTMLDivElement, score: Score, viewportWidth: number, z
       afterParsing: notation.afterParsing,
       responsive: 'resize',
       add_classes: true,
-      foregroundColor: '#e2e8f0',
-      selectionColor: '#e2e8f0',
+      foregroundColor: 'currentColor',
+      selectionColor: 'currentColor',
       staffwidth: Math.max(220, width - leftPadding - rightPadding),
       paddingleft: leftPadding,
       paddingright: rightPadding,
@@ -992,8 +993,8 @@ export default function EditableStaff(props: Props) {
     ? (Math.min(...finalSystem.map(row => row.geometry.bottom - 8 * row.geometry.step)) + Math.max(...finalSystem.map(row => row.geometry.bottom))) / 2
     : 0;
   const score = snapshot(props), measured = scene && props.onProperty ? markings(scene) : [];
-  const activate = (kind: 'clef' | 'key' | 'tempo' | 'meter', staffId: string, anchor: HTMLElement) => { if (props.locked) return; gesture.current = null; clearPreview(); props.onProperty?.(kind, staffId, anchor); };
-  const markingLabel = (kind: Marking['kind'], staffId: string) => kind === 'clef' ? `Change clef for staff ${score.staffs.findIndex(part => part.id === staffId) + 1}, currently ${score.staffs.find(part => part.id === staffId)?.clef}` : kind === 'key' ? `Change key signature, currently ${score.key}, whole score` : kind === 'meter' ? `Change time signature, currently ${meterName(score.meter)}, whole score` : `Change tempo, currently ${score.tempoBeat?.dotted ? 'dotted ' : ''}${score.tempoBeat?.duration ?? 'quarter'} = ${score.bpm}, whole score`;
+  const activate = (kind: 'clef' | 'key' | 'tempo' | 'meter', staffId: string, anchor: HTMLElement) => { if (props.locked || (props.fixedClef && kind === 'clef')) return; gesture.current = null; clearPreview(); props.onProperty?.(kind, staffId, anchor); };
+  const markingLabel = (kind: Marking['kind'], staffId: string) => kind === 'clef' && props.fixedClef ? 'Treble clef (fixed for Game melody)' : kind === 'clef' ? `Change clef for staff ${score.staffs.findIndex(part => part.id === staffId) + 1}, currently ${score.staffs.find(part => part.id === staffId)?.clef}` : kind === 'key' ? `Change key signature, currently ${score.key}, whole score` : kind === 'meter' ? `Change time signature, currently ${meterName(score.meter)}, whole score` : `Change tempo, currently ${score.tempoBeat?.dotted ? 'dotted ' : ''}${score.tempoBeat?.duration ?? 'quarter'} = ${score.bpm}, whole score`;
   return (
     <section aria-label="Editable musical staff">
       {error && (
@@ -1006,7 +1007,7 @@ export default function EditableStaff(props: Props) {
       )}
       {!ready && !error && <p role="status">Preparing the staff…</p>}
       {props.onProperty && <div className="score-property-fallbacks" role="group" aria-label="Score markings">
-        {score.staffs.filter(part => !measured.some(mark => mark.kind === 'clef' && mark.staffId === part.id)).map((part,index) => <button key={part.id} type="button" data-studio-panel disabled={props.locked} data-clef-staff={part.id} aria-label={markingLabel('clef',part.id)} onClick={event => activate('clef',part.id,event.currentTarget)}>Staff {index+1} · {part.clef}</button>)}
+        {score.staffs.filter(part => !measured.some(mark => mark.kind === 'clef' && mark.staffId === part.id)).map((part,index) => <button key={part.id} type="button" data-studio-panel disabled={props.locked || props.fixedClef} data-clef-staff={part.id} aria-label={markingLabel('clef',part.id)} onClick={event => activate('clef',part.id,event.currentTarget)}>Staff {index+1} · {part.clef}</button>)}
         {(['key','meter','tempo'] as const).filter(kind => !measured.some(mark => mark.kind === kind)).map(kind => <button key={kind} type="button" data-studio-panel disabled={props.locked} aria-label={markingLabel(kind,score.staffs[0].id)} onClick={event => activate(kind,score.staffs[0].id,event.currentTarget)}>{kind === 'key' ? `Key: ${score.key}` : kind === 'meter' ? meterName(score.meter) : <><RhythmSymbol duration={score.tempoBeat?.duration ?? 'quarter'} dotted={score.tempoBeat?.dotted} /><span>= {score.bpm}</span></>}</button>)}
       </div>}
 
@@ -1167,7 +1168,7 @@ export default function EditableStaff(props: Props) {
           <div ref={canvas} className="sheet-editor-canvas" />
           {scene && (props.onProperty || props.onAddMeasure || props.staffActions) && <div className="score-native-controls" data-studio-panel style={{ width: scene.width, height: scene.height }} onFocusCapture={() => clearPreview()} onPointerMove={event => { event.stopPropagation(); clearPreview(); }} onPointerDown={event => event.stopPropagation()} onPointerUp={event => event.stopPropagation()} onKeyDown={event => event.stopPropagation()}>
 
-            {measured.map((mark,index) => <button key={`${mark.kind}-${index}`} type="button" className="score-marking-target" aria-label={markingLabel(mark.kind,mark.staffId)} data-clef-staff={mark.kind === 'clef' ? mark.staffId : undefined} data-property={mark.kind} disabled={props.locked} style={{ left: (mark.bounds.left - (scene.svg.viewBox.baseVal.x ?? 0))*(props.zoom??1), top: (mark.bounds.top - (scene.svg.viewBox.baseVal.y ?? 0))*(props.zoom??1), width: (mark.bounds.right-mark.bounds.left)*(props.zoom??1), height: Math.max(30,(mark.bounds.bottom-mark.bounds.top)*(props.zoom??1)) }} onClick={event => activate(mark.kind,mark.staffId,event.currentTarget)} />)}
+            {measured.map((mark,index) => <button key={`${mark.kind}-${index}`} type="button" className="score-marking-target" aria-label={markingLabel(mark.kind,mark.staffId)} data-clef-staff={mark.kind === 'clef' ? mark.staffId : undefined} data-property={mark.kind} disabled={props.locked || (props.fixedClef && mark.kind === 'clef')} style={{ left: (mark.bounds.left - (scene.svg.viewBox.baseVal.x ?? 0))*(props.zoom??1), top: (mark.bounds.top - (scene.svg.viewBox.baseVal.y ?? 0))*(props.zoom??1), width: (mark.bounds.right-mark.bounds.left)*(props.zoom??1), height: Math.max(30,(mark.bounds.bottom-mark.bounds.top)*(props.zoom??1)) }} onClick={event => activate(mark.kind,mark.staffId,event.currentTarget)} />)}
             {lastRow && props.onAddMeasure && <button type="button" className="score-add-measure" aria-label="Add measure" disabled={props.locked}
               style={{ left: scene.width - 116, top: (measureCenter - (scene.svg.viewBox.baseVal.y ?? 0)) * (props.zoom ?? 1), transform: 'translateY(-50%)' }}
               onClick={() => { if (!props.locked) { gesture.current = null; clearPreview(); props.onAddMeasure?.(); } }}>+ Measure</button>}

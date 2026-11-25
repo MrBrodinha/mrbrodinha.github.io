@@ -17,9 +17,9 @@ const { supabase } = await import(clientUrl);
 const serviceUrl = await moduleUrl('../../src/components/brodle/services/progressService.ts', {
   '../../../lib/supabase': clientUrl, '../lib/gameProgress': progressUrl,
 });
-const { progressTransport } = await import(serviceUrl);
+const { progressTransport, loadLegacyHardProgress } = await import(serviceUrl);
 
-test('account load/save requests keep Casual and Hard progress in separate records', async (t) => {
+test('canonical load/save uses one record; legacy Hard is available only as an explicit compatibility read', async t => {
   const records = new Map();
   const requests = [];
   t.mock.method(supabase, 'rpc', (name, scope) => ({
@@ -33,24 +33,24 @@ test('account load/save requests keep Casual and Hard progress in separate recor
     },
   }));
   const target = [60,64,67,65];
-  const casual = progressTransport('alice','day-a',target,'guided');
-  const hard = progressTransport('alice','day-a',target,'classic');
+  const legacy = parseProgress(JSON.stringify({ attempts: [[61,65,68,66]], guess: [60,64], hintsUsed: 1, songHintUsed: true }),target);
+  records.set(JSON.stringify(['alice','hard:day-a',target]), JSON.parse(serializeProgress(legacy)));
   const signal = new AbortController().signal;
-  const casualRound = parseProgress(JSON.stringify({attempts:[[60,63,69,64]],guess:[60,64],hintsUsed:1}),target,'guided');
-  const hardRound = parseProgress(JSON.stringify({attempts:[[59,63,66,66]],guess:[62,66]}),target,'classic');
-  await casual.save(casualRound,signal);
-  assert.deepEqual(await hard.load(signal),emptyProgress(),'Hard does not load the old shared history');
-  await hard.save(hardRound,signal);
-  assert.deepEqual(await casual.load(signal),casualRound);
-  assert.deepEqual(await hard.load(signal),hardRound);
-  const solved = parseProgress(JSON.stringify({attempts:[target],guess:[]}),target,'guided');
-  await casual.save(solved,signal);
-  const returningHard = progressTransport('alice','day-a',target,'classic');
-  const returningCasual = progressTransport('alice','day-a',target,'guided');
-  assert.deepEqual(await returningCasual.load(signal),solved);
-  assert.deepEqual(await returningHard.load(signal),hardRound,'a Casual win does not overwrite Hard on another device');
-  assert.deepEqual(await progressTransport('bob','day-a',target,'classic').load(signal),emptyProgress());
-  assert.deepEqual([...new Set(requests.filter(({scope})=>scope.p_user_id==='alice').map(({scope})=>scope.p_challenge_id))].sort(),['day-a','hard:day-a']);
-  assert.equal(records.size,2);
-  assert.equal(serializeProgress(await hard.load(signal)),serializeProgress(hardRound));
+  const canonical = progressTransport('alice','day-a',target);
+  assert.deepEqual(await canonical.load(signal),emptyProgress());
+  assert.equal(canonical.hasRemoteRecord, false);
+  assert.deepEqual(await loadLegacyHardProgress('alice','day-a',target,signal),legacy);
+  await canonical.save(legacy,signal);
+  assert.deepEqual(await canonical.load(signal),legacy);
+  assert.equal(canonical.hasRemoteRecord, true);
+  assert.deepEqual(await progressTransport('bob','day-a',target).load(signal),emptyProgress());
+  assert.deepEqual(await progressTransport('alice','day-b',target).load(signal),emptyProgress());
+  assert.deepEqual(await progressTransport('alice','day-a',[60,64]).load(signal),emptyProgress());
+  assert.deepEqual(requests.filter(request => request.name === 'save_brodle_progress').map(request => request.scope.p_challenge_id), ['day-a']);
+  assert.deepEqual(records.get(JSON.stringify(['alice','hard:day-a',target])),JSON.parse(serializeProgress(legacy)));
+  await canonical.save(emptyProgress(), signal);
+  assert.deepEqual(await canonical.load(signal), emptyProgress());
+  assert.equal(canonical.hasRemoteRecord, true, 'an existing empty row stays authoritative');
+  const cancelled = new AbortController(); cancelled.abort();
+  await assert.rejects(canonical.load(cancelled.signal), { name: 'AbortError' });
 });

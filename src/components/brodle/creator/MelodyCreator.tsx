@@ -298,7 +298,7 @@ function MelodyCreator({ fresh }: { fresh: boolean }) {
             <div className="composer-field"><label htmlFor="melody-source">Source / artist <span>Optional</span></label><input id="melody-source" maxLength={200} value={draft.source ?? ''} disabled={!editable} onChange={(event) => setDraft((previous) => ({ ...previous, source: event.target.value }))} /></div>
           </div>
           <div className="composer-difficulty" aria-live="polite">
-            <MelodyDifficulty melody={draft.melody} />
+            <MelodyDifficulty melody={draft.melody} showDetails />
             <p>{draft.melody.some((step) => step.midi !== null)
               ? 'Rated automatically from the challenge melody. Updates as you edit.'
               : 'Add a note to see the estimated difficulty.'}</p>

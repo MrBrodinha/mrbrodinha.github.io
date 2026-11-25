@@ -1,0 +1,30 @@
+import type { TutorialStep } from './tutorial';
+
+export function studioTutorialSteps({ signedIn, gameMelody, readOnly }: {
+  signedIn: boolean; gameMelody: boolean; readOnly: boolean;
+}): TutorialStep[] {
+  return [
+    { id: 'details', selector: '.studio-metadata', title: 'Name your melody', description: readOnly ? 'The title and source identify this saved melody. They are locked while this version is submitted or approved.' : 'Give your melody a title and add its source or artist here. These identify your draft and appear when it is reviewed for a future Brodle.' },
+    { id: 'tracks', selector: '.studio-track-switch', title: 'Game and Victory melodies', description: 'Game melody is what players guess: one staff in Treble clef. Victory melody plays after a win and can have additional staffs. Leave Victory empty to reuse Game melody. Each tab keeps its own score and Undo history.' },
+    { id: 'mode', selector: '.studio-mode', title: 'Write or edit', description: readOnly
+      ? 'This saved version is read only. Write and Edit become available if an administrator returns it for changes. You can still inspect both melodies and their code.'
+      : 'Write places new notes or rests at the chosen position on the staff. Existing notes cannot be selected in Write. Switch to Edit to select a note or rest and change it; Shift-click can select more notes.' },
+    { id: 'rhythm', selector: '.studio-duration-buttons', title: 'Choose a note or rest value', description: 'The symbols run from sixteenth through eighth, quarter and half to whole. Notes/Rests beside them switches the entry type while keeping its value. In Write these set the next entry; in Edit they change the selected event.' },
+    { id: 'accidentals', selector: '.studio-accidentals', title: 'Sharp, flat or natural', description: 'Choose ♯, ♭ or ♮ to set the next written pitch in Write, or change the selected pitch in Edit. Natural is the default. Changing the key signature changes notation without moving notes you already wrote.' },
+    { id: 'score', selector: '.sheet-editor-scroll', title: 'Work directly on the sheet', description: readOnly
+      ? 'This is the saved score. The key, time signature, tempo and clef describe it. They can be changed on an editable draft.'
+      : 'Place notes on the staff lines or spaces, or use the optional piano below. Longer notes carry later music into new measures. Click the key, time signature or tempo marking to change it. Use + Measure at the end of the score.' + (gameMelody
+        ? ' Game keeps one Treble staff; switch to Victory to add staffs or change clefs.'
+        : ' Click a clef to change it. + Staff below the last staff adds a part; + Measure extends all parts together.') },
+    { id: 'expression', selector: '.studio-expression-tools', title: 'Dots, ties and tuplets', description: 'Dotted lengthens the next entry in Write or the selected event in Edit. Staccato shortens a note’s sound. Tie joins matching adjacent tones; Arpeggio rolls a chord. For tuplets, switch to Edit, select a rest, then open Tuplets and choose a group. The note value is chosen automatically. Some advanced notation can be saved but cannot yet be submitted to Brodle.' },
+    { id: 'playback', selector: '.studio-primary-actions', title: 'Listen, undo and reset', description: readOnly ? 'Score playback and history controls are unavailable on this locked version. You can still use the optional piano to try sounds without editing. On editable drafts, Play previews the score, Undo restores edits and Reset clears only the current score.' : 'Play previews the current score; press Stop to end playback. Undo restores the previous score edit. Reset clears the current score, so use Undo if you reset by mistake. The other melody tab stays separate.' },
+    { id: 'view', selector: '.studio-score-actions', title: 'Zoom and a little reverb', description: 'Zoom makes the notation larger or smaller. Light reverb adds a short tail to the sound. Both affect your workspace or playback, without changing the written score.' },
+    { id: 'piano', selector: '.studio-piano .piano-scroll', reveal: '.studio-piano', title: 'Use the optional piano', description: (readOnly ? 'This version is locked, so piano keys only play sounds and never edit the score. ' : 'With Free play off, piano keys enter notes at the Write position or replace a selected note or rest in Edit. Free play only auditions keys. ') + 'Hold a key to sustain it; switch A–G/Dó–Si names or adjust volume above. Grand piano is fixed, with Synth as a backup if samples fail.' },
+    { id: 'code', selector: '.sheet-code-editor', reveal: '#melody-code-panel', title: 'Melody code and backups', description: readOnly ? 'Inspect the code for this saved score here. Code editing and Apply are unavailable while this version is locked. Switch Game/Victory tabs after closing the tour to inspect either melody.' : 'This is the code for the current score. You can copy it for a backup or edit it directly. Apply code commits your edits; Reset code to score discards unapplied text. Unapplied code pauses staff editing and submission until you apply or reset it. Both melodies keep their own code drafts.' },
+    { id: 'save', selector: '.studio-save-row', title: readOnly ? 'Review status' : 'Save and submit for future Brodles', description: readOnly
+      ? 'Submitted and approved versions are locked. Review feedback appears here when available. Returned melodies can be revised and submitted again; follow their status in My melodies from the left menu.'
+      : signedIn
+        ? 'Edits are backed up in this browser. Changed drafts also save to your account every five seconds; Save now saves immediately. Submit for review offers a compatible melody for future Brodles. It does not publish automatically, and the submitted version locks for review.'
+        : 'Your guest draft is kept in this browser. Log in to save account drafts and submit a melody for future Brodles. Guest and account drafts are separate, so copy both melodies’ code before changing accounts if you need to transfer your work.' },
+  ];
+}

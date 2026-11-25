@@ -1,9 +1,20 @@
 import type { MelodyStep } from './musicGame';
 
-export type MelodyDifficultyLevel = 'Easy' | 'Medium' | 'Hard';
+export const MELODY_DIFFICULTY_LEVELS = [
+  { level: 'Very Easy', slug: 'very-easy', upperBound: 20 },
+  { level: 'Easy', slug: 'easy', upperBound: 40 },
+  { level: 'Medium', slug: 'medium', upperBound: 60 },
+  { level: 'Hard', slug: 'hard', upperBound: 80 },
+  { level: 'Very Hard', slug: 'very-hard', upperBound: Infinity },
+] as const;
+
+export type MelodyDifficultyLevel = typeof MELODY_DIFFICULTY_LEVELS[number]['level'];
+export type MelodyDifficultyContributions = { length: number; variety: number; span: number; intervals: number };
 export type MelodyDifficultyRating = {
   level: MelodyDifficultyLevel;
+  slug: typeof MELODY_DIFFICULTY_LEVELS[number]['slug'];
   score: number;
+  contributions: MelodyDifficultyContributions;
   noteCount: number;
   uniquePitches: number;
   rangeSemitones: number;
@@ -11,7 +22,12 @@ export type MelodyDifficultyRating = {
   largestJump: number;
 };
 
-const points = (value: number, easyLimit: number, mediumLimit: number) => value <= easyLimit ? 0 : value <= mediumLimit ? 1 : 2;
+const clamp = (value: number) => Math.max(0, Math.min(1, value));
+
+export function difficultyForScore(score: number) {
+  // Classify the raw score so rounding cannot move a melody into another tier.
+  return MELODY_DIFFICULTY_LEVELS.find(tier => score < tier.upperBound) ?? MELODY_DIFFICULTY_LEVELS[4];
+}
 
 // Rate the sounding challenge notes only. Pitch span (rather than octave labels)
 // keeps the rating unchanged when the same melody is transposed.
@@ -25,11 +41,19 @@ export function rateMelody(melody: readonly Pick<MelodyStep, 'midi'>[]): MelodyD
   const jumps = notes.slice(1).map((note, index) => Math.abs(note - notes[index]));
   const averageJump = jumps.length ? jumps.reduce((sum, jump) => sum + jump, 0) / jumps.length : 0;
   const largestJump = jumps.length ? Math.max(...jumps) : 0;
-  // Frequent moderate jumps and isolated large leaps both contribute.
-  const jumpPoints = Math.max(points(averageJump, 2, 4), points(largestJump, 4, 7));
-  const score = points(noteCount, 8, 16) + points(uniquePitches, 4, 8)
-    + points(rangeSemitones, 7, 12) + jumpPoints;
+  // Difficulty v2: length and variety carry 65% of the estimate. Cap them at
+  // 32 notes and 12 distinct pitches; cap span at two octaves. This keeps a
+  // short melody's slightly wider range from dominating its difficulty.
+  const contributions: MelodyDifficultyContributions = {
+    length: 35 * clamp((noteCount - 1) / 31),
+    variety: 30 * clamp((uniquePitches - 1) / 11),
+    span: 10 * clamp(rangeSemitones / 24),
+    // Frequent jumps (up to a fifth on average) and isolated octave leaps matter.
+    intervals: 25 * (.6 * clamp(averageJump / 7) + .4 * clamp(largestJump / 12)),
+  };
+  const score = contributions.length + contributions.variety + contributions.span + contributions.intervals;
+  const { level, slug } = difficultyForScore(score);
 
-  return { level: score <= 2 ? 'Easy' : score <= 5 ? 'Medium' : 'Hard', score,
+  return { level, slug, score, contributions,
     noteCount, uniquePitches, rangeSemitones, averageJump, largestJump };
 }

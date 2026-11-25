@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../../auth/authContext';
 import { usePianoAudio } from '../hooks/usePianoAudio';
 import { listMelodies, deleteMelody, melodyError } from '../services/melodyService';
+import { melodyEditorPath } from '../lib/melodyLibrary';
 import type { MelodyRecord } from '../lib/melodyLibrary';
 import type { NoteNaming } from '../lib/musicGame';
 import PianoControls from '../components/PianoControls';
@@ -52,8 +53,8 @@ function MyMelodies() {
       {!rows.length && !loading && !error && <p className="library-muted">No cloud melodies yet. Start in Melody Studio and save a draft.</p>}
       {rows.map((row) => <MelodyCard key={row.id} row={row} audio={audio} naming={naming}
         dangerAction={['draft','rejected','approved'].includes(row.status) ? <button type="button" className="library-button library-button--danger delete-melody" disabled={Boolean(deleting) || loading} aria-label={'Delete melody: ' + (row.title || 'Untitled melody')} onClick={() => void remove(row.id)}><BrodleIcon name="trash" />{deleting === row.id ? 'Deleting…' : 'Delete melody'}</button> : undefined}>
-        <Link className="library-button library-button--primary" aria-label={['draft','rejected'].includes(row.status) ? 'Edit melody' : 'View melody'} to={'/brodle/create?id=' + row.id}><BrodleIcon name={['draft','rejected'].includes(row.status) ? 'edit' : 'eye'} />{['draft','rejected'].includes(row.status) ? 'Edit melody' : 'View'}</Link>
-        <Link className="library-button" to={'/brodle/create?copy=' + row.id}><BrodleIcon name="copy" />Duplicate</Link>
+        <Link className="library-button library-button--primary" aria-label={['draft','rejected'].includes(row.status) ? 'Edit melody' : 'View melody'} to={melodyEditorPath(row, 'id', row.id)}><BrodleIcon name={['draft','rejected'].includes(row.status) ? 'edit' : 'eye'} />{['draft','rejected'].includes(row.status) ? 'Edit melody' : 'View'}</Link>
+        <Link className="library-button" to={melodyEditorPath(row, 'copy', row.id)}><BrodleIcon name="copy" />Duplicate</Link>
       </MelodyCard>)}
       {more && <div className="library-pagination"><button className="library-button" disabled={loading || Boolean(deleting)} onClick={() => void load(rows.length)}>Load more melodies</button></div>}
       {audio.audioError && <p className="progress-error" role="status">{audio.audioError}</p>}

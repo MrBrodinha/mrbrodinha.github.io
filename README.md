@@ -60,15 +60,53 @@ Its Python scripts resolve files relative to their own directory and need
 `requests` and `beautifulsoup4`. Catalog snapshots and original images are kept
 for reference; the duplicate scraped snapshot was removed.
 
-## Testing hub
+## Melody Studio and Testing
 
-`/testing` is a simple hub for experimental features, accessible from Manage
-Brodle. It uses the existing Brodle administrator membership. Its first experiment,
-`/testing/sheet-editor`, starts with a 4/4 measure of four quarter rests.
-The Melody editor uses sheet entry with one transient score, selection, history
-and editable code. Compact zoom controls stay beside the score. Experimental
-piano entry is removed for now; score playback and note/chord auditions remain.
-The production `/brodle/create` page and its saved drafts remain separate.
+`/brodle/create` is the sheet-based Melody Studio, within the existing Brodle
+header and left menu. Profile and logout stay in the shared header. Guests can
+compose locally; signed-in authors can save and submit. The protected
+`/testing/sheet-editor` preview shares this implementation. `/testing` remains an
+administrator-only hub, accessible from Manage Brodle.
+Melody Studio adds Title and Source / Artist, with independent Game melody and
+Victory melody scores, selection, history and editable code. Switch between the two
+using the tabs aligned to the left above the sheet workspace. Game melody uses
+exactly one staff in Treble clef. Victory melody plays after a win; leaving it empty
+reuses Game melody. Both applied scores and unapplied code are backed up on
+each change in account-scoped browser storage. Signed-in authors autosave to their
+account every five seconds when changed; Save now also saves immediately. Submitted
+versions lock until an administrator returns them with feedback. Reopen Studio
+drafts and returned reviews from My melodies. Studio records open at
+`/brodle/create?id=…`; duplicate links use `?copy=…`. Older records retain the
+previous editor at `/brodle/create/classic`, including its existing browser draft.
+When that browser draft contains work, Studio offers a link to reopen it.
+
+Apply `database/migrations/202611250018_melody_studio_documents.sql` after earlier
+Brodle migrations to enable cloud Studio saves. The migration adds private, lossless
+source documents and optimistic saves to the existing melody library. It does not
+rewrite existing melodies or daily snapshots. Unsupported notation is retained in
+drafts and explicitly blocks submission until Brodle can represent it.
+
+The dark studio layout groups musical icon controls above a
+centered score, with compact zoom and reverb controls beside it. A collapsed
+Piano panel above Melody code and Help and shortcuts reuses the game keyboard:
+Free play, A–G or Dó–Si names, volume and mobile octave controls. Studio always
+requests Grand piano on every device; if its samples cannot load, Synth plays
+automatically as a backup. The instrument is fixed rather than selectable. With Free play off,
+keys enter notes at the Write caret or replace one selected note/rest in Edit.
+Keys use their exact sounding pitch, preserve the selected duration, and create
+one Undo step. Free play and locked-editor auditions do not alter the draft.
+Closing the panel stops its audio; the piano shares the editor’s instrument,
+volume and reverb. Score playback and note/chord auditions remain.
+The left menu's Create a melody action starts a new draft; its one-time `new=1`
+parameter is consumed so refreshing restores subsequent edits. Studio recovery
+is scoped to each account (or guest). The previous editor's browser draft is kept
+separately and is not automatically imported or overwritten.
+
+**How to compose** opens a guided spotlight tour of the editor. It explains the
+real controls, temporarily reveals Piano and code, and restores the workspace
+when closed. Brodle's **How to play** tour follows the current exact-note and
+hint rules. The separate hands-on example is removed; old `/brodle/tutorial`
+links now open the game tour.
 
 Five glyph buttons expose sixteenth, eighth, quarter, half and whole values.
 **Notes / Rests** switches their symbols while preserving duration and entry dots.
@@ -108,7 +146,7 @@ half note = 60 plays twice as fast as quarter note = 60. Meter supports numerato
 values and onsets where possible, moves conflicting tuplets intact to a fitting
 bar, and rounds shared capacity up to complete bars. An oversized group or event
 limit failure rejects the entire change. Dialog drafts do not enter history;
-Apply is one Undo step. Code remains visible below the workspace.
+Apply is one Undo step. Code is available in the Melody code panel below the workspace.
 
 Choose a value and fill a beat or subdivision. Notes and duration edits consume
 available rests first, then carry conflicting later notes forward without
@@ -116,7 +154,7 @@ changing their pitches, duration, identity or order. Replacing a quarter rest
 before a quarter note with a whole note moves that quarter note to beat one of
 the next measure. A note can start inside the final measure and extend across
 its barline; entering at the score endpoint also adds measures automatically.
-The endpoint is reachable with score keyboard navigation or **Positions**.
+The endpoint is reachable with score keyboard navigation.
 **+ Measure** still adds empty space.
 
 Only music in the edited staff is displaced. New measures pad every other staff
@@ -175,14 +213,11 @@ Converting an event to a rest removes its staccato mark, and Undo restores it.
 
 In Write mode, each newly placed note or chord tone stays selected, including the
 last note of a measure. Clicking existing noteheads does nothing in Write, in both
-Notes and Rests entry; existing note buttons in Sequence are disabled. Switch to
-Edit to select them. Clicking a different pitch in a column still adds a chord tone.
-Up/Down or the semitone buttons adjust the most recently placed tone; Selected
-note duration changes its event (and the whole chord), carrying later notes
-forward if needed.
-The note-value toolbar sets the next entry. Escape, Left/Right, a rhythmic-position
-button or Continue placing clears the selection; entry stays in Write mode.
-Edit notes also supports group selection and the full event controls.
+Notes and Rests entry. Switch to Edit to select them. Clicking a different pitch in a column still adds a chord tone.
+Up/Down adjusts the most recently placed tone. The note-value toolbar sets the
+next entry. Escape or Left/Right clears the selection; entry stays in Write mode.
+Edit uses the sheet selection, toolbar, piano and keyboard directly; selecting
+a note does not open an additional panel.
 
 **Reverb On/Off**, beside score zoom, adds an optional light room effect with a
 short 0.38-second decay and a quiet wet signal. It applies to entry previews and
@@ -195,8 +230,7 @@ keyboard arrows can reach MIDI 0–127. In Edit, click one chord member; Shift-c
 toggles more notes across chords, rows and parts. Only selected noteheads receive
 a lavender tint. Up/Down moves the selected notes by a semitone, and Delete
 restores silence without moving later notes. Group changes are atomic; collisions
-or range/cap failures leave every part unchanged. Member +/− and sequence ±
-buttons also support keyboard selection. In Edit, the top value buttons change
+or range/cap failures leave every part unchanged. In Edit, the top value buttons change
 the selection instead of the next entry.
 
 The aligned parts wrap into rows, including dense measures on mobile. Zoom −/+,
@@ -210,7 +244,11 @@ tempo. Feedback is capped at one beat and half a second; full Play preserves eac
 part's timing and plays them together. Use N for Write and E for Edit
 outside text fields.
 
-The always-visible code is editable, with numbered lines that highlight the primary
+Melody code starts collapsed in a secondary panel. Its heading opens it; closing
+it retains the draft, caret and selected source line. Unapplied
+code keeps a visible warning and Review code action above the score, and an Apply
+error opens the panel. Selecting a note alone does not open it.
+The code is editable, with numbered lines that highlight the primary
 selected event's line. The data-only STAVES format includes globals, staff IDs,
 the four supported clefs and written `duration`, `dotted`, `staccato`, `tuplet`, `tieToNext` and `arpeggio`
 fields on event lines. `TIME_SIGNATURE` stores the meter, and `TEMPO_BEAT`
@@ -225,7 +263,7 @@ also blocks code and score mutations until applied or canceled. Code accepts
 literal MIDI/chord pitches and supported written rhythms in equal complete measures in `TIME_SIGNATURE`;
 length and rhythm labels are derived. Limits are four parts, 64 events per part
 including normalized rests, eight pitches per chord and 250,000 code characters.
-The transient score resets on leaving/reloading.
+Reload restores the latest browser/account draft; Undo history starts fresh.
 It does not read or write Brodle drafts, progress, or cloud melodies.
 Add future internal experiment routes beneath `TestingAccess` in `src/App.tsx`,
 then add their labels, descriptions, and paths to the destination list in

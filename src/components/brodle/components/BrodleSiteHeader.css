@@ -48,8 +48,7 @@
   .is-menu-open .brodle-site-header .site-header-inner > .account-controls { grid-column: 1; grid-row: 1; max-width: 100%; }
   .is-menu-open .brodle-header-navigation { grid-column: 1; grid-row: 2; }
   .is-menu-open .brodle-site-brand { grid-column: 1; grid-row: 3; }
-  .is-menu-open .puzzle-toolbar .game-mode-picker { flex-wrap: wrap; }
-  .is-menu-open .game-mode-options .brodle-button { padding-inline: 7px; }
+  .is-menu-open .puzzle-toolbar .puzzle-help { flex-wrap: wrap; }
   .is-menu-open .piano-octaves { flex-wrap: wrap; }
   .is-menu-open .brodle-page .play-panel .guess-actions { display: flex; flex-wrap: wrap; }
   .is-menu-open .brodle-page .play-panel .submit-guess { flex: 1 1 100%; }

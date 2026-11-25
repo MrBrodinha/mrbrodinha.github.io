@@ -5,12 +5,18 @@ import type { VictoryStep, Clef } from './victoryMusic';
 import { victorySettings } from '../creator/melodyComposer';
 import type { ComposerDraft } from '../creator/melodyComposer';
 
+export type StudioScoreDocument = {
+  score: string; codeDraft: string | null;
+  notation?: { authored: boolean; pitches: { letter: 'C' | 'D' | 'E' | 'F' | 'G' | 'A' | 'B'; octave: number; accidental: -1 | 0 | 1 }[] }[][];
+};
+export type StudioDocument = { version: 1; main: StudioScoreDocument; final: StudioScoreDocument };
 export type MelodyStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
 export type MelodyRecord = {
   id: string; created_by: string; author_username: string; title: string; source: string; hint: string;
   bpm: number; key_signature: MusicalKey; time_signature: TimeSignature;
   final_bpm?: number | null; final_key_signature?: MusicalKey | null;
   notes: StoredNote[]; final_notes: StoredVictoryNote[] | null; final_bass_notes?: StoredVictoryNote[] | null; final_clef?: Clef; final_bass_clef?: Clef; status: MelodyStatus; review_note: string;
+  studio_document?: StudioDocument | null;
   created_at: string; updated_at: string;
 };
 export type StoredNote = Pick<MelodyStep, 'midi' | 'beats' | 'triplet'>;
@@ -26,7 +32,7 @@ export type GameChallenge = Omit<ChallengeSnapshot, 'melody' | 'finalMelody' | '
 };
 export const MAX_MELODY_STEPS = 256;
 export const MAX_FINAL_STEPS = 512;
-export const MELODY_COLUMNS = 'id,created_by,author_username,title,source,hint,bpm,key_signature,final_bpm,final_key_signature,time_signature,notes,final_notes,final_bass_notes,final_clef,final_bass_clef,status,review_note,created_at,updated_at';
+export const MELODY_COLUMNS = 'id,created_by,author_username,title,source,hint,bpm,key_signature,final_bpm,final_key_signature,time_signature,notes,final_notes,final_bass_notes,final_clef,final_bass_clef,status,review_note,created_at,updated_at,studio_document';
 
 export function restoreNotes(raw: unknown, limit = MAX_MELODY_STEPS): MelodyStep[] {
   if (!Array.isArray(raw) || raw.length > limit) throw new Error('Invalid melody');
@@ -73,3 +79,5 @@ export function lisbonDate(date = new Date()): string {
 export const displayDate = (date: string) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(date + 'T12:00:00Z'));
 
 export const storeVictoryNotes = (notes: readonly VictoryStep[]): StoredVictoryNote[] => notes.map(({ midi, beats, pitches, triplet }) => ({ midi, beats, ...(pitches ? { pitches: [...pitches] } : {}), ...(triplet ? { triplet } : {}) }));
+
+export const melodyEditorPath = (row: Pick<MelodyRecord, 'studio_document'>, action: 'id' | 'copy', id: string) => (row.studio_document ? '/brodle/create' : '/brodle/create/classic') + '?' + action + '=' + encodeURIComponent(id);

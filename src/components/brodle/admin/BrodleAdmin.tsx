@@ -1,3 +1,4 @@
+import { melodyEditorPath } from '../lib/melodyLibrary';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../auth/authContext';
@@ -72,7 +73,7 @@ function BrodleAdmin() {
           dangerAction={row.status === 'approved' ? <button type="button" className="library-button library-button--danger delete-melody" disabled={Boolean(busy) || loading} aria-label={'Delete melody: ' + (row.title || 'Untitled melody')} onClick={() => void remove(row)}><BrodleIcon name="trash" />{busy === row.id ? 'Working…' : 'Delete melody'}</button> : undefined}>
           {row.status === 'submitted' && <><button className="library-button library-button--primary" disabled={Boolean(busy) || loading} onClick={() => void review(row, 'approved')}><BrodleIcon name="check" />{busy === row.id ? 'Working…' : 'Approve melody'}</button><button className="library-button" disabled={Boolean(busy) || loading} onClick={() => void review(row, 'rejected')}><BrodleIcon name="undo" />Return to creator</button></>}
           {row.status === 'approved' && <><button className="library-button library-button--primary" disabled={Boolean(busy) || loading} onClick={() => setTab('calendar')}><BrodleIcon name="calendar" />Schedule melody</button><button type="button" className="library-button" disabled={Boolean(busy) || loading} onClick={() => void review(row, 'rejected')}><BrodleIcon name="undo" />{busy === row.id ? 'Working…' : 'Return for editing'}</button></>}
-          <Link className="library-button" to={'/brodle/create?copy=' + row.id}><BrodleIcon name="copy" />Edit a copy</Link>
+          <Link className="library-button" to={melodyEditorPath(row, 'copy', row.id)}><BrodleIcon name="copy" />Edit a copy</Link>
         </MelodyCard>)}
         {more && <div className="library-pagination"><button className="library-button" disabled={loading || Boolean(busy)} onClick={() => void load(rows.length)}>Load more submissions</button></div>}
         {audio.audioError && <p className="progress-error" role="status">{audio.audioError}</p>}

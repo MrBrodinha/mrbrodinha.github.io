@@ -6,7 +6,7 @@ export function validUsername(value: unknown): value is string {
 }
 
 export function safeReturnPath(value: string | null): string {
-  return value === '/redbull' || value === '/brodle' || value === '/brodle/create' || value === '/brodle/melodies' || value === '/brodle/admin' || value === '/testing' ? value : '/account';
+  return value === '/redbull' || value === '/brodle' || value === '/brodle/create' || value === '/brodle/create/classic' || value === '/brodle/melodies' || value === '/brodle/admin' || value === '/testing' ? value : '/account';
 }
 
 export function authRedirect(path: '/auth/callback' | '/auth/reset-password'): string {

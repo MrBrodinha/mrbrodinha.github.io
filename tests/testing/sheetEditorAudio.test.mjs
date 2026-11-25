@@ -6,7 +6,7 @@ import { hookHostUrl, moduleUrl, sourceUrl, musicUrl, victoryUrl } from './sheet
 // sampler readiness. This adapter never downloads samples or opens audio devices.
 const hostUrl=hookHostUrl('sheet entry audio'),host=await import(hostUrl);
 const soundsUrl=moduleUrl(`export const fixture={instrument:null};
- export const defaultPianoSound=()=> 'grand';export const PIANO_SOUNDS={grand:'Grand piano'};
+ export const defaultPianoSound=()=> 'synth';export const PIANO_SOUNDS={grand:'Grand piano'};
  export const createSampledPiano=async()=>fixture.instrument;`);
 const {fixture}=await import(soundsUrl);
 const {usePianoAudio}=await import(await sourceUrl('src/components/brodle/hooks/usePianoAudio.ts',{
@@ -29,7 +29,7 @@ function mount(t){
  const originals=new Map(Object.keys(globals).map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
  for(const [name,value] of Object.entries(globals))Object.defineProperty(globalThis,name,{configurable:true,value});
  t.after(()=>{host.reset();for(const [name,descriptor] of originals){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];}});
- const render=()=>{host.begin();const audio=usePianoAudio([],120);host.flush();return audio;};
+ const render=()=>{host.begin();const audio=usePianoAudio([],120,'grand');host.flush();return audio;};
  return {audio:render(),render,starts,stops,contexts,resolve:()=>resolve(),reject:()=>reject(new Error('Offline')),disposed:()=>disposed};
 }
 const preview=(midi,pitches)=>[{midi,beats:1,...(pitches?{pitches}:{})}];
@@ -48,7 +48,7 @@ for(const cancellation of ['stop','unmount'])test(`${cancellation} cancels a pen
 test('a failed sampler falls back to synth for this accepted entry and remains editable',async t=>{
  const f=mount(t),pending=f.audio.playMelody(preview(60),'testing-sheet-editor-entry',120);f.reject();await pending;
  assert.equal(f.starts.length,0);assert.equal(f.contexts[0].oscillators.length,1);const audio=f.render();
- assert.equal(audio.usingSynthFallback,true);assert.match(audio.audioError,/could not load/);
+ assert.equal(audio.sound,'grand');assert.equal(audio.usingSynthFallback,true);assert.match(audio.audioError,/could not load/);
  await audio.playMelody(preview(62),'testing-sheet-editor-entry',120);assert.equal(f.contexts[0].oscillators.length,2);
  audio.stopAudio();
 });
@@ -65,4 +65,9 @@ test('unmount cancels delayed precise arpeggio/tied timelines before any sound',
 
 test('accepted timeline snapshots cannot be changed while waiting for a sampler',async t=>{
  const f=mount(t),timeline={totalDuration:1,events:[{midi:60,time:0,duration:1,sustain:true}]};const pending=f.audio.playTimeline(timeline,'snapshot');timeline.events[0].midi=99;timeline.events[0].time=.5;f.resolve();await pending;assert.equal(f.starts[0].note,60);assert.equal(f.starts[0].time,.03);
+});
+
+
+test('Studio fixes Grand on devices that default to Synth and prevents manual instrument changes',t=>{
+ const f=mount(t);assert.equal(f.audio.sound,'grand');f.audio.setSound('synth');assert.equal(f.render().sound,'grand');f.audio.setSound('electric');assert.equal(f.render().sound,'grand');
 });

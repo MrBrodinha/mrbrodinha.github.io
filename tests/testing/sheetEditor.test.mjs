@@ -14,7 +14,7 @@ const dependenciesUrl = moduleUrl(`
     playArrangement: (...args) => { calls.push(['arrangement', ...args]); return Promise.resolve(); },
     playMelody: (...args) => { calls.push(['play', ...args]); return Promise.resolve(); },
     setSound: value => calls.push(['sound', value]) };
-  export function usePianoAudio(steps, bpm) { calls.push(['configuration', steps, bpm]); return audio; }
+  export function usePianoAudio(steps, bpm, sound) { calls.push(['configuration', steps, bpm, sound]); return audio; }
   export function Link() {}
   export default function Stub() {}
 `);
@@ -24,11 +24,11 @@ const { default: SheetEditor } = await import(await sourceUrl('src/components/te
   '../../brodle/components/RhythmSymbol': dependenciesUrl,
   '../../brodle/components/BrodleIcon': dependenciesUrl,
   '../../brodle/hooks/usePianoAudio': dependenciesUrl,
-  './sheetEditorExpressions':expressionsUrl,'./ClefChoices':dependenciesUrl,'./NotationPreview':dependenciesUrl,'./sheetEditorPreview':previewUrl, './EditableStaff': dependenciesUrl, './sheetEditorModel': modelUrl, './scoreModel':scoreUrl, './sheetEditorRhythm':rhythmUrl, './sheetEditorPlayback':playbackUrl, '../../brodle/lib/musicGame':musicUrl, './sheetEditorCode': codeUrl, './sheetEditorCodeParser': parserUrl, './SheetCodeEditor': dependenciesUrl,
+  './sheetEditorExpressions':expressionsUrl,'./ClefChoices':dependenciesUrl,'./NotationPreview':dependenciesUrl,'./sheetEditorPreview':previewUrl, './EditableStaff': dependenciesUrl, './sheetEditorModel': modelUrl, './scoreModel':scoreUrl, './sheetEditorRhythm':rhythmUrl, './sheetEditorPlayback':playbackUrl, '../../brodle/lib/musicGame':musicUrl, './sheetEditorCode': codeUrl, './sheetEditorCodeParser': parserUrl, './SheetCodeEditor': dependenciesUrl, './StudioPiano': dependenciesUrl, './StudioTutorial': dependenciesUrl,
 }));
 const text = node => Array.isArray(node) ? node.map(text).join('') : typeof node === 'string' || typeof node === 'number' ? String(node) : text(node?.props?.children ?? []);
 
-function mount(t) {
+function mount(t, props = {}) {
   host.reset(); dependencies.calls.length = 0;
   Object.assign(dependencies.audio, { reverb:false, sound: 'synth', playing: null, audioError: '' });
   const originals = new Map(['document', 'localStorage', 'sessionStorage'].map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)]));
@@ -41,7 +41,7 @@ function mount(t) {
   let elements;
   function render() {
     for (let i = 0; i < 8; i++) {
-      host.begin(); const tree = SheetEditor(); elements = flatten(tree).flatMap(node=>node.props?.staffActions?[node,...flatten(node.props.staffActions)]:[node]); host.flush();
+      host.begin(); const tree = SheetEditor(props); elements = flatten(tree).flatMap(node=>node.props?.staffActions?[node,...flatten(node.props.staffActions)]:[node]); host.flush();
       if (!host.dirty) return tree;
     }
     assert.fail('Page did not settle');
@@ -72,23 +72,37 @@ function mount(t) {
 
 
 const openProperty=(page,kind,staffId=page.staff().activeStaffId)=>{page.staff().onProperty(kind,staffId);page.render();};
+test('opening composer help stops audio and dismisses tools without changing score or history', t => {
+  const page=mount(t,{gameMelody:true});
+  const before=page.nodes().find(node=>node.props?.value?.includes?.('export const BPM'))?.props.value;
+  const revision=page.staff().revision;
+  const tour=page.nodes().find(node=>node.props?.gameMelody===true&&typeof node.props?.onOpen==='function');
+  assert.ok(tour);
+  const stops=dependencies.calls.filter(call=>call[0]==='stop').length;
+  tour.props.onOpen();page.render();
+  assert.equal(page.staff().revision,revision);
+  assert.equal(page.nodes().find(node=>node.props?.value?.includes?.('export const BPM'))?.props.value,before);
+  assert.equal(page.button('Undo').disabled,true);
+  assert.equal(dependencies.calls.filter(call=>call[0]==='stop').length,stops+1);
+});
 const field=(page,label)=>{if(label==='Tempo beat unit'){const buttons=page.nodes().filter(n=>n.props?.['data-tempo-beat']);return {value:buttons.find(n=>n.props['aria-pressed'])?.props['data-tempo-beat'],onChange:event=>buttons.find(n=>n.props['data-tempo-beat']===event.target.value).props.onClick()};}const node=page.nodes().find(n=>n.props?.['aria-label']===label&&typeof n.props.onChange==='function');return ['input','select'].includes(node.type)?node.props:{...node.props,onChange:event=>node.props.onChange(event.target.value)};};
 const submitProperty=page=>{page.nodes().find(n=>n.type==='form').props.onSubmit({preventDefault(){}});page.render();};
 const codeEditor=page=>page.nodes().find(node=>typeof node.props?.onApply==='function').props;
 const code=codeEditor;
 const note=(page,midi)=>page.staff().events.find(event=>event.midi===midi);
+const pianoKey=(page,midi)=>{page.nodes().find(n=>n.props?.audio&&typeof n.props.onNote==='function').props.onNote(midi);page.render();};
 const choose=(page,id)=>{page.button('Edit notes').onClick();page.render();page.staff().onSelect(id);page.render();};
 test('initial page always shows editable four-rest code with Play, Reset and Undo disabled',t=>{
  const page=mount(t);assert.equal(page.staff().events.length,4);assert.equal(page.button('Quarter')['aria-pressed'],true);assert.equal(page.button('Play').disabled,true);assert.equal(page.button('Reset score').disabled,true);assert.equal(page.button('Undo').disabled,true);
  assert.equal((code(page).value.match(/"midi":null/g)??[]).length,4);
  const before=code(page).value;page.button('Sixteenth').onClick();page.render();assert.equal(code(page).value,before);assert.equal(page.staff().events.length,4);
 });
-test('actual fill, pitch/duration/delete/reset controls preserve time and update committed code',t=>{
+test('actual fill, piano pitch, duration and keyboard delete/reset controls preserve time and update committed code',t=>{
  const page=mount(t);page.button('Sixteenth').onClick();page.render();page.staff().onPlace({tick:units(2),pitch:60});page.render();
  const id=note(page,60).id;assert.equal(model.totalTicks(page.staff().events)/420,16);assert.equal(page.staff().events.length,6);assert.ok(code(page).value.includes('"duration":"sixteenth"'));
- choose(page,id);page.nodes().find(n=>n.type==='select'&&n.props.value==='C4').props.onChange({target:{value:'D4'}});page.render();
+ choose(page,id);pianoKey(page,62);
  page.button('Eighth').onClick();page.render();assert.equal(note(page,62).duration,'eighth');assert.equal(model.totalTicks(page.staff().events)/420,16);
- page.button('Delete event').onClick();page.render();assert.ok(model.isInitialScore(page.staff().events));
+ keyboard(page,'Delete');assert.ok(model.isInitialScore(page.staff().events));
  page.button('Undo').onClick();page.render();assert.equal(note(page,62).duration,'eighth');assert.equal(page.staff().mode,'edit');
  page.button('Reset score').onClick();page.render();assert.ok(model.isInitialScore(page.staff().events));assert.equal((code(page).value.match(/"midi":null/g)??[]).length,4);
 });
@@ -96,10 +110,10 @@ test('native chord entry and member edits share the committed playable/code data
  const page=mount(t);page.staff().onPlace({tick:units(0),pitch:60});page.render();const id=note(page,60).id;
  page.staff().onAddTone({kind:'add-tone',eventId:id,pitch:64});page.render();
  assert.equal(page.staff().mode,'place');assert.equal(page.staff().selectedId,id);assert.equal(page.staff().selectedToneId,model.eventTones(page.staff().events[0])[1].id);assert.ok(code(page).value.includes('"pitches":[60,64]'));
- choose(page,id);const group=page.nodes().find(n=>n.props?.['aria-label']==='Chord tones');flatten(group).find(n=>n.type==='button'&&text(n)==='E4').props.onClick({shiftKey:false});page.render();
- page.button('Up semitone').onClick();page.render();assert.ok(code(page).value.includes('"pitches":[60,65]'));
+ choose(page,id);page.staff().onSelect(id,model.eventTones(page.staff().events[0])[1].id);page.render();
+ keyboard(page,'ArrowUp');assert.ok(code(page).value.includes('"pitches":[60,65]'));
  page.button('Play').onClick();const played=dependencies.calls.filter(c=>c[0]==='timeline'&&c[2]==='testing-sheet-editor').at(-1)[1];assert.deepEqual(played.events.map(e=>e.midi),[60,65]);assert.equal(played.totalDuration,2);
- page.button('Delete tone').onClick();page.render();assert.equal(model.eventTones(note(page,60)).length,1);assert.equal(model.totalTicks(page.staff().events)/420,16);
+ keyboard(page,'Delete');assert.equal(model.eventTones(note(page,60)).length,1);assert.equal(model.totalTicks(page.staff().events)/420,16);
 });
 test('explicit modes preserve entry values and protect score/code from stale callbacks, targets and invalid fills',t=>{
  const page=mount(t);page.button('Eighth').onClick();page.render();page.staff().onPlace({tick:units(4),pitch:60});page.render();
@@ -109,12 +123,12 @@ test('explicit modes preserve entry values and protect score/code from stale cal
  page.button('Edit notes').onClick();page.render();assert.equal(page.button('Notes').disabled,true);oldPlace({tick:units(8),pitch:64});page.render();assert.equal(page.staff().events,original);
  page.button('Place notes').onClick();page.render();oldPlace({tick:units(8),pitch:64});page.render();assert.equal(page.staff().events,original);assert.equal(page.staff().duration,'whole');assert.equal(page.staff().accidental,1);
 });
-test('measure actions, rhythmic target buttons and rest editing remain accessible and timing-aware',t=>{
+test('measure actions, staff caret navigation and rest editing remain accessible and timing-aware',t=>{
  const page=mount(t);page.button('Eighth').onClick();page.render();
- const slots=page.nodes().find(n=>n.props?.['aria-label']==='Rhythmic positions');const offbeat=flatten(slots).find(n=>n.type==='button'&&n.props['aria-label']==='Measure 1, beat 1 + 0.5');assert.ok(offbeat);offbeat.props.onClick();page.render();assert.equal(page.staff().caret.tick/420,2);
+ page.staff().onCaret({tick:units(2),pitch:60});page.render();assert.equal(page.staff().caret.tick/420,2);
  page.button('Add measure').onClick();page.render();assert.equal(model.totalTicks(page.staff().events)/420,32);assert.equal((code(page).value.match(/"midi":null/g)??[]).length,8);
- choose(page,page.staff().events[4].id);assert.equal(flatten(page.nodes().find(n=>n.type==='fieldset'&&text(n).includes('Edit event'))).filter(n=>n.type==='select').length,1,'rest duration is derived; only pitch conversion is shown');
- page.nodes().find(n=>n.type==='select'&&n.props.value==='rest').props.onChange({target:{value:'G4'}});page.render();assert.equal(note(page,67).duration,'quarter');assert.equal(model.timedEvents(page.staff().events).find(s=>s.event.midi===67).start/420,16);
+ choose(page,page.staff().events[4].id);assert.equal(page.nodes().some(n=>n.props?.['aria-label']==='Selection inspector'),false);
+ pianoKey(page,67);assert.equal(note(page,67).duration,'quarter');assert.equal(model.timedEvents(page.staff().events).find(s=>s.event.midi===67).start/420,16);
 });
 test('initial silence does not play; edits/modes/Stop/unmount retain audio cleanup and remount resets',t=>{
  const page=mount(t);page.staff().onPlace({tick:units(0),pitch:76});page.render();page.button('Play').onClick();const played=dependencies.calls.find(c=>c[0]==='timeline'&&c[2]==='testing-sheet-editor');assert.equal(played[2],'testing-sheet-editor');assert.equal(played[1].totalDuration,2);assert.deepEqual(played[1].events.map(p=>p.midi),[76]);
@@ -125,7 +139,7 @@ test('audio failure still allows editing and synth fallback; palette remains sho
  const page=mount(t);dependencies.audio.audioError='Sound unavailable';dependencies.audio.sound='grand';page.render();assert.ok(page.nodes().some(n=>n.props?.role==='alert'&&text(n).includes('keep editing')));
  page.button('Notes').onClick();page.render();
  const palette=page.nodes().find(n=>n.props?.['aria-label']==='Note value');assert.deepEqual(flatten(palette).filter(n=>n.type==='button').map(n=>n.props['aria-label']),['Sixteenth','Eighth','Quarter','Half','Whole']);
- page.button('Use Synth').onClick();assert.deepEqual(dependencies.calls.at(-1),['sound','synth']);
+ assert.equal(page.nodes().some(n=>n.type==='button'&&text(n)==='Use Synth'),false);assert.equal(dependencies.calls.filter(c=>c[0]==='configuration').at(-1)[3],'grand');
 });
 
 const auditions=()=>dependencies.calls.filter(call=>call[0]==='timeline'&&call[2]==='testing-sheet-editor-entry');
@@ -151,10 +165,10 @@ test('chord addition previews accepted simultaneous pitches; duplicates, selecti
  const page=mount(t);page.staff().onPlace({tick:units(0),pitch:60});page.render();const id=note(page,60).id;
  page.staff().onAddTone({kind:'add-tone',eventId:id,pitch:64});page.render();assert.equal(auditions().length,2);assert.deepEqual(auditions().at(-1)[1].events.map(e=>e.midi),[60,64]);
  page.staff().onAddTone({kind:'add-tone',eventId:id,pitch:64});page.render();assert.equal(auditions().length,2);
- page.staff().onSelect(id);page.render();choose(page,id);page.button('Up semitone').onClick();page.render();assert.equal(auditions().length,3);
+ page.staff().onSelect(id);page.render();choose(page,id);keyboard(page,'ArrowUp');assert.equal(auditions().length,3);
  const rest=page.staff().events.find(e=>e.midi===null);page.staff().onSelect(rest.id);page.render();
- page.nodes().find(n=>n.type==='select'&&n.props.value==='rest').props.onChange({target:{value:'G4'}});page.render();assert.equal(auditions().length,4);assert.equal(auditions().at(-1)[1].events[0].midi,67);
- page.button('Reset score').onClick();page.render();page.button('Undo').onClick();page.render();assert.equal(auditions().length,4);
+ pianoKey(page,67);assert.equal(auditions().length,3,'the piano owns its voice; committing must not duplicate its audition');assert.ok(note(page,67));
+ page.button('Reset score').onClick();page.render();page.button('Undo').onClick();page.render();assert.equal(auditions().length,3);
 });
 test('dirty code locks direct score callbacks and Play, preserves selection and draft, then cancels stale round trips',t=>{
  const page=mount(t);page.staff().onPlace({tick:units(0),pitch:60});page.render();const initial=page.staff().events,id=note(page,60).id;
@@ -166,7 +180,7 @@ test('dirty code locks direct score callbacks and Play, preserves selection and 
  assert.equal(dependencies.calls.filter(c=>c[0]==='timeline').length,before);
  page.staff().onSelect(id);page.render();assert.equal(codeEditor(page).range.startLine,codeSnapshotFor(page,id).startLine+1);
  keyboard(page,'e');assert.equal(page.staff().mode,'edit');assert.equal(code(page).value,draft);page.staff().onSelect(id);page.render();
- page.button('Up semitone').onClick();page.render();assert.equal(page.staff().events,initial);
+ keyboard(page,'ArrowUp');assert.equal(page.staff().events,initial);
  codeEditor(page).onReset();page.render();assert.equal(page.staff().locked,false);assert.equal(code(page).value,old);assert.equal(page.staff().events,initial);
  keyboard(page,'n');stalePlace({tick:units(4),pitch:64});page.render();assert.equal(page.staff().events,initial,'unlock cannot revive stale callbacks');
  page.staff().onPlace({tick:units(4),pitch:64});page.render();assert.ok(note(page,64));
@@ -191,7 +205,7 @@ test('clean and dirty selected ranges link only matching events; invalid/moved p
  codeEditor(page).onChange(canonical.replace('"midi":60','"midi":61'));page.render();assert.equal(codeEditor(page).range,null);assert.equal(codeEditor(page).linkMissing,true);
  codeEditor(page).onChange(canonical+' error');page.render();assert.equal(codeEditor(page).range,null);codeEditor(page).onReset();page.render();assert.deepEqual(codeEditor(page).range,range);
  keyboard(page,'e');page.staff().onSelect(id);page.render();assert.deepEqual(codeEditor(page).range,range);
- page.button('Delete event').onClick();page.render();assert.equal(codeEditor(page).range,null);
+ keyboard(page,'Delete');assert.equal(codeEditor(page).range,null);
 });
 test('mode keys are scoped and silent, with native/composition/repeat/modifier exclusions and dirty preservation',t=>{
  const page=mount(t);const original=page.staff().events;
@@ -211,12 +225,12 @@ test('an older Apply callback cannot overwrite a newer draft',t=>{
  oldApply();page.render();assert.equal(page.staff().events,original);assert.equal(code(page).value,latest);assert.equal(codeEditor(page).dirty,true);
  codeEditor(page).onApply();page.render();assert.equal(code(page).value,clean);assert.equal(page.staff().events,original);assert.equal(auditions().length,0);
 });
-test('Edit arrows from member controls change one tone, respect native fields and retain extended values',t=>{
+test('Edit arrows on a selected staff tone change one tone, respect native fields and retain extended values',t=>{
  const page=mount(t);page.staff().onPlace({tick:units(0),pitch:53});page.render();const id=note(page,53).id;
  page.staff().onAddTone({kind:'add-tone',eventId:id,pitch:101});page.render();choose(page,id);
  const upper=model.eventTones(page.staff().events[0])[1];page.staff().onSelect(id,upper.id);page.render();const count=auditions().length;
  keyboard(page,'ArrowUp');assert.deepEqual(model.scoreSteps(page.staff().events)[0].pitches,[53,102]);assert.equal(page.staff().selectedToneId,upper.id);
- const field=page.nodes().find(n=>n.type==='select'&&n.props.value==='F#7');assert.ok(field);assert.ok(flatten(field).some(n=>n.type==='option'&&n.props.value==='F#7'));
+ assert.deepEqual(page.nodes().find(n=>n.props?.audio&&typeof n.props.onNote==='function').props.selectedPitches,[102]);
  const before=page.staff().events;keyboard(page,'ArrowDown',{target:{closest:()=>({tagName:'TEXTAREA'})}});assert.equal(page.staff().events,before);
  keyboard(page,'ArrowDown',{repeat:true});assert.deepEqual(model.scoreSteps(page.staff().events)[0].pitches,[53,101]);assert.equal(auditions().length,count+2);
 });
@@ -244,19 +258,20 @@ test('page caret and cross-part group arrows audition accepted destinations once
  keyboard(page,'Delete');assert.ok(page.staff().score.staffs.every(s=>s.events.every(e=>e.midi===null)));page.button('Undo').onClick();page.render();assert.ok(page.staff().score.staffs.every(s=>s.events.some(e=>e.midi===61)));
 });
 
-test('most recently placed note has Place-mode pitch/duration controls and accepted arrows audition once',t=>{
+test('Write keeps its latest note selected for arrow edits without showing the selection inspector',t=>{
  const page=mount(t);for(const [i,pitch] of [60,62,64,65].entries()){page.staff().onPlace({tick:units(i*4),pitch});page.render();}
- const last=note(page,65),ref=page.staff().selection[0];assert.equal(ref.eventId,last.id);assert.equal(page.staff().mode,'place');assert.ok(page.nodes().find(n=>n.props?.['aria-label']==='Placed note controls'));
+ const last=note(page,65),ref=page.staff().selection[0];assert.equal(ref.eventId,last.id);assert.equal(page.staff().mode,'place');assert.equal(page.nodes().some(n=>n.props?.['aria-label']==='Selection inspector'),false);
  const before=auditions().length;keyboard(page,'ArrowUp');assert.equal(note(page,66).id,last.id);assert.equal(page.staff().selection[0].toneId,ref.toneId);assert.equal(auditions().length,before+1);assert.equal(auditions().at(-1)[1].events[0].midi,66);
- page.nodes().find(n=>n.props?.['aria-label']==='Selected note duration').props.onChange({target:{value:'eighth'}});page.render();assert.equal(note(page,66).duration,'eighth');assert.equal(page.staff().mode,'place');assert.equal(model.totalTicks(page.staff().events)/420,16);assert.ok(code(page).range);
- page.button('Continue placing').onClick();page.render();assert.equal(page.staff().selection.length,0);assert.equal(page.staff().mode,'place');assert.equal(page.nodes().some(n=>n.props?.['aria-label']==='Placed note controls'),false);
+ page.button('Eighth').onClick();page.render();assert.equal(note(page,66).duration,'quarter');assert.equal(page.staff().duration,'eighth');assert.equal(page.nodes().some(n=>n.props?.['aria-label']==='Selection inspector'),false);
+ choose(page,last.id);assert.equal(page.nodes().some(n=>n.props?.['aria-label']==='Selection inspector'),false);page.button('Eighth').onClick();page.render();assert.equal(note(page,66).duration,'eighth');assert.ok(code(page).range);
+ page.button('Write').onClick();page.render();assert.equal(page.nodes().some(n=>n.props?.['aria-label']==='Selection inspector'),false);keyboard(page,'Escape');assert.equal(page.staff().selection.length,0);
 });
 
-test('Place selected-note controls keep code draft locks and superseded commands cannot edit the next note',t=>{
- const page=mount(t);page.staff().onPlace({tick:units(0),pitch:60});page.render();const old=page.button('Up semitone').onClick,oldDuration=page.nodes().find(n=>n.props?.['aria-label']==='Selected note duration').props.onChange;
- page.staff().onPlace({tick:units(4),pitch:64});page.render();const original=page.staff().score;
- old();oldDuration({target:{value:'half'}});page.render();assert.equal(page.staff().score,original);
- const clean=code(page).value;code(page).onChange('// draft\n'+clean);page.render();page.button('Up semitone').onClick();page.nodes().find(n=>n.props?.['aria-label']==='Selected note duration').props.onChange({target:{value:'half'}});page.render();assert.equal(page.staff().score,original);assert.equal(code(page).value,'// draft\n'+clean);
+test('Edit keyboard and toolbar controls keep code draft locks and superseded commands cannot edit the next note',t=>{
+ const page=mount(t);page.staff().onPlace({tick:units(0),pitch:60});page.render();choose(page,note(page,60).id);const old=page.staff().onTranspose,oldDuration=page.button('Half').onClick;
+ page.button('Write').onClick();page.render();page.staff().onPlace({tick:units(4),pitch:64});page.render();const original=page.staff().score;
+ old(1);oldDuration();page.render();assert.equal(page.staff().score,original);
+ choose(page,note(page,64).id);const clean=code(page).value;code(page).onChange('// draft\n'+clean);page.render();keyboard(page,'ArrowUp');page.button('Half').onClick();page.render();assert.equal(page.staff().score,original);assert.equal(code(page).value,'// draft\n'+clean);
 });
 
 test('dot and tie shortcuts are scoped, idempotent under native exclusions, undoable and silent',t=>{
@@ -378,9 +393,9 @@ test('direct Tie and Arpeggio controls update the same committed notation and re
  page.button('Off').onClick();page.render();assert.equal(page.staff().events[0].arpeggio,undefined);assert.equal(focused,2);
 });
 
-test('Positions reaches the endpoint and placement there creates one undoable measure',t=>{
+test('staff caret reaches the endpoint and placement there creates one undoable measure',t=>{
  const page=mount(t),before=page.staff().score;
- page.button('End of score').onClick();page.render();assert.equal(page.staff().score,before);assert.equal(page.staff().caret.tick,model.MEASURE_TICKS);
+ page.staff().onCaret({tick:model.MEASURE_TICKS,pitch:60});page.render();assert.equal(page.staff().score,before);assert.equal(page.staff().caret.tick,model.MEASURE_TICKS);
  page.staff().onPlace({...page.staff().caret});page.render();
  assert.equal(model.totalTicks(page.staff().events),2*model.MEASURE_TICKS);
  page.button('Undo').onClick();page.render();assert.equal(page.staff().score,before);
@@ -574,12 +589,11 @@ test('Light reverb toggles independently of score and history, with Dotted besid
  assert.equal(dependencies.calls.filter(call=>call[0]==='timeline').length,0);
 });
 
-test('Write ignores existing-note selection from the staff and disables note sequence buttons; Edit restores it',t=>{
+test('Write ignores existing-note selection from the staff; Edit restores it without secondary panels',t=>{
  const page=mount(t);page.staff().onPlace({tick:0,pitch:60});page.render();const first=note(page,60).id;
  page.staff().onPlace({tick:units(4),pitch:64});page.render();const before=page.staff().score,selected=page.staff().selectedId;
  page.staff().onSelect(first);page.render();assert.equal(page.staff().selectedId,selected);assert.equal(page.staff().score,before);
- const sequence=page.nodes().find(node=>node.props?.['aria-label']==='Score events');
- assert.ok(flatten(sequence).filter(node=>node.type==='button'&&node.props['aria-label']?.startsWith('Target')&&!text(node).includes('Rest')).every(node=>node.props.disabled));
+ assert.equal(page.nodes().some(node=>['Score events','Rhythmic positions'].includes(node.props?.['aria-label'])),false);
  choose(page,first);assert.equal(page.staff().selectedId,first);assert.equal(page.staff().mode,'edit');
 });
 
@@ -605,4 +619,54 @@ test('Staccato configures Write entries, edits selected notes with Undo and clea
  page.button('Rests').onClick();page.render();assert.equal(page.staff().events[0].staccato,undefined);assert.equal(page.button('Staccato').disabled,true);
  page.button('Undo').onClick();page.render();choose(page,id);const old=page.button('Staccato').onClick;code(page).onChange('// draft\n'+code(page).value);page.render();old();page.render();assert.equal(page.staff().score,marked);
  code(page).onReset();page.render();page.button('Reset score').onClick();page.render();assert.equal(page.staff().staccato,false);assert.equal(page.button('Staccato')['aria-pressed'],false);
+});
+
+test('code is secondary, preserves collapsed drafts, warns visibly and opens on Review or Apply failure',t=>{
+ const page=mount(t);assert.equal(code(page).expanded,false);assert.equal(page.nodes().some(node=>node.type==='button'&&node.props?.['aria-label']==='Melody code'),false);
+ page.staff().onPlace({tick:0,pitch:60});page.render();const score=page.staff().score,id=note(page,60).id;assert.equal(code(page).expanded,false,'placing music does not open code');
+ const audioCalls=dependencies.calls.length;
+ code(page).onExpandedChange(true);page.render();assert.equal(code(page).expanded,true);assert.equal(page.staff().score,score);assert.equal(dependencies.calls.length,audioCalls+1,'render only configures the existing audio hook');
+ const draft='// my draft\n'+code(page).value;code(page).onChange(draft);page.render();code(page).onExpandedChange(false);page.render();
+ assert.equal(code(page).dirty,true);assert.equal(code(page).expanded,false);assert.equal(code(page).value,draft);assert.equal(page.button('Play').disabled,true);
+ assert.ok(page.nodes().some(node=>node.props?.className==='studio-draft-notice'&&text(node).includes('Unapplied code')));
+ page.staff().onPlace({tick:units(4),pitch:64});page.render();assert.equal(page.staff().score,score,'collapsed drafts retain score locks');
+ page.button('Review code').onClick();page.render();assert.equal(code(page).expanded,true);assert.equal(code(page).value,draft);
+ code(page).onChange('invalid melody code');page.render();code(page).onExpandedChange(false);page.render();code(page).onApply();page.render();
+ assert.equal(code(page).expanded,true);assert.ok(code(page).error);assert.equal(page.staff().score,score);
+ code(page).onReset();page.render();code(page).onExpandedChange(false);page.render();choose(page,id);assert.equal(code(page).expanded,false,'selection keeps the code panel closed');
+});
+
+
+test('Studio session changes retain score/source and read-only transitions reject captured editing callbacks',t=>{
+ const changes=[],props={onSessionChange:session=>changes.push(session),readOnly:false};const page=mount(t,props);
+ page.staff().onPlace({tick:0,pitch:60});page.render();const score=page.staff().score,oldPlace=page.staff().onPlace,oldReset=page.button('Reset score').onClick;
+ assert.equal(changes.at(-1).state.score,score);code(page).onChange('// pending\n'+code(page).value);page.render();assert.match(changes.at(-1).codeDraft,/pending/);
+ const oldApply=code(page).onApply,oldEdit=code(page).onChange;props.readOnly=true;page.render();oldPlace({tick:units(4),pitch:64});oldReset();oldApply();oldEdit('overwrite');page.render();
+ assert.equal(page.staff().score,score);assert.match(code(page).value,/pending/);assert.equal(code(page).blocked,true);assert.equal(page.button('Reset score').disabled,true);
+ assert.equal(page.nodes().some(node=>text(node).includes('Staff 1 · Next')),false);
+});
+
+test('Game melody keeps one Treble staff and rejects staff/clef changes through both controls and code',t=>{
+ const props={gameMelody:true},page=mount(t,props),before=page.staff().score;
+ assert.equal(page.staff().fixedClef,true);assert.equal(page.staff().staffActions,undefined);assert.equal(page.nodes().some(n=>n.props?.['aria-label']==='Add staff'),false);
+ page.staff().onProperty('clef',page.staff().activeStaffId);page.render();assert.equal(page.nodes().some(n=>n.type==='dialog'),false);
+ const bass="const BPM=120;const KEY='C';const TIME_SIGNATURE='4/4';const STAVES=[{id:'a',clef:'bass',steps:[{midi:60,duration:'whole'}]}];";
+ const multiple="const BPM=120;const KEY='C';const TIME_SIGNATURE='4/4';const STAVES=[{id:'a',clef:'treble',steps:[{midi:60,duration:'whole'}]},{id:'b',clef:'bass',steps:[{midi:36,duration:'whole'}]}];";
+ for(const source of [bass,multiple]){code(page).onChange(source);page.render();code(page).onApply();page.render();assert.equal(page.staff().score,before);assert.equal(code(page).value,source);assert.match(code(page).error,/exactly one staff in Treble/);code(page).onReset();page.render();}
+ props.gameMelody=false;page.render();code(page).onChange(multiple);page.render();code(page).onApply();page.render();assert.equal(page.staff().score.staffs.length,2);assert.equal(page.staff().score.staffs[1].clef,'bass');assert.ok(page.staff().staffActions);
+});
+
+test('older incompatible Game scores stay in code until explicitly repaired without rendering extra or non-Treble staffs',async t=>{
+ const {emptyScore}=await import(scoreUrl),state=emptyScore();state.score.staffs[0].clef='bass';
+ const page=mount(t,{gameMelody:true,initialSession:{state,codeDraft:null}}),original=code(page).value;
+ assert.match(original,/clef: "bass"/);assert.equal(page.nodes().some(n=>typeof n.props?.onPlace==='function'),false);assert.ok(page.nodes().some(n=>n.props?.role==='alert'&&text(n).includes('music is preserved')));
+ code(page).onChange(original.replace('clef: "bass"','clef: "treble"'));page.render();code(page).onApply();page.render();assert.equal(page.staff().score.staffs.length,1);assert.equal(page.staff().score.staffs[0].clef,'treble');
+});
+
+test('bottom Piano commits keys without cancelling or duplicating held audio and retains draft/read-only guards',t=>{
+ const props={readOnly:false},page=mount(t,props),piano=()=>page.nodes().find(n=>n.props?.audio&&typeof n.props.onNote==='function').props;
+ const stopCount=()=>dependencies.calls.filter(c=>c[0]==='stop').length,feedbackCount=()=>dependencies.calls.filter(c=>c[0]==='timeline').length;
+ const beforeStop=stopCount(),beforeFeedback=feedbackCount();piano().onNote(61);page.render();assert.ok(note(page,61));assert.equal(stopCount(),beforeStop);assert.equal(feedbackCount(),beforeFeedback);assert.equal(page.button('Undo').disabled,false);
+ const before=page.staff().score,stale=piano().onNote;code(page).onChange('// pending\n'+code(page).value);page.render();assert.equal(piano().locked,true);piano().onNote(64);stale(65);page.render();assert.equal(page.staff().score,before);
+ code(page).onReset();page.render();const old=piano().onNote;props.readOnly=true;page.render();old(67);piano().onNote(69);page.render();assert.equal(page.staff().score,before);assert.equal(piano().locked,true);
 });

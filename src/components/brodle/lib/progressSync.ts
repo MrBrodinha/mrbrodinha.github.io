@@ -1,9 +1,11 @@
-import { emptyProgress, mergeProgress, parseProgress, serializeProgress } from './gameProgress';
-import type { GameMode, GameProgress } from './gameProgress';
+import { emptyProgress, hasProgress, mergeProgress, parseProgress, serializeProgress } from './gameProgress';
+import type { GameProgress } from './gameProgress';
 
 export type ProgressTransport = {
   load: (signal: AbortSignal) => Promise<GameProgress>;
   save: (progress: GameProgress, signal: AbortSignal) => Promise<GameProgress>;
+  // An existing empty row may be a deliberately cleared imported draft.
+  hasRemoteRecord?: boolean;
 };
 export type ProgressSyncState = {
   progress: GameProgress;
@@ -12,17 +14,17 @@ export type ProgressSyncState = {
   status: 'local' | 'loading' | 'saving' | 'saved' | 'error';
 };
 
-export function readProgressCache(raw: string | null, target: readonly number[], mode: GameMode = 'guided') {
+export function readProgressCache(raw: string | null, target: readonly number[]) {
   let pending = false;
   try { pending = JSON.parse(raw ?? 'null')?.pending === true; } catch { /* Restore any valid history below. */ }
-  return { progress: parseProgress(raw, target, mode), pending };
+  return { progress: parseProgress(raw, target), pending };
 }
 
 export function serializeProgressCache(progress: GameProgress, pending: boolean) {
   return JSON.stringify({ ...JSON.parse(serializeProgress(progress)), pending });
 }
 
-// Each session belongs to one account, puzzle and mode; late responses are ignored
+// Each session belongs to one account and puzzle; late responses are ignored
 // after disposal. Save requests are serialized and merge append-only history.
 export class ProgressSync {
   state: ProgressSyncState;
@@ -37,7 +39,7 @@ export class ProgressSync {
     initial: { progress: GameProgress; pending: boolean },
     private transport: ProgressTransport | undefined,
     private changed: (state: ProgressSyncState) => void,
-    private mode: GameMode = 'guided',
+    private loadFallback?: (signal: AbortSignal) => Promise<GameProgress>,
   ) {
     this.state = { ...initial, loading: Boolean(transport), status: transport ? 'loading' : 'local' };
   }
@@ -48,14 +50,14 @@ export class ProgressSync {
     const next = update(previous);
     if (next === previous) return { previous, next };
     this.revision++;
-    this.emit({ progress: parseProgress(serializeProgress(next), this.target, this.mode), pending: Boolean(this.transport), status: this.transport ? 'saving' : 'local' });
+    this.emit({ progress: parseProgress(serializeProgress(next), this.target), pending: Boolean(this.transport), status: this.transport ? 'saving' : 'local' });
     void this.sync();
     return { previous, next: this.state.progress };
   }
 
   receive(progress: GameProgress, pending: boolean) {
     if (this.disposed) return;
-    const merged = mergeProgress(progress, this.state.progress, this.target, this.state.pending, this.mode);
+    const merged = mergeProgress(progress, this.state.progress, this.target, this.state.pending);
     if (serializeProgress(merged) === serializeProgress(this.state.progress)) return;
     this.revision++;
     this.emit({ progress: merged, pending: Boolean(this.transport) && (pending || this.state.pending) });
@@ -70,16 +72,23 @@ export class ProgressSync {
     try {
       const remote = await this.transport.load(this.abort.signal);
       if (this.disposed) return;
-      const remoteEmpty = remote.attempts.length === 0 && remote.guess.length === 0;
-      const merged = mergeProgress(remote, this.state.progress, this.target, this.state.pending || remoteEmpty, this.mode);
-      const needsSave = serializeProgress(merged) !== serializeProgress(remote);
+      if (!this.transport.hasRemoteRecord && !this.state.pending && !hasProgress(remote) && !hasProgress(this.state.progress) && this.loadFallback) {
+        const fallback = await this.loadFallback(this.abort.signal);
+        if (this.disposed) return;
+        // A storage event may have delivered canonical progress while loading.
+        if (!hasProgress(this.state.progress)) this.emit({ progress: fallback });
+      }
+      const remoteEmpty = !this.transport.hasRemoteRecord && !hasProgress(remote);
+      const merged = mergeProgress(remote, this.state.progress, this.target, this.state.pending || remoteEmpty);
+      const needsSave = serializeProgress(merged) !== serializeProgress(remote)
+        || (this.state.pending && !this.transport.hasRemoteRecord);
       this.emit({ progress: merged, pending: needsSave, status: needsSave ? 'saving' : 'saved' });
       if (needsSave) {
         const revision = this.revision;
         const saved = await this.transport.save(merged, this.abort.signal);
         if (this.disposed) return;
         const edited = revision !== this.revision;
-        this.emit({ progress: mergeProgress(saved, this.state.progress, this.target, edited, this.mode), pending: edited, loading: false, status: edited ? 'saving' : 'saved' });
+        this.emit({ progress: mergeProgress(saved, this.state.progress, this.target, edited), pending: edited, loading: false, status: edited ? 'saving' : 'saved' });
         this.requested ||= edited;
       } else this.emit({ loading: false });
     } catch {

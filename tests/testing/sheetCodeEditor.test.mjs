@@ -7,7 +7,7 @@ const {default:SheetCodeEditor}=await import(await sourceUrl('src/components/tes
 test('physical line numbers, selected ranges and scroll synchronization preserve focus and text editing',t=>{
  host.reset();t.after(()=>host.reset());
  const calls=[],field={scrollTop:0,clientHeight:80,matches:()=>false,focus:()=>assert.fail('Selection must not steal focus')},numbers={style:{}},band={style:{}};
- const props={value:'header\n\n'+Array.from({length:20},(_,i)=>`row ${i}`).join('\n'),dirty:false,error:'',range:{startLine:18,endLine:20},linkMissing:false,
+ const props={expanded:true,onExpandedChange:value=>calls.push(['expanded',value]),value:'header\n\n'+Array.from({length:20},(_,i)=>`row ${i}`).join('\n'),dirty:false,error:'',range:{startLine:18,endLine:20},linkMissing:false,
  onChange:value=>calls.push(['change',value]),onApply:()=>calls.push(['apply']),onReset:()=>calls.push(['reset'])};
  function render(){host.begin();const nodes=flatten(SheetCodeEditor(props));nodes.find(n=>n.type==='textarea').ref.current=field;
   nodes.find(n=>n.props?.className==='sheet-code-line-list').ref.current=numbers;
@@ -25,4 +25,18 @@ test('physical line numbers, selected ranges and scroll synchronization preserve
  assert.equal(nodes.find(n=>n.type==='textarea').props['aria-invalid'],true);assert.equal(nodes.some(n=>n.props?.className==='sheet-code-line-highlight'),false);
  for(const button of nodes.filter(n=>n.type==='button')){assert.equal(button.props.disabled,false);button.props.onClick();}assert.deepEqual(calls.slice(1),[['apply'],['reset']]);
  assert.ok(nodes.some(n=>n.props?.role==='alert'));assert.ok(nodes.some(n=>n.props?.role==='status'));
+});
+
+test('collapsed code stays mounted, preserves caret/scroll, and reveals the current linked line on expansion',t=>{
+ host.reset();t.after(()=>host.reset());
+ const changes=[],field={scrollTop:140,clientHeight:80,selectionStart:8,selectionEnd:12,matches:()=>false},numbers={style:{}},band={style:{}};
+ const props={expanded:false,onExpandedChange:value=>changes.push(value),value:Array.from({length:24},(_,i)=>'line '+i).join('\n'),dirty:true,error:'',range:{startLine:18,endLine:18},linkMissing:false,onChange(){},onApply(){},onReset(){}};
+ function render(){host.begin();const nodes=flatten(SheetCodeEditor(props));nodes.find(node=>node.type==='textarea').ref.current=field;nodes.find(node=>node.props?.className==='sheet-code-line-list').ref.current=numbers;nodes.find(node=>node.props?.className==='sheet-code-line-highlight').ref.current=band;host.flush();return nodes;}
+ let nodes=render();assert.equal(nodes.find(node=>node.type==='details').props.open,false);assert.equal(field.scrollTop,140);assert.equal(field.selectionStart,8);assert.equal(field.selectionEnd,12);
+ const value=nodes.find(node=>node.type==='textarea').props.value;
+ nodes.find(node=>node.type==='details').props.onToggle({currentTarget:{open:true}});assert.deepEqual(changes,[true]);
+ props.expanded=true;nodes=render();assert.equal(field.scrollTop,304);assert.equal(numbers.style.transform,'translateY(-304px)');assert.equal(nodes.find(node=>node.type==='textarea').props.value,value);
+ nodes.find(node=>node.type==='details').props.onToggle({currentTarget:{open:true}});assert.deepEqual(changes,[true],'controlled toggle notifications do not loop');
+ props.expanded=false;props.range={startLine:2,endLine:2};render();assert.equal(field.scrollTop,304);assert.equal(field.selectionStart,8);assert.equal(field.selectionEnd,12);
+ props.expanded=true;render();assert.equal(field.scrollTop,20);
 });

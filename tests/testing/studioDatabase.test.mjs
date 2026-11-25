@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { readFile } from 'node:fs/promises';
+import { PGlite } from '@electric-sql/pglite';
+import { studio } from './studioModules.mjs';
+import { codeUrl, scoreModel } from './sheetEditorModules.mjs';
+const { scoreCodeSnapshot } = await import(codeUrl);
+const alice='11111111-1111-4111-8111-111111111111',bob='22222222-2222-4222-8222-222222222222',admin='33333333-3333-4333-8333-333333333333',id='44444444-4444-4444-8444-444444444444';
+test('Studio migration preserves old records and enforces private optimistic saves plus review/return/resubmit',async()=>{
+ const db=new PGlite();
+ const role=async(user)=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify(user?{sub:user}:{})]);await db.exec('set role '+(user?'authenticated':'anon'));};
+ const scalar=async(sql,args=[])=>Object.values((await db.query(sql,args)).rows[0])[0];
+ const save=(content,expected=null,key=id)=>scalar('select to_jsonb(public.save_brodle_studio($1,$2,$3))',[key,expected,JSON.stringify(content)]);
+ try{
+  await db.exec(`create role anon;create role authenticated;create schema auth;grant usage on schema public,auth to anon,authenticated;
+   create function auth.uid() returns uuid language sql stable as $$ select (nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'sub')::uuid $$;
+   create table public.users(id uuid primary key,username text);insert into public.users values('${alice}','Alice'),('${bob}','Bob'),('${admin}','Admin');`);
+  for(const file of ['202610310002_brodle_library.sql','202610310003_victory_parts.sql','202610310004_piano_range.sql','202611010011_brodle_demisemiquavers.sql','202611010012_brodle_victory_settings.sql','202611010014_brodle_return_approved_melodies.sql','202611110016_brodle_triplets.sql'])await db.exec(await readFile(new URL('../../database/migrations/'+file,import.meta.url),'utf8'));
+  await db.exec(`insert into public.brodle_admins values('${admin}');insert into public.brodle_melodies(created_by,title,bpm,key_signature,time_signature,notes) values('${alice}','Legacy',120,'C','4/4','[{"midi":60,"beats":4}]');`);
+  await db.exec(await readFile(new URL('../../database/migrations/202611250018_melody_studio_documents.sql',import.meta.url),'utf8'));
+  assert.equal(await scalar("select count(*)::int from public.brodle_melodies where title='Legacy' and studio_document is null"),1);
+  const draft=studio.emptyStudioDraft();draft.title='My tune';draft.source='Artist';const score=scoreModel.importScore(scoreModel.initialScore(),{bpm:120,key:'C',staffs:[{id:'staff-1',clef:'treble',steps:[{midi:60,duration:'whole'}]}]},'save');draft.document.main=studio.studioScoreDocument(score,null);
+  const content=studio.studioPayload(draft);
+  await role(null);await assert.rejects(save(content),{code:'42501'});
+  await role(alice);let row=await save(content);assert.equal(row.created_by,alice);assert.deepEqual(row.studio_document,draft.document);
+  assert.equal((await save(content)).updated_at,row.updated_at,'lost first response retries without duplicate or new revision');
+  await assert.rejects(db.query('update public.brodle_melodies set studio_document=$1 where id=$2',[JSON.stringify(draft.document),id]),{code:'42501'});
+  await role(bob);assert.equal(await scalar('select count(*)::int from public.brodle_melodies where id=$1',[id]),0);await assert.rejects(save(content,row.updated_at),/brodle_not_editable/);
+  await role(admin);assert.equal(await scalar('select count(*)::int from public.brodle_melodies where id=$1',[id]),0,'admins cannot browse private drafts');await assert.rejects(save(content,row.updated_at),/brodle_not_editable/);
+  await role(alice);const stale=row.updated_at;const changed={...content,title:'Updated tune'};row=await save(changed,stale);assert.notEqual(row.updated_at,stale);
+  await assert.rejects(save({...changed,source:'Stale device'},stale),/brodle_studio_conflict/);assert.equal((await save(changed,stale)).updated_at,row.updated_at,'retries of a committed update are idempotent');
+  const pending=structuredClone(changed);pending.studio_document.final.codeDraft='unfinished';row=await save(pending,row.updated_at);
+  await assert.rejects(db.query('select public.submit_brodle_melody($1)',[id]),/brodle_studio_unapplied/);
+  row=await save(changed,row.updated_at);await db.query('select public.submit_brodle_melody($1)',[id]);await assert.rejects(save(changed,row.updated_at),/brodle_not_editable/);
+  await role(admin);assert.equal(await scalar('select count(*)::int from public.brodle_melodies where id=$1',[id]),1);await db.query("select public.review_brodle_melody($1,'rejected','Please revise the ending')",[id]);
+  await role(alice);row=await scalar('select to_jsonb(m) from public.brodle_melodies m where id=$1',[id]);assert.equal(row.review_note,'Please revise the ending');assert.deepEqual(row.studio_document,draft.document);
+  row=await save({...changed,source:'Revised artist'},row.updated_at);assert.equal(row.status,'draft');await db.query('select public.submit_brodle_melody($1)',[id]);
+  await role(admin);await db.query("select public.review_brodle_melody($1,'approved','Ready')",[id]);await db.query("select public.schedule_brodle_melody($1,(now() at time zone 'Europe/Lisbon')::date+1)",[id]);
+  const snapshot=await scalar('select snapshot from public.brodle_daily_challenges');assert.equal(snapshot.melody[0].midi,60);assert.equal(snapshot.source,'Revised artist');
+  await role(alice);await assert.rejects(save(changed,row.updated_at),/brodle_not_editable/);
+  const malformed=structuredClone(content);malformed.studio_document.main.score='';await assert.rejects(save(malformed,null,'55555555-5555-4555-8555-555555555555'),{code:'23514'});
+ }finally{await db.close();}
+});
